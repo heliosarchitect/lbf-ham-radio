@@ -3,6 +3,8 @@
 > `pip install ft991a-control` | PyPI: [ft991a-control](https://pypi.org/project/ft991a-control/)
 > GitHub: [heliosarchitect/lbf-ham-radio](https://github.com/heliosarchitect/lbf-ham-radio)
 
+**Version plan**: v0.3.1 → v1.0.0 = **7 minor version increments** (7 feature milestones)
+
 ---
 
 ## v0.3.x — Foundation (✅ CURRENT)
@@ -78,7 +80,24 @@
 
 ---
 
-## v0.8.0 — Logging & QSO Management
+## v0.8.0 — AI-Assisted Broadcast & TX Queue
+
+**Goal**: Draft → review → transmit workflow for newsletters and alerts.
+
+- [ ] Broadcast message composer (AI drafts, operator approves)
+- [ ] TX queue in web GUI (queued messages awaiting operator PTT)
+- [ ] Text-to-speech synthesis for voice broadcasts (TTS → audio → TX)
+- [ ] CW bulletin formatting (auto-format text as CW-ready)
+- [ ] Digital mode message formatting (JS8Call, Winlink)
+- [ ] Simultaneous web audio stream (stream TX audio to web listeners)
+- [ ] WebSDR/KiwiSDR integration links for remote verification
+- [ ] Broadcast templates (emergency alert, weather, news, net check-in)
+- [ ] Broadcast log (what was sent, when, on what frequency/mode)
+- [ ] Sub-10-minute draft-to-air pipeline
+
+---
+
+## v0.9.0 — QSO Logging & Contact Management
 
 **Goal**: Integrated logging without needing external software.
 
@@ -94,17 +113,19 @@
 
 ---
 
-## v0.9.0 — APRS & Packet Radio
+## v0.10.0 — APRS, Packet Radio & Emergency Comms
 
-**Goal**: Position reporting and digital packet capabilities.
+**Goal**: Position reporting, packet capabilities, and ARES/RACES readiness.
 
 - [ ] APRS position beacon (via Direwolf bridge)
 - [ ] APRS message send/receive
 - [ ] APRS map display in web GUI
 - [ ] Packet radio TNC (software TNC via Direwolf)
 - [ ] Winlink email gateway integration
-- [ ] APRS weather station reporting
-- [ ] IS-gate functionality
+- [ ] ARES/RACES net frequencies pre-programmed
+- [ ] Emergency beacon mode
+- [ ] Cross-band repeat capability
+- [ ] Mesh networking (JS8Call relay)
 
 ---
 
@@ -114,14 +135,13 @@
 
 - [ ] Comprehensive documentation site
 - [ ] Plugin architecture (extend via Python packages)
-- [ ] Multi-radio support (not just FT-991A — extend to IC-7300, FT-891, etc.)
+- [ ] Multi-radio support (IC-7300, FT-891, etc. via Hamlib)
 - [ ] User authentication for web GUI (optional, for remote access)
 - [ ] TLS/HTTPS support
 - [ ] Configuration persistence (save/restore radio profiles)
 - [ ] Backup/restore radio memories via GUI
 - [ ] Performance optimization (minimize CAT polling overhead)
 - [ ] Accessibility (screen reader support, keyboard navigation)
-- [ ] Internationalization (i18n)
 
 ---
 
@@ -134,13 +154,6 @@
 - [ ] AI band recommendation ("20m is open to Europe right now")
 - [ ] Automatic contest operation (AI handles exchanges)
 
-### Emergency Communications
-- [ ] Emergency beacon mode (automatic distress signaling)
-- [ ] ARES/RACES integration (emergency net frequencies pre-programmed)
-- [ ] Automatic position reporting in emergency mode
-- [ ] Cross-band repeat capability
-- [ ] Mesh networking (JS8Call relay)
-
 ### Satellite
 - [ ] Satellite pass prediction (gpredict integration)
 - [ ] Auto-Doppler correction during satellite passes
@@ -149,10 +162,27 @@
 
 ### Hardware Extensions
 - [ ] Antenna rotator control (via Hamlib rotctld)
-- [ ] Antenna tuner integration (external auto-tuner support)
 - [ ] SDR panadapter overlay (RTL-SDR waterfall display)
 - [ ] Remote head operation (control radio from anywhere via web)
 - [ ] Multi-operator support (shared radio, queue-based TX)
+
+---
+
+## Version Summary
+
+| Version | Feature Count | Milestone |
+|---------|--------------|-----------|
+| v0.3.x | — | Foundation (✅ done) |
+| v0.4.0 | +1 | Hardware validation + audio |
+| v0.5.0 | +1 | Digital modes (FT8, fldigi) |
+| v0.6.0 | +1 | CW / Morse code |
+| v0.7.0 | +1 | Band monitoring & intelligence |
+| v0.8.0 | +1 | AI broadcast & TX queue |
+| v0.9.0 | +1 | QSO logging |
+| v0.10.0 | +1 | APRS + emergency comms |
+| **v1.0.0** | — | **Production release** |
+
+**Total: 7 feature increments → v0.3 to v0.10, then v1.0.0**
 
 ---
 
