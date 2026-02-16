@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  traefik:
+    image: traefik:v3.3
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=true"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+      - "--providers.file.watch=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      # Self-signed TLS for local network (no Let's Encrypt needed)
+      - "--serversTransport.insecureSkipVerify=true"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./certs:/etc/traefik/certs:ro
+    networks:
+      - radio
+
+networks:
+  radio:
+    driver: bridge

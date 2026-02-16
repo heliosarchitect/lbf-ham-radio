@@ -1,0 +1,28 @@
+http:
+  routers:
+    ft991a:
+      rule: "Host(`radio.fleet.wood`)"
+      entryPoints:
+        - websecure
+      service: ft991a
+      tls: {}
+
+    ft991a-ws:
+      rule: "Host(`radio.fleet.wood`) && PathPrefix(`/ws`)"
+      entryPoints:
+        - websecure
+      service: ft991a
+      tls: {}
+
+  services:
+    ft991a:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8000"
+
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/radio.fleet.wood.crt
+        keyFile: /etc/traefik/certs/radio.fleet.wood.key
