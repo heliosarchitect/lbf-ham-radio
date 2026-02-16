@@ -27,12 +27,15 @@ __email__ = "heliosarchitectlbf@gmail.com"
 __license__ = "MIT"
 
 # Import main classes for easy access
-from .cat import FT991A, Mode, Band, RadioStatus
-
-__all__ = [
-    'FT991A',
-    'Mode', 
-    'Band',
-    'RadioStatus',
-    '__version__'
-]
+try:
+    from .cat import FT991A, Mode, Band, RadioStatus
+    __all__ = [
+        'FT991A',
+        'Mode', 
+        'Band',
+        'RadioStatus',
+        '__version__'
+    ]
+except ImportError as e:
+    # Handle missing dependencies during development/testing
+    __all__ = ['__version__']

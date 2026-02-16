@@ -102,9 +102,6 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = [
-    "--cov=src/ft991a",
-    "--cov-report=term-missing", 
-    "--cov-report=html",
     "-v"
 ]
 asyncio_mode = "auto"

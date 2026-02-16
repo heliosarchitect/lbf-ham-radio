@@ -247,7 +247,7 @@ git clone https://github.com/heliosarchitect/lbf-ham-radio.git
 cd lbf-ham-radio
 pip install -e .[dev]
 
-# Run tests
+# Run tests (Note: tests need API signature updates)
 pytest tests/
 
 # Code formatting  
@@ -257,6 +257,8 @@ isort src/ tests/
 # Type checking
 mypy src/
 ```
+
+**Note**: Unit tests need to be updated to match the actual FT991A API signatures. Current tests use placeholder signatures and will be fixed in v0.3.1.
 
 ## License
 
