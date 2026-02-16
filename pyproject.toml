@@ -1,0 +1,125 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ft991a-control"
+version = "0.3.0"
+description = "AI-controllable Yaesu FT-991A transceiver interface with web GUI, CLI, and MCP server"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "LBF / Matthew", email = "heliosarchitectlbf@gmail.com" }
+]
+maintainers = [
+    { name = "LBF / Matthew", email = "heliosarchitectlbf@gmail.com" }
+]
+keywords = ["ham-radio", "amateur-radio", "ft991a", "yaesu", "cat-control", "mcp", "ai", "transceiver"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers", 
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10", 
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Ham Radio",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+    "Environment :: Web Environment",
+    "Environment :: Console",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "pyserial>=3.5",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0", 
+    "websockets>=11.0",
+    "mcp>=1.0.0",
+    "pydantic>=2.0.0"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0"
+]
+audio = [
+    "sounddevice>=0.4.0",
+    "numpy>=1.20.0"
+]
+
+[project.urls]
+Homepage = "https://github.com/heliosarchitect/lbf-ham-radio"
+Repository = "https://github.com/heliosarchitect/lbf-ham-radio"
+Issues = "https://github.com/heliosarchitect/lbf-ham-radio/issues"
+Documentation = "https://github.com/heliosarchitect/lbf-ham-radio/blob/main/README.md"
+
+[project.scripts]
+ft991a-web = "ft991a.cli:web_server_main"
+ft991a-cli = "ft991a.cli:cli_main"
+ft991a-mcp = "ft991a.cli:mcp_server_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+ft991a = ["static/*", "static/**/*"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = [
+    "--cov=src/ft991a",
+    "--cov-report=term-missing", 
+    "--cov-report=html",
+    "-v"
+]
+asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_column_numbers = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = "serial.*"
+ignore_missing_imports = true

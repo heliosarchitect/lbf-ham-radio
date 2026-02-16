@@ -1,0 +1,180 @@
+{
+  "name": "ft991a-control",
+  "displayName": "FT-991A Control - Ham Radio MCP Server",
+  "description": "AI-controllable Yaesu FT-991A transceiver interface with comprehensive CAT control. Features frequency/mode control, power management, S-meter reading, PTT keying, band switching, and full radio status monitoring via MCP tools.",
+  "version": "0.3.0",
+  "author": {
+    "name": "LBF / Matthew",
+    "email": "heliosarchitectlbf@gmail.com",
+    "url": "https://loverbearfarm.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/heliosarchitect/lbf-ham-radio",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/heliosarchitect/lbf-ham-radio"
+  },
+  "categories": [
+    "hardware-control",
+    "communication",
+    "amateur-radio",
+    "iot-devices"
+  ],
+  "tags": [
+    "ham-radio",
+    "amateur-radio", 
+    "ft991a",
+    "yaesu",
+    "transceiver",
+    "cat-control",
+    "radio-control",
+    "rf-hardware",
+    "ptt",
+    "frequency-control",
+    "mode-control",
+    "hardware-interface",
+    "serial-communication"
+  ],
+  "tools": [
+    {
+      "name": "get_frequency",
+      "description": "Get the current VFO-A frequency in Hz from the FT-991A transceiver"
+    },
+    {
+      "name": "set_frequency",
+      "description": "Tune the FT-991A to a specific frequency in Hz (30kHz - 56MHz range)"
+    },
+    {
+      "name": "get_mode", 
+      "description": "Get the current operating mode (LSB, USB, CW, FM, AM, DATA-USB for FT8, etc.)"
+    },
+    {
+      "name": "set_mode",
+      "description": "Change the operating mode (LSB/USB/CW/FM/AM/DATA_USB for digital modes)"
+    },
+    {
+      "name": "get_smeter",
+      "description": "Read the S-meter signal strength measurement from the receiver"
+    },
+    {
+      "name": "get_power",
+      "description": "Get the current TX power setting in watts"
+    },
+    {
+      "name": "set_power", 
+      "description": "Set the TX power output (5-100W range for FT-991A)"
+    },
+    {
+      "name": "ptt_on",
+      "description": "Key the transmitter (start transmitting) - use with caution"
+    },
+    {
+      "name": "ptt_off",
+      "description": "Unkey the transmitter (return to receive mode)"
+    },
+    {
+      "name": "get_status",
+      "description": "Get complete radio status including frequency, mode, S-meter, TX/RX state, and power"
+    },
+    {
+      "name": "set_band", 
+      "description": "Switch to a specific amateur radio band (160M, 80M, 40M, 20M, etc.)"
+    },
+    {
+      "name": "get_memories",
+      "description": "List all programmed memory channels with frequencies and modes"
+    },
+    {
+      "name": "recall_memory",
+      "description": "Tune to a specific memory channel (1-99)"
+    },
+    {
+      "name": "toggle_tx_lock",
+      "description": "Toggle TX lockout to prevent accidental transmission (safety feature)"
+    }
+  ],
+  "installation": {
+    "python": {
+      "command": "python3",
+      "args": ["-m", "ft991a.cli", "mcp"], 
+      "package": "ft991a-control",
+      "install": "pip install ft991a-control"
+    }
+  },
+  "configuration": {
+    "required": true,
+    "description": "Requires FT-991A connected via USB serial port. Default: /dev/ttyUSB0 @ 38400 baud. Radio menu item 031 must match baud rate.",
+    "parameters": [
+      {
+        "name": "port",
+        "description": "Serial port device path",
+        "default": "/dev/ttyUSB0",
+        "type": "string"
+      },
+      {
+        "name": "baud", 
+        "description": "Serial baud rate (must match radio menu 031)",
+        "default": 38400,
+        "type": "integer"
+      }
+    ]
+  },
+  "requirements": {
+    "hardware": [
+      "Yaesu FT-991A transceiver",
+      "USB-A to USB-B cable (for CAT control)",
+      "Linux system with USB serial support"
+    ],
+    "software": [
+      "Python 3.9+",
+      "pyserial library",
+      "MCP Python SDK"
+    ],
+    "setup": [
+      "Enable CAT control on FT-991A (menu item 031)", 
+      "Set baud rate to 38400 (menu item 031)",
+      "Connect USB cable between radio and computer",
+      "Ensure user has access to serial port (/dev/ttyUSB0)"
+    ]
+  },
+  "features": [
+    "Full CAT (Computer Aided Transceiver) control",
+    "Frequency control across entire FT-991A range (30kHz-56MHz)", 
+    "All operating modes (LSB/USB/CW/FM/AM/Digital)",
+    "Real-time S-meter readings",
+    "TX power control (5-100W)",
+    "PTT (Push-To-Talk) control",
+    "Amateur band switching",
+    "Memory channel management",
+    "Complete radio status monitoring",
+    "Safety features (TX lockout)",
+    "Hardware serial interface (38400 baud)",
+    "Cross-platform Linux support"
+  ],
+  "useCases": [
+    "AI-assisted ham radio operations",
+    "Automated frequency scanning and monitoring",
+    "Remote radio control and monitoring",
+    "Contest station automation", 
+    "Digital mode integration (FT8, PSK31, etc.)",
+    "Emergency communication automation",
+    "Radio configuration management",
+    "QSO logging and band tracking",
+    "Antenna tuner integration",
+    "Software-defined radio workflows"
+  ],
+  "safety": {
+    "warnings": [
+      "PTT control can key the transmitter - ensure proper antenna connection",
+      "Verify license privileges before transmitting on any frequency",
+      "High power output (100W) - ensure adequate cooling and SWR",
+      "RF exposure limits must be observed per FCC/IC regulations"
+    ],
+    "features": [
+      "TX lockout toggle for accidental transmission prevention",
+      "Power level control and monitoring", 
+      "Frequency range validation",
+      "Mode-appropriate frequency ranges"
+    ]
+  }
+}
