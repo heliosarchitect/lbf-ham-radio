@@ -1,14 +1,14 @@
 http:
   routers:
     ft991a:
-      rule: "Host(`radio.fleet.wood`)"
+      rule: "Host(`{{ env \"RADIO_HOSTNAME\" }}`)"
       entryPoints:
         - websecure
       service: ft991a
       tls: {}
 
     ft991a-ws:
-      rule: "Host(`radio.fleet.wood`) && PathPrefix(`/ws`)"
+      rule: "Host(`{{ env \"RADIO_HOSTNAME\" }}`) && PathPrefix(`/ws`)"
       entryPoints:
         - websecure
       service: ft991a
@@ -18,11 +18,11 @@ http:
     ft991a:
       loadBalancer:
         servers:
-          - url: "http://host.docker.internal:8000"
+          - url: "http://host.docker.internal:{{ env \"RADIO_BACKEND_PORT\" }}"
 
 tls:
   stores:
     default:
       defaultCertificate:
-        certFile: /etc/traefik/certs/radio.fleet.wood.crt
-        keyFile: /etc/traefik/certs/radio.fleet.wood.key
+        certFile: /etc/traefik/certs/cert.crt
+        keyFile: /etc/traefik/certs/cert.key
