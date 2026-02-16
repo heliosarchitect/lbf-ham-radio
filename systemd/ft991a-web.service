@@ -1,0 +1,28 @@
+[Unit]
+Description=FT-991A Web GUI Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/Projects/lbf-ham-radio
+ExecStart=/usr/bin/python3 server.py --host 0.0.0.0 --port 8991 --radio-port /dev/ttyUSB0 --baud 38400
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
+
+# Security settings
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ReadWritePaths=/home/%i/Projects/lbf-ham-radio
+ProtectHome=read-only
+
+# Allow access to serial device
+SupplementaryGroups=dialout
+
+[Install]
+WantedBy=default.target
