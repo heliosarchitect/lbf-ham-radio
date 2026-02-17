@@ -1292,7 +1292,7 @@
                 <div class="lcars-connection-status">
                     <div class="lcars-status-indicator" id="connectionIndicator"></div>
                     <span id="connectionText">CONNECTING...</span>
-                    <span id="versionLabel" style="margin-left: 0.8rem; font-size: 0.75rem; color: var(--lcars-lavender); opacity: 0.7; letter-spacing: 1px;" title="ft991a-control package version">v0.7.1</span>
+                    <span id="versionLabel" style="margin-left: 0.8rem; font-size: 0.75rem; color: var(--lcars-lavender); opacity: 0.7; letter-spacing: 1px;" title="ft991a-control package version">v0.7.2</span>
                     <button class="lcars-reconnect-btn" id="reconnectButton" onclick="reconnectRadio()" 
                             title="Reconnect to FT-991A transceiver">↻ RECONNECT</button>
                 </div>
@@ -4106,6 +4106,7 @@
             return Array.from(fftData.slice(startBin, startBin + zoomBins));
         }
         
+                var _lastWaterfallLen = 0;
         function renderWaterfall() {
             if (!waterfallRunning || !waterfallCtx) return;
             
@@ -4117,14 +4118,20 @@
             const waterfallTop = spectrumHeight;
             const waterfallHeight = height - spectrumHeight;
             
-            // Scroll waterfall portion down
-            if (waterfallHeight > waterfallConfig.scrollSpeed) {
-                const imgData = ctx.getImageData(0, waterfallTop, width, waterfallHeight - waterfallConfig.scrollSpeed);
-                ctx.putImageData(imgData, 0, waterfallTop + waterfallConfig.scrollSpeed);
+            // Only scroll and draw when new data has arrived
+            const hasNewData = waterfallData.length > _lastWaterfallLen;
+            _lastWaterfallLen = waterfallData.length;
+            
+            if (hasNewData) {
+                // Scroll waterfall portion down
+                if (waterfallHeight > waterfallConfig.scrollSpeed) {
+                    const imgData = ctx.getImageData(0, waterfallTop, width, waterfallHeight - waterfallConfig.scrollSpeed);
+                    ctx.putImageData(imgData, 0, waterfallTop + waterfallConfig.scrollSpeed);
+                }
             }
             
             // Draw new waterfall line
-            if (waterfallData.length > 0) {
+            if (hasNewData && waterfallData.length > 0) {
                 const latestData = waterfallData[waterfallData.length - 1];
                 drawWaterfallLine(ctx, latestData, waterfallTop, width);
                 
