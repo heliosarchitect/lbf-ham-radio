@@ -751,9 +751,491 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* ── Setup Wizard Styles ────────────────────────────── */
+        .setup-wizard-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .setup-wizard {
+            background: var(--lcars-gray);
+            border: 3px solid var(--lcars-amber);
+            border-radius: var(--lcars-pill-radius);
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .setup-wizard::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            height: 10px;
+            background: var(--lcars-amber);
+            border-radius: var(--lcars-pill-radius) var(--lcars-pill-radius) 0 0;
+        }
+
+        .setup-wizard-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .setup-wizard-title {
+            font-size: 2rem;
+            color: var(--lcars-amber);
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .setup-wizard-subtitle {
+            color: var(--lcars-peach);
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .setup-step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background: var(--lcars-black);
+            border-radius: var(--lcars-small-radius);
+            border: 2px solid var(--lcars-blue);
+        }
+
+        .setup-step {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--lcars-light-gray);
+            color: var(--lcars-white);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .setup-step.active {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.7);
+        }
+
+        .setup-step.complete {
+            background: var(--lcars-green);
+            color: var(--lcars-black);
+        }
+
+        .setup-step-connector {
+            flex: 1;
+            height: 3px;
+            background: var(--lcars-light-gray);
+        }
+
+        .setup-step-connector.complete {
+            background: var(--lcars-green);
+        }
+
+        .setup-step-content {
+            margin-bottom: 30px;
+        }
+
+        .setup-step-title {
+            font-size: 1.4rem;
+            color: var(--lcars-amber);
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .setup-step-description {
+            color: var(--lcars-peach);
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .setup-port-list {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-blue);
+            border-radius: var(--lcars-small-radius);
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .setup-port-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: var(--lcars-gray);
+            border-radius: var(--lcars-small-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .setup-port-item:hover {
+            background: var(--lcars-light-gray);
+        }
+
+        .setup-port-item.selected {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
+        }
+
+        .setup-port-item.likely {
+            border: 2px solid var(--lcars-green);
+        }
+
+        .setup-port-info {
+            flex: 1;
+        }
+
+        .setup-port-device {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+
+        .setup-port-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .setup-baud-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .setup-baud-button {
+            background: var(--lcars-blue);
+            color: var(--lcars-white);
+            border: none;
+            border-radius: var(--lcars-small-radius);
+            padding: 12px;
+            font-family: var(--lcars-font);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .setup-baud-button:hover {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
+        }
+
+        .setup-baud-button.selected {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
+        }
+
+        .setup-baud-button.testing {
+            background: var(--lcars-lavender);
+            color: var(--lcars-black);
+        }
+
+        .setup-baud-button.success {
+            background: var(--lcars-green);
+            color: var(--lcars-black);
+        }
+
+        .setup-baud-button.failed {
+            background: var(--lcars-red);
+            color: var(--lcars-white);
+        }
+
+        .setup-connection-test {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-blue);
+            border-radius: var(--lcars-small-radius);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .setup-connection-status {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .setup-connection-status.success {
+            color: var(--lcars-green);
+        }
+
+        .setup-connection-status.failed {
+            color: var(--lcars-red);
+        }
+
+        .setup-connection-status.testing {
+            color: var(--lcars-amber);
+        }
+
+        .setup-radio-info {
+            background: var(--lcars-gray);
+            padding: 15px;
+            border-radius: var(--lcars-small-radius);
+            margin-top: 15px;
+        }
+
+        .setup-radio-info-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .setup-radio-info-label {
+            color: var(--lcars-peach);
+        }
+
+        .setup-radio-info-value {
+            color: var(--lcars-amber);
+        }
+
+        .setup-wizard-buttons {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .setup-button-back {
+            background: var(--lcars-light-gray);
+            color: var(--lcars-white);
+        }
+
+        .setup-button-skip {
+            background: var(--lcars-tan);
+            color: var(--lcars-white);
+        }
+
+        .setup-summary {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-green);
+            border-radius: var(--lcars-small-radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .setup-summary-title {
+            color: var(--lcars-green);
+            font-weight: 700;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .setup-summary-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .setup-summary-label {
+            color: var(--lcars-peach);
+            font-weight: 600;
+        }
+
+        .setup-summary-value {
+            color: var(--lcars-white);
+            font-weight: 700;
+        }
     </style>
 </head>
 <body>
+    <!-- Setup Wizard Overlay -->
+    <div class="setup-wizard-overlay lcars-hidden" id="setupWizard">
+        <div class="setup-wizard">
+            <div class="setup-wizard-header">
+                <div class="setup-wizard-title">FT-991A Setup Wizard</div>
+                <div class="setup-wizard-subtitle">Let's get your radio connected</div>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="setup-step-indicator">
+                <div class="setup-step active" id="stepIndicator1">1</div>
+                <div class="setup-step-connector" id="connector1"></div>
+                <div class="setup-step" id="stepIndicator2">2</div>
+                <div class="setup-step-connector" id="connector2"></div>
+                <div class="setup-step" id="stepIndicator3">3</div>
+                <div class="setup-step-connector" id="connector3"></div>
+                <div class="setup-step" id="stepIndicator4">4</div>
+                <div class="setup-step-connector" id="connector4"></div>
+                <div class="setup-step" id="stepIndicator5">5</div>
+                <div class="setup-step-connector" id="connector5"></div>
+                <div class="setup-step" id="stepIndicator6">6</div>
+            </div>
+
+            <!-- Step 1: Welcome -->
+            <div class="setup-step-content" id="setupStep1">
+                <div class="setup-step-title">Welcome</div>
+                <div class="setup-step-description">
+                    Welcome to the FT-991A LCARS Interface! This wizard will help you connect your Yaesu FT-991A 
+                    transceiver to this web interface. You'll be able to control frequency, mode, power, and monitor 
+                    radio status through your browser.
+                    <br><br>
+                    Make sure your FT-991A is powered on and connected to this computer via USB before continuing.
+                </div>
+            </div>
+
+            <!-- Step 2: Serial Port Detection -->
+            <div class="setup-step-content lcars-hidden" id="setupStep2">
+                <div class="setup-step-title">Serial Port Detection</div>
+                <div class="setup-step-description">
+                    Scanning for available serial ports. The FT-991A typically uses a CP2105 USB-to-serial converter. 
+                    Select the correct port below:
+                </div>
+                <div class="setup-port-list" id="portList">
+                    <div style="text-align: center; color: var(--lcars-peach);">
+                        <div class="lcars-spinner" style="margin: 20px auto;"></div>
+                        Scanning for serial ports...
+                    </div>
+                </div>
+                <div class="lcars-input-group">
+                    <label>Custom Port:</label>
+                    <input type="text" class="lcars-input" id="customPort" placeholder="/dev/ttyUSB0" 
+                           title="Enter custom serial port path">
+                    <button class="lcars-button-small" onclick="selectCustomPort()" 
+                            title="Use the entered custom port path">Use Custom</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Baud Rate Detection -->
+            <div class="setup-step-content lcars-hidden" id="setupStep3">
+                <div class="setup-step-title">Baud Rate Detection</div>
+                <div class="setup-step-description">
+                    Select the baud rate for your FT-991A. The default is 38400, but you can test each rate 
+                    or auto-detect:
+                </div>
+                <div class="setup-baud-grid" id="baudGrid">
+                    <button class="setup-baud-button" onclick="selectBaudRate(4800)" title="Test 4800 baud">4800</button>
+                    <button class="setup-baud-button" onclick="selectBaudRate(9600)" title="Test 9600 baud">9600</button>
+                    <button class="setup-baud-button" onclick="selectBaudRate(19200)" title="Test 19200 baud">19200</button>
+                    <button class="setup-baud-button selected" onclick="selectBaudRate(38400)" title="Test 38400 baud (default)">38400</button>
+                </div>
+                <button class="lcars-button" onclick="autoDetectBaudRate()" 
+                        title="Test each baud rate to find the correct one">🔍 Auto-Detect</button>
+            </div>
+
+            <!-- Step 4: Connection Test -->
+            <div class="setup-step-content lcars-hidden" id="setupStep4">
+                <div class="setup-step-title">Connection Test</div>
+                <div class="setup-step-description">
+                    Testing communication with your FT-991A. This will send a test command to verify 
+                    the radio is responding correctly.
+                </div>
+                <div class="setup-connection-test">
+                    <div class="setup-connection-status" id="connectionTestStatus">Ready to test</div>
+                    <button class="lcars-button" onclick="testConnection()" 
+                            title="Send a test command to verify radio communication">Test Connection</button>
+                    <div class="setup-radio-info lcars-hidden" id="radioInfo">
+                        <div class="setup-radio-info-item">
+                            <span class="setup-radio-info-label">Radio Model:</span>
+                            <span class="setup-radio-info-value" id="radioModel">-</span>
+                        </div>
+                        <div class="setup-radio-info-item">
+                            <span class="setup-radio-info-label">Current Frequency:</span>
+                            <span class="setup-radio-info-value" id="radioFrequency">-</span>
+                        </div>
+                        <div class="setup-radio-info-item">
+                            <span class="setup-radio-info-label">Current Mode:</span>
+                            <span class="setup-radio-info-value" id="radioMode">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Callsign (Optional) -->
+            <div class="setup-step-content lcars-hidden" id="setupStep5">
+                <div class="setup-step-title">Callsign (Optional)</div>
+                <div class="setup-step-description">
+                    Enter your amateur radio callsign. This is used for identification in digital modes 
+                    and logging. You can skip this step if you prefer.
+                </div>
+                <div class="lcars-input-group">
+                    <label>Callsign:</label>
+                    <input type="text" class="lcars-input" id="setupCallsign" placeholder="W1AW" 
+                           maxlength="10" style="text-transform: uppercase;" 
+                           title="Enter your amateur radio callsign">
+                </div>
+                <div class="setup-step-description">
+                    <small>This is used for identification in digital modes and logging functions.</small>
+                </div>
+            </div>
+
+            <!-- Step 6: Complete -->
+            <div class="setup-step-content lcars-hidden" id="setupStep6">
+                <div class="setup-step-title">Setup Complete</div>
+                <div class="setup-step-description">
+                    Congratulations! Your FT-991A is now configured and ready to use.
+                </div>
+                <div class="setup-summary" id="setupSummary">
+                    <div class="setup-summary-title">Configuration Summary</div>
+                    <div class="setup-summary-item">
+                        <span class="setup-summary-label">Serial Port:</span>
+                        <span class="setup-summary-value" id="summaryPort">-</span>
+                    </div>
+                    <div class="setup-summary-item">
+                        <span class="setup-summary-label">Baud Rate:</span>
+                        <span class="setup-summary-value" id="summaryBaudRate">-</span>
+                    </div>
+                    <div class="setup-summary-item">
+                        <span class="setup-summary-label">Callsign:</span>
+                        <span class="setup-summary-value" id="summaryCallsign">-</span>
+                    </div>
+                    <div class="setup-summary-item">
+                        <span class="setup-summary-label">Connection Status:</span>
+                        <span class="setup-summary-value" style="color: var(--lcars-green);">✓ Connected</span>
+                    </div>
+                </div>
+                <div class="setup-step-description">
+                    <a href="#" style="color: var(--lcars-amber); text-decoration: underline;" 
+                       title="Open documentation in new window">📖 View Documentation</a>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="setup-wizard-buttons">
+                <button class="lcars-button setup-button-back lcars-hidden" id="setupBackBtn" onclick="setupPrevStep()" 
+                        title="Go back to previous step">← Back</button>
+                <button class="lcars-button setup-button-skip lcars-hidden" id="setupSkipBtn" onclick="setupSkipStep()" 
+                        title="Skip this optional step">Skip</button>
+                <button class="lcars-button" id="setupNextBtn" onclick="setupNextStep()" 
+                        title="Continue to next step">Begin Setup →</button>
+            </div>
+        </div>
+    </div>
+
     <!-- LCARS Container -->
     <div class="lcars-container">
         <!-- LCARS Header with Elbow -->
@@ -1442,19 +1924,355 @@
             });
         }
 
+        // ── Setup Wizard Functions ──────────────────────────────
+        let setupCurrentStep = 1;
+        let setupSelectedPort = null;
+        let setupSelectedBaudRate = 38400;
+        let setupConnectionTested = false;
+
+        function showSetupWizard() {
+            document.getElementById('setupWizard').classList.remove('lcars-hidden');
+            setupCurrentStep = 1;
+            updateSetupStepDisplay();
+            loadAvailablePorts();
+        }
+
+        function hideSetupWizard() {
+            document.getElementById('setupWizard').classList.add('lcars-hidden');
+        }
+
+        function updateSetupStepDisplay() {
+            // Hide all step contents
+            for (let i = 1; i <= 6; i++) {
+                document.getElementById(`setupStep${i}`).classList.add('lcars-hidden');
+            }
+            
+            // Show current step
+            document.getElementById(`setupStep${setupCurrentStep}`).classList.remove('lcars-hidden');
+            
+            // Update step indicators
+            for (let i = 1; i <= 6; i++) {
+                const indicator = document.getElementById(`stepIndicator${i}`);
+                const connector = document.getElementById(`connector${i}`);
+                
+                indicator.classList.remove('active', 'complete');
+                if (connector) connector.classList.remove('complete');
+                
+                if (i < setupCurrentStep) {
+                    indicator.classList.add('complete');
+                    if (connector) connector.classList.add('complete');
+                } else if (i === setupCurrentStep) {
+                    indicator.classList.add('active');
+                }
+            }
+            
+            // Update navigation buttons
+            const backBtn = document.getElementById('setupBackBtn');
+            const skipBtn = document.getElementById('setupSkipBtn');
+            const nextBtn = document.getElementById('setupNextBtn');
+            
+            // Back button
+            if (setupCurrentStep > 1) {
+                backBtn.classList.remove('lcars-hidden');
+            } else {
+                backBtn.classList.add('lcars-hidden');
+            }
+            
+            // Skip button (only show on callsign step)
+            if (setupCurrentStep === 5) {
+                skipBtn.classList.remove('lcars-hidden');
+            } else {
+                skipBtn.classList.add('lcars-hidden');
+            }
+            
+            // Next button text
+            switch (setupCurrentStep) {
+                case 1:
+                    nextBtn.textContent = 'Begin Setup →';
+                    break;
+                case 2:
+                    nextBtn.textContent = 'Continue →';
+                    nextBtn.disabled = !setupSelectedPort;
+                    break;
+                case 3:
+                    nextBtn.textContent = 'Continue →';
+                    break;
+                case 4:
+                    nextBtn.textContent = 'Continue →';
+                    nextBtn.disabled = !setupConnectionTested;
+                    break;
+                case 5:
+                    nextBtn.textContent = 'Continue →';
+                    break;
+                case 6:
+                    nextBtn.textContent = 'Start Using Radio';
+                    break;
+            }
+        }
+
+        async function loadAvailablePorts() {
+            try {
+                const response = await apiCall('/setup/ports');
+                const portList = document.getElementById('portList');
+                
+                if (response.success && response.ports.length > 0) {
+                    let html = '';
+                    response.ports.forEach(port => {
+                        const likelyClass = port.likely_ft991a ? ' likely' : '';
+                        html += `
+                            <div class="setup-port-item${likelyClass}" onclick="selectPort('${port.device}')">
+                                <div class="setup-port-info">
+                                    <div class="setup-port-device">${port.device}</div>
+                                    <div class="setup-port-description">${port.description}</div>
+                                </div>
+                                ${port.likely_ft991a ? '<span style="color: var(--lcars-green);">📡</span>' : ''}
+                            </div>
+                        `;
+                    });
+                    portList.innerHTML = html;
+                    
+                    // Auto-select likely FT-991A port
+                    const likelyPort = response.ports.find(p => p.likely_ft991a);
+                    if (likelyPort) {
+                        selectPort(likelyPort.device);
+                    }
+                } else {
+                    portList.innerHTML = `
+                        <div style="text-align: center; color: var(--lcars-red); padding: 20px;">
+                            <strong>No serial ports found</strong><br>
+                            Make sure your FT-991A is connected via USB and powered on.
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Failed to load ports:', error);
+                document.getElementById('portList').innerHTML = `
+                    <div style="text-align: center; color: var(--lcars-red); padding: 20px;">
+                        <strong>Error loading ports</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function selectPort(portDevice) {
+            setupSelectedPort = portDevice;
+            
+            // Update UI
+            document.querySelectorAll('.setup-port-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            event.target.closest('.setup-port-item').classList.add('selected');
+            
+            // Update custom port field
+            document.getElementById('customPort').value = portDevice;
+            
+            updateSetupStepDisplay();
+        }
+
+        function selectCustomPort() {
+            const customPort = document.getElementById('customPort').value.trim();
+            if (customPort) {
+                setupSelectedPort = customPort;
+                
+                // Deselect all port items
+                document.querySelectorAll('.setup-port-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                
+                updateSetupStepDisplay();
+            }
+        }
+
+        function selectBaudRate(baudRate) {
+            setupSelectedBaudRate = baudRate;
+            
+            // Update UI
+            document.querySelectorAll('.setup-baud-button').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+        }
+
+        async function autoDetectBaudRate() {
+            if (!setupSelectedPort) {
+                alert('Please select a serial port first');
+                return;
+            }
+            
+            const baudRates = [4800, 9600, 19200, 38400];
+            const buttons = document.querySelectorAll('.setup-baud-button');
+            
+            for (const baudRate of baudRates) {
+                // Find corresponding button
+                const button = Array.from(buttons).find(btn => btn.textContent.includes(baudRate.toString()));
+                if (button) {
+                    button.classList.remove('selected', 'success', 'failed');
+                    button.classList.add('testing');
+                    button.textContent = `${baudRate} (Testing...)`;
+                }
+                
+                try {
+                    const response = await apiCall('/setup/test', 'POST', {
+                        port: setupSelectedPort,
+                        baudrate: baudRate
+                    });
+                    
+                    if (button) {
+                        button.classList.remove('testing');
+                        if (response.success && response.connected) {
+                            button.classList.add('success');
+                            button.textContent = `${baudRate} ✓`;
+                            setupSelectedBaudRate = baudRate;
+                        } else {
+                            button.classList.add('failed');
+                            button.textContent = `${baudRate} ✗`;
+                        }
+                    }
+                    
+                    // If we found a working baud rate, stop testing
+                    if (response.success && response.connected) {
+                        break;
+                    }
+                } catch (error) {
+                    if (button) {
+                        button.classList.remove('testing');
+                        button.classList.add('failed');
+                        button.textContent = `${baudRate} ✗`;
+                    }
+                }
+                
+                // Small delay between tests
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+
+        async function testConnection() {
+            if (!setupSelectedPort || !setupSelectedBaudRate) {
+                alert('Please select both port and baud rate');
+                return;
+            }
+            
+            const statusEl = document.getElementById('connectionTestStatus');
+            const radioInfoEl = document.getElementById('radioInfo');
+            
+            statusEl.textContent = 'Testing connection...';
+            statusEl.className = 'setup-connection-status testing';
+            radioInfoEl.classList.add('lcars-hidden');
+            
+            try {
+                const response = await apiCall('/setup/test', 'POST', {
+                    port: setupSelectedPort,
+                    baudrate: setupSelectedBaudRate
+                });
+                
+                if (response.success && response.connected) {
+                    statusEl.textContent = '✓ Connection successful!';
+                    statusEl.className = 'setup-connection-status success';
+                    
+                    // Show radio info
+                    if (response.radio_info) {
+                        document.getElementById('radioModel').textContent = response.radio_info.model || 'FT-991A';
+                        document.getElementById('radioFrequency').textContent = 
+                            formatFrequency(response.radio_info.frequency_a || 0) + ' MHz';
+                        document.getElementById('radioMode').textContent = response.radio_info.mode || '-';
+                        radioInfoEl.classList.remove('lcars-hidden');
+                    }
+                    
+                    setupConnectionTested = true;
+                } else {
+                    statusEl.textContent = '✗ Connection failed: ' + (response.error || 'No response');
+                    statusEl.className = 'setup-connection-status failed';
+                    setupConnectionTested = false;
+                }
+            } catch (error) {
+                statusEl.textContent = '✗ Connection error: ' + error.message;
+                statusEl.className = 'setup-connection-status failed';
+                setupConnectionTested = false;
+            }
+            
+            updateSetupStepDisplay();
+        }
+
+        async function setupNextStep() {
+            if (setupCurrentStep < 6) {
+                setupCurrentStep++;
+                updateSetupStepDisplay();
+                
+                // Auto-trigger certain actions
+                if (setupCurrentStep === 2) {
+                    // Already loaded ports when wizard opened
+                } else if (setupCurrentStep === 4) {
+                    // Auto-test connection
+                    setTimeout(testConnection, 500);
+                }
+            } else {
+                // Final step - save configuration and complete setup
+                await completeSetup();
+            }
+        }
+
+        function setupPrevStep() {
+            if (setupCurrentStep > 1) {
+                setupCurrentStep--;
+                updateSetupStepDisplay();
+            }
+        }
+
+        function setupSkipStep() {
+            if (setupCurrentStep === 5) {
+                // Skip callsign step
+                setupNextStep();
+            }
+        }
+
+        async function completeSetup() {
+            const callsign = document.getElementById('setupCallsign').value.trim().toUpperCase();
+            
+            try {
+                const response = await apiCall('/setup/save', 'POST', {
+                    port: setupSelectedPort,
+                    baudrate: setupSelectedBaudRate,
+                    callsign: callsign || null
+                });
+                
+                if (response.success) {
+                    // Update summary
+                    document.getElementById('summaryPort').textContent = setupSelectedPort;
+                    document.getElementById('summaryBaudRate').textContent = setupSelectedBaudRate.toString();
+                    document.getElementById('summaryCallsign').textContent = callsign || 'Not specified';
+                    
+                    // Hide wizard after a short delay and reload page
+                    setTimeout(() => {
+                        hideSetupWizard();
+                        location.reload();
+                    }, 2000);
+                } else {
+                    alert('Setup failed: ' + (response.error || 'Unknown error'));
+                }
+            } catch (error) {
+                alert('Setup error: ' + error.message);
+            }
+        }
+
         // ── Initialization ──────────────────────────────────────
         function init() {
             console.log('Initializing FT-991A LCARS Interface...');
             connectWebSocket();
             updateLockoutDisplay();
             
-            // Load initial status
+            // Load initial status and check if radio is connected
             apiCall('/status').then(data => {
                 if (data.connected) {
                     updateRadioStatus(data.status);
+                    console.log('Radio connected, showing main interface');
+                } else {
+                    console.log('Radio not connected, showing setup wizard');
+                    showSetupWizard();
                 }
             }).catch(error => {
-                console.log('Initial status load failed:', error);
+                console.log('Initial status load failed, showing setup wizard:', error);
+                showSetupWizard();
             });
         }
 
