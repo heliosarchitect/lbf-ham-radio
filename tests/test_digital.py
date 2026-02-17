@@ -140,19 +140,19 @@ class TestDigitalModes:
         assert result is True
         mock_radio.set_frequency_a.assert_called_with(7078000)  # 40m JS8
 
-    @patch('builtins.open', new_callable=mock_open, read_data=" 0 [CODEC   ]: USB Audio CODEC - C-Media USB Audio Device\n")
-    @patch('pathlib.Path.exists')
-    def test_get_audio_device_proc_asound(self, mock_exists, mock_file, digital_modes):
+    def test_get_audio_device_proc_asound(self, digital_modes):
         """Test audio device detection via /proc/asound/cards"""
-        mock_exists.return_value = True
+        mock_data = " 0 [CODEC   ]: USB Audio CODEC - C-Media USB Audio Device\n"
         
-        device = digital_modes.get_audio_device()
-        
-        assert device is not None
-        assert device['card'] == '0'
-        assert device['device'] == '0'
-        assert 'USB Audio CODEC' in device['name']
-        assert device['alsa_name'] == 'plughw:0,0'
+        with patch('pathlib.Path.exists', return_value=True):
+            with patch('pathlib.Path.read_text', return_value=mock_data):
+                device = digital_modes.get_audio_device()
+                
+                assert device is not None
+                assert device['card'] == '0'
+                assert device['device'] == '0'
+                assert 'USB Audio CODEC' in device['name']
+                assert device['alsa_name'] == 'plughw:0,0'
 
     @patch('subprocess.run')
     @patch('pathlib.Path.exists', return_value=False)
