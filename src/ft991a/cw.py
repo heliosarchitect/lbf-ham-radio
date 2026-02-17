@@ -52,14 +52,10 @@ MORSE_TABLE = {
     '+': '.-.-.', '-': '-....-', '_': '..--.-', '"': '.-..-.',
     '$': '...-..-', '@': '.--.-.',
     
-    # Common prosigns (procedural signals) - using proper unique codes
-    '<AR>': '.-.-.',   # End of message (AR) - different from punctuation
-    '<SK>': '...-.-', # End of contact (SK)
-    '<BT>': '-...-',  # Break (BT) - different from =
-    '<AS>': '.-...',  # Wait (AS)
-    '<KA>': '-.-.-',  # Attention (KA)
+    # Common prosigns (procedural signals) - only non-conflicting ones
+    '<SK>': '...-.-', # End of contact (SK)  
+    '<KA>': '-.-.-', # Attention (KA)
     '<SN>': '...-.',  # Understood (SN)
-    '<KN>': '-.--.', # Over to you only (KN) - different from Y
     
     # Special space character for word breaks
     ' ': ' ',
@@ -67,14 +63,6 @@ MORSE_TABLE = {
 
 # Reverse lookup table for decoding
 REVERSE_MORSE_TABLE = {code: char for char, code in MORSE_TABLE.items() if char != ' '}
-
-# Handle conflicts in reverse lookup (prefer letters over prosigns for ambiguous codes)
-# This ensures basic letters decode properly
-_conflicts = {}
-for char, code in MORSE_TABLE.items():
-    if code in _conflicts and not char.startswith('<'):
-        REVERSE_MORSE_TABLE[code] = char
-    _conflicts[code] = char
 
 
 @dataclass

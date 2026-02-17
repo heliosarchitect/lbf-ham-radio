@@ -30,6 +30,7 @@ __license__ = "MIT"
 try:
     from .cat import FT991A, Mode, Band, RadioStatus
     from .scanner import BandScanner, ScanResult, ActivityResult
+    from .broadcast import Broadcaster, BroadcastError, AudioDeviceError, TTSError
     __all__ = [
         'FT991A',
         'Mode', 
@@ -38,6 +39,10 @@ try:
         'BandScanner',
         'ScanResult',
         'ActivityResult',
+        'Broadcaster',
+        'BroadcastError',
+        'AudioDeviceError',
+        'TTSError',
         '__version__'
     ]
 except ImportError as e:

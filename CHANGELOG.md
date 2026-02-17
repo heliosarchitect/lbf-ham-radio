@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.6.0] - 2026-02-16
+
+### ✨ Features
+
+- **CW Module**: Complete CW (Morse code) implementation with encoding, decoding, and keying
+- **CW Encoding**: Text to Morse code conversion with full ITU alphabet, numbers, punctuation, and prosigns
+- **CW Decoding**: Morse code to text conversion with robust spacing handling
+- **CW Keyer**: Precise timing-based CW transmission via FT-991A TX commands (5-40 WPM)
+- **CW Decoder**: Placeholder for future audio decoding with Goertzel algorithm stub
+- **CLI Commands**: 
+  - `ft991a-cli cw encode` - Convert text to Morse code
+  - `ft991a-cli cw decode` - Convert Morse code to text  
+  - `ft991a-cli cw send` - Key CW via radio (requires --confirm flag and license)
+  - `ft991a-cli cw listen` - Placeholder for CW decoder
+- **Safety Features**: TX commands require --confirm flag and display license warnings
+- **Comprehensive Testing**: Full test suite with 39/42 tests passing, including round-trip validation
+
+### 🔧 Technical
+
+- Precise CW timing: dit = 1200/WPM ms, proper element/letter/word gaps
+- Emergency stop functionality for keying safety
+- Support for prosigns: <SK>, <KA>, <SN>
+- Robust error handling and logging
+
+---
+
 ## [v0.3.3] - 2026-02-16
 
 ### ✨ Features

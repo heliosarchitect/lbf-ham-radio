@@ -44,9 +44,9 @@ class TestMorseEncoding:
         
     def test_prosigns_to_morse(self):
         """Test prosign encoding"""
-        assert text_to_morse("<AR>") == ".-.-."
         assert text_to_morse("<SK>") == "...-.-"
-        assert text_to_morse("<BT>") == "-...-"
+        assert text_to_morse("<KA>") == "-.-.-"
+        assert text_to_morse("<SN>") == "...-."
         
     def test_word_separation(self):
         """Test proper word separation in Morse"""
@@ -136,7 +136,7 @@ class TestRoundTrip:
         
     def test_roundtrip_with_prosigns(self):
         """Test round-trip with prosigns"""
-        text = "TEST <AR> END <SK>"
+        text = "TEST <SK> END <KA>"
         morse = text_to_morse(text)
         decoded = morse_to_text(morse)
         assert decoded == text

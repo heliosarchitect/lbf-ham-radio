@@ -181,7 +181,7 @@ class APRSClient:
         self.emergency_kit = EmergencyKit()
         
         # Validate callsign format
-        if not re.match(r'^[A-Z0-9]{1,6}(-[0-9]{1,2})?$', self.callsign):
+        if not re.match(r'^[A-Z0-9]{1,6}(-[1-9][0-9]?)?$', self.callsign):
             raise ValueError(f"Invalid callsign format: {self.callsign}")
     
     def setup_aprs(self) -> bool:
@@ -341,6 +341,11 @@ class APRSClient:
             destination = path_parts[0]
             path = path_parts[1:] if len(path_parts) > 1 else []
             
+            # Validate we have actual content
+            if not source_call or not destination:
+                logger.warning(f"Missing source or destination: {header}")
+                return None
+            
             # Determine packet type from first character of data
             if not data:
                 logger.warning("Empty data field")
@@ -439,7 +444,8 @@ class APRSClient:
                 'longitude': longitude,
                 'symbol_table': symbol_table,
                 'symbol_code': symbol_code,
-                'comment': comment.strip()
+                'comment': comment.strip(),
+                'type': 'position'
             }
             
         except Exception as e:
@@ -453,7 +459,7 @@ class APRSClient:
                 return {'error': 'Message too short'}
             
             addressee = data[:9].strip()
-            if data[9] != ':':
+            if len(data) <= 9 or data[9] != ':':
                 return {'error': 'Invalid message format'}
             
             message_text = data[10:]
@@ -466,7 +472,8 @@ class APRSClient:
             return {
                 'addressee': addressee,
                 'message': message_text,
-                'message_id': message_id
+                'message_id': message_id,
+                'type': 'message'
             }
             
         except Exception as e:
