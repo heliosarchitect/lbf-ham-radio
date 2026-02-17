@@ -1204,6 +1204,7 @@
                 <a href="#" class="lcars-nav-item" data-tab="tx-pwr">TX PWR</a>
                 <a href="#" class="lcars-nav-item" data-tab="meters">METERS</a>
                 <a href="#" class="lcars-nav-item" data-tab="audio">AUDIO</a>
+                <a href="#" class="lcars-nav-item" data-tab="scanner">SCANNER</a>
                 <a href="#" class="lcars-nav-item" data-tab="system">SYSTEM</a>
                 <a href="#" class="lcars-nav-item" data-tab="config">CONFIG</a>
                 <a href="#" class="lcars-nav-item" data-tab="status">STATUS</a>
@@ -1240,6 +1241,7 @@
                     <button class="mobile-nav-item" data-tab="tx-pwr" title="TX Power Control - Transmitter power settings">TX PWR</button>
                     <button class="mobile-nav-item" data-tab="meters" title="Meters - S-meter, SWR, power output">METERS</button>
                     <button class="mobile-nav-item" data-tab="audio" title="Audio Waterfall - Real-time spectrum display">AUDIO</button>
+                    <button class="mobile-nav-item" data-tab="memory" title="Memory Channels - Store, recall and manage memory channels">MEMORY</button>
                     <button class="mobile-nav-item" data-tab="system" title="System - Memory channels and radio settings">SYSTEM</button>
                     <button class="mobile-nav-item" data-tab="config" title="Configuration - Serial port and interface settings">CONFIG</button>
                     <button class="mobile-nav-item" data-tab="status" title="Status - Real-time radio and server information">STATUS</button>
@@ -1558,6 +1560,60 @@
                         <div class="lcars-panel-title">📡 Audio Waterfall Display</div>
                     </div>
 
+                    <!-- ═══ INLINE TUNER STRIP ═══ -->
+                    <div class="lcars-panel full-width" id="waterfallTuner">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator gold"></div>
+                            <div class="lcars-panel-title">⚡ VFO TUNER</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.5rem 0;">
+                            <!-- Frequency Display (clickable to edit) -->
+                            <div style="flex: 0 0 auto; text-align: center;">
+                                <div id="tunerFreqDisplay" style="font-family: 'Antonio', monospace; font-size: 2.2rem; color: var(--lcars-gold); letter-spacing: 2px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(255,168,0,0.4);" 
+                                     onclick="showFreqInput()" title="Click to enter frequency directly">
+                                    14.250.000
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--lcars-orange); letter-spacing: 3px;">MHz</div>
+                                <input type="text" id="tunerFreqInput" style="display:none; font-family:'Antonio',monospace; font-size:1.8rem; background:rgba(0,0,0,0.8); color:var(--lcars-gold); border:2px solid var(--lcars-orange); border-radius:var(--radius-sm); text-align:center; width:12ch; padding:0.2rem;"
+                                       placeholder="14.250.000" title="Enter frequency in MHz (e.g. 14.250.000)" 
+                                       onkeydown="if(event.key==='Enter')submitTunerFreq(); if(event.key==='Escape')hideTunerFreqInput();"
+                                       onblur="hideTunerFreqInput()">
+                            </div>
+
+                            <!-- Mode badge -->
+                            <div id="tunerModeBadge" style="flex: 0 0 auto; background: var(--lcars-blue); color: #000; font-weight: 900; font-size: 0.9rem; padding: 0.3rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 2px;" title="Current operating mode">
+                                USB
+                            </div>
+
+                            <!-- Step size selector -->
+                            <div style="flex: 1 1 auto; display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
+                                <span style="color: var(--lcars-peach); font-size: 0.7rem; margin-right: 0.3rem;">STEP:</span>
+                                <button class="selector-btn" onclick="setTunerStep(10)" title="10 Hz tuning step">10</button>
+                                <button class="selector-btn active" onclick="setTunerStep(100)" title="100 Hz tuning step">100</button>
+                                <button class="selector-btn" onclick="setTunerStep(1000)" title="1 kHz tuning step">1k</button>
+                                <button class="selector-btn" onclick="setTunerStep(5000)" title="5 kHz tuning step">5k</button>
+                                <button class="selector-btn" onclick="setTunerStep(10000)" title="10 kHz tuning step">10k</button>
+                                <button class="selector-btn" onclick="setTunerStep(100000)" title="100 kHz tuning step">100k</button>
+                                <button class="selector-btn" onclick="setTunerStep(1000000)" title="1 MHz tuning step">1M</button>
+                            </div>
+
+                            <!-- Tune Up/Down buttons -->
+                            <div style="flex: 0 0 auto; display: flex; gap: 0.4rem;">
+                                <button class="btn" onclick="tuneDown()" style="font-size: 1.4rem; padding: 0.3rem 1rem; background: var(--lcars-lavender);" title="Tune down by selected step size">◀ DN</button>
+                                <button class="btn" onclick="tuneUp()" style="font-size: 1.4rem; padding: 0.3rem 1rem; background: var(--lcars-lavender);" title="Tune up by selected step size">UP ▶</button>
+                            </div>
+
+                            <!-- S-meter mini bar -->
+                            <div style="flex: 0 0 120px;">
+                                <div style="font-size: 0.6rem; color: var(--lcars-peach); margin-bottom: 2px;">S-METER</div>
+                                <div style="background: rgba(0,0,0,0.6); border: 1px solid var(--lcars-orange); border-radius: 3px; height: 14px; overflow: hidden;">
+                                    <div id="tunerSmeterBar" style="height: 100%; width: 40%; background: linear-gradient(90deg, var(--lcars-green), var(--lcars-gold), var(--lcars-red)); transition: width 0.3s;" title="Signal strength meter"></div>
+                                </div>
+                                <div id="tunerSmeterVal" style="font-size: 0.65rem; color: var(--lcars-gold); text-align: right;">S5</div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Waterfall Display -->
                     <div class="lcars-panel full-width">
                         <div class="lcars-panel-header">
@@ -1709,6 +1765,208 @@
                                     <div class="status-value" id="audioChannels">1 (Mono)</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- S-Meter History Graph -->
+                    <div class="lcars-panel full-width">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator gold"></div>
+                            <div class="lcars-panel-title">📈 S-Meter History</div>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.8); border: 2px solid var(--lcars-gold); border-radius: var(--radius-sm); padding: 0.5rem; position: relative;">
+                            <canvas id="smeterCanvas" width="800" height="150" 
+                                    style="width: 100%; height: 150px; background: #000; border-radius: var(--radius-sm); display: block;"
+                                    title="Real-time S-meter signal strength history (last 120 readings)">
+                            </canvas>
+                            <div style="position: absolute; top: 0.5rem; right: 0.8rem; color: var(--lcars-peach); font-size: 0.65rem; pointer-events: none;">
+                                <span id="smeterPeak" title="Peak signal strength">PEAK: S0</span> · 
+                                <span id="smeterAvg" title="Average signal strength">AVG: S0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MEMORY Tab -->
+            <div class="tab-content" id="memory">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator gold"></div>
+                        <div class="lcars-panel-title">📻 Memory Channel Manager</div>
+                    </div>
+
+                    <div class="main-grid">
+                        <!-- Memory Channel List -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator blue"></div>
+                                <div class="lcars-panel-title">Memory Channels (001-099)</div>
+                            </div>
+
+                            <div class="form-group">
+                                <div class="form-actions">
+                                    <button class="btn success" id="scanMemoryBtn" onclick="scanMemoryChannels()" 
+                                            title="Scan all memory channels from radio (reads MR001; through MR099;)">SCAN ALL MEMORIES</button>
+                                    <button class="btn" onclick="refreshMemoryDisplay()" 
+                                            title="Refresh memory channel display">REFRESH</button>
+                                </div>
+                            </div>
+
+                            <div class="memory-list" id="memoryChannelList" style="max-height: 500px; overflow-y: auto;">
+                                <!-- Memory channels will be populated here -->
+                                <div class="placeholder-message" id="memoryLoadingMsg">
+                                    Click "SCAN ALL MEMORIES" to load channels from radio
+                                </div>
+                            </div>
+
+                            <div class="status-grid" style="margin-top: 1rem;">
+                                <div class="status-item">
+                                    <div class="status-label">Total Channels</div>
+                                    <div class="status-value" id="totalChannels">99</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Programmed</div>
+                                    <div class="status-value" id="programmedChannels">-</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Current Memory</div>
+                                    <div class="status-value active" id="currentMemoryChannel">-</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Last Operation</div>
+                                    <div class="status-value" id="lastMemoryOp">None</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Memory Operations -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator orange"></div>
+                                <div class="lcars-panel-title">Memory Operations</div>
+                            </div>
+
+                            <!-- Quick Recall -->
+                            <div class="form-group">
+                                <label>Quick Memory Recall</label>
+                                <div class="form-row">
+                                    <input type="number" id="recallChannelNum" placeholder="001" min="1" max="99" 
+                                           title="Memory channel number (001-099)">
+                                    <button class="btn primary" onclick="recallMemoryChannel()" 
+                                            title="Recall memory channel to VFO-A (MC command)">RECALL</button>
+                                </div>
+                            </div>
+
+                            <!-- Store Current VFO -->
+                            <div class="form-group">
+                                <label>Store Current VFO-A to Memory</label>
+                                <div class="form-row">
+                                    <input type="number" id="storeChannelNum" placeholder="001" min="1" max="99" 
+                                           title="Target memory channel number (001-099)">
+                                    <button class="btn success" onclick="storeToMemoryChannel()" 
+                                            title="Store current VFO-A frequency and mode to memory channel (MW command)">STORE</button>
+                                </div>
+                            </div>
+
+                            <!-- Current VFO Info -->
+                            <div class="diagnostic-item">
+                                <h4>Current VFO-A Status</h4>
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">Frequency</div>
+                                        <div class="status-value" id="currentVfoFreq">14.074.000</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Mode</div>
+                                        <div class="status-value" id="currentVfoMode">DATA_USB</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Memory Management -->
+                            <div class="form-group">
+                                <label>Memory Management</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                    <button class="btn btn-small danger" onclick="clearMemoryChannel()" 
+                                            title="Clear/delete selected memory channel">CLEAR CHANNEL</button>
+                                    <button class="btn btn-small" onclick="copyMemoryChannel()" 
+                                            title="Copy one memory channel to another">COPY CHANNEL</button>
+                                </div>
+                            </div>
+
+                            <!-- Memory Labels -->
+                            <div class="form-group">
+                                <label>Memory Label (Future Feature)</label>
+                                <input type="text" id="memoryLabel" placeholder="Label (MT command - future)" 
+                                       maxlength="8" disabled
+                                       title="Memory channel label - MT command implementation planned">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Memory Channel Details -->
+                    <div class="lcars-panel full-width" id="memoryDetailsPanel" style="display: none;">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator purple"></div>
+                            <div class="lcars-panel-title">Memory Channel Details</div>
+                        </div>
+
+                        <div class="main-grid">
+                            <div class="diagnostic-item">
+                                <h4>Channel <span id="detailChannelNum">001</span> Information</h4>
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">Frequency</div>
+                                        <div class="status-value" id="detailFrequency">14.074.000 MHz</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Mode</div>
+                                        <div class="status-value" id="detailMode">DATA_USB</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">CTCSS</div>
+                                        <div class="status-value" id="detailCtcss">OFF</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Label</div>
+                                        <div class="status-value" id="detailLabel">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn primary" onclick="recallDetailedChannel()" 
+                                        title="Recall this memory channel to VFO-A">RECALL</button>
+                                <button class="btn success" onclick="updateDetailedChannel()" 
+                                        title="Update this channel with current VFO-A">UPDATE</button>
+                                <button class="btn danger" onclick="deleteDetailedChannel()" 
+                                        title="Delete this memory channel">DELETE</button>
+                                <button class="btn" onclick="hideMemoryDetails()" 
+                                        title="Close details panel">CLOSE</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAT Command Reference -->
+                    <div class="lcars-panel full-width">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator green"></div>
+                            <div class="lcars-panel-title">🛠️ FT-991A Memory CAT Commands</div>
+                        </div>
+                        
+                        <div class="audio-code-block" style="font-size: 0.85rem;">
+                            <div class="audio-code-comment"># Memory operations (RX safe - no transmitting):</div>
+                            <div><span style="color: var(--lcars-gold);">MC001;</span>  # Memory Channel recall - tunes VFO to memory 001</div>
+                            <div><span style="color: var(--lcars-gold);">MR001;</span>  # Memory Read - reads memory 001 data</div>
+                            <div><span style="color: var(--lcars-gold);">MW001;</span>  # Memory Write - stores current VFO to memory 001</div>
+                            <br>
+                            <div class="audio-code-comment"># Memory response format (MR command):</div>
+                            <div>MR001+14074000000100200000000000000000000000000;</div>
+                            <div style="color: var(--lcars-peach); font-size: 0.8rem;">      ↑channel ↑frequency ↑mode ↑other data</div>
+                            <br>
+                            <div class="audio-code-comment"># Future: Memory tag (label) support:</div>
+                            <div><span style="color: var(--lcars-lilac);">MT001;</span>  # Read memory tag for channel 001 (8 chars max)</div>
                         </div>
                     </div>
                 </div>
@@ -2894,6 +3152,201 @@
                 document.addEventListener('touchend', endDrag);
             });
         }
+
+        // ── Inline Tuner (Audio Tab) ──────────────────────────
+        let tunerStep = 100; // Hz
+
+        function setTunerStep(hz) {
+            tunerStep = hz;
+            document.querySelectorAll('#waterfallTuner .selector-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function tuneUp() {
+            if (!radioStatus || !radioStatus.frequency_a) return;
+            const newFreq = radioStatus.frequency_a + tunerStep;
+            fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) });
+        }
+
+        function tuneDown() {
+            if (!radioStatus || !radioStatus.frequency_a) return;
+            const newFreq = radioStatus.frequency_a - tunerStep;
+            if (newFreq > 0) fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) });
+        }
+
+        function showFreqInput() {
+            const display = document.getElementById('tunerFreqDisplay');
+            const input = document.getElementById('tunerFreqInput');
+            // Pre-fill with clean MHz decimal (e.g. "14.250000") for easy editing
+            if (radioStatus && radioStatus.frequency_a) {
+                input.value = (radioStatus.frequency_a / 1000000).toFixed(6);
+            } else {
+                input.value = display.textContent.trim();
+            }
+            display.style.display = 'none';
+            input.style.display = 'block';
+            input.focus();
+            input.select();
+        }
+
+        function hideTunerFreqInput() {
+            document.getElementById('tunerFreqDisplay').style.display = '';
+            document.getElementById('tunerFreqInput').style.display = 'none';
+        }
+
+        function submitTunerFreq() {
+            const input = document.getElementById('tunerFreqInput');
+            let raw = input.value.trim();
+            // Handle dotted format like "14.250.000" → "14250000" Hz
+            // or plain MHz like "14.25" → 14250000 Hz
+            // or plain kHz like "14250" → 14250000 Hz
+            const dots = (raw.match(/\./g) || []).length;
+            let hz;
+            if (dots >= 2) {
+                // Dotted display format: "14.250.000" → remove all dots → Hz
+                hz = parseInt(raw.replace(/\./g, ''), 10);
+            } else if (dots === 1) {
+                // Standard decimal MHz: "14.25" → Hz
+                hz = Math.round(parseFloat(raw) * 1000000);
+            } else {
+                // No dots — if > 30000 assume Hz, else assume kHz
+                const num = parseInt(raw, 10);
+                hz = num > 30000 ? num : num * 1000;
+            }
+            if (hz && hz > 100000 && hz < 500000000) {
+                fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: hz}) });
+            }
+            hideTunerFreqInput();
+        }
+
+        function updateTunerStrip(status) {
+            if (!status) return;
+            // Frequency
+            const mhz = status.frequency_a / 1000000;
+            const formatted = mhz.toFixed(6).replace(/(\d)(?=(\d{3})+\.)/g, '$1.');
+            const el = document.getElementById('tunerFreqDisplay');
+            if (el) el.textContent = formatted;
+            // Mode
+            const mode = document.getElementById('tunerModeBadge');
+            if (mode) mode.textContent = status.mode || 'N/A';
+            // S-meter (0-255 range → percentage + S-unit)
+            const sm = status.s_meter || 0;
+            const pct = Math.min(100, (sm / 255) * 100);
+            const bar = document.getElementById('tunerSmeterBar');
+            if (bar) bar.style.width = pct + '%';
+            const sUnit = sm < 20 ? 'S0' : sm < 40 ? 'S1' : sm < 60 ? 'S2' : sm < 80 ? 'S3' : sm < 100 ? 'S4' : sm < 120 ? 'S5' : sm < 140 ? 'S6' : sm < 160 ? 'S7' : sm < 180 ? 'S8' : sm < 200 ? 'S9' : 'S9+' + Math.round((sm-200)/5);
+            const sVal = document.getElementById('tunerSmeterVal');
+            if (sVal) sVal.textContent = sUnit;
+        }
+
+        // Hook into existing WebSocket status updates
+        const _origHandleStatus = window._origHandleStatus || null;
+        (function() {
+            const origWsOnMessage = null; // will patch in initWaterfall
+            // Patch: call updateTunerStrip whenever status updates
+            const _patchInterval = setInterval(() => {
+                if (typeof radioStatus !== 'undefined' && radioStatus) {
+                    updateTunerStrip(radioStatus);
+                }
+            }, 600);
+        })();
+
+        // Keyboard tuning: arrow keys when on audio tab
+        document.addEventListener('keydown', function(e) {
+            const audioTab = document.getElementById('audio');
+            if (!audioTab || audioTab.style.display === 'none') return;
+            if (document.activeElement.tagName === 'INPUT') return;
+            if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); tuneUp(); }
+            if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); tuneDown(); }
+        });
+
+        // ── S-Meter History Chart ──────────────────────────
+        const smeterHistory = [];
+        const SMETER_MAX_POINTS = 120;
+        let smeterPeakVal = 0;
+        let smeterAnimFrame = null;
+
+        function updateSmeterHistory(sVal) {
+            smeterHistory.push(sVal);
+            if (smeterHistory.length > SMETER_MAX_POINTS) smeterHistory.shift();
+            if (sVal > smeterPeakVal) smeterPeakVal = sVal;
+        }
+
+        function drawSmeterChart() {
+            const canvas = document.getElementById('smeterCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            if (smeterHistory.length < 2) return;
+
+            // Grid lines at S-units
+            ctx.strokeStyle = 'rgba(255,168,0,0.15)';
+            ctx.lineWidth = 1;
+            for (let s = 0; s <= 9; s++) {
+                const y = h - (s / 9) * h * 0.8 - h * 0.1;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+                ctx.fillStyle = 'rgba(255,168,0,0.3)';
+                ctx.font = '10px Antonio';
+                ctx.fillText('S' + s, 4, y - 2);
+            }
+
+            // Signal line
+            const grad = ctx.createLinearGradient(0, h, 0, 0);
+            grad.addColorStop(0, 'rgba(0,200,100,0.8)');
+            grad.addColorStop(0.5, 'rgba(255,168,0,0.9)');
+            grad.addColorStop(1, 'rgba(255,60,60,1)');
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const maxS = 255;
+            for (let i = 0; i < smeterHistory.length; i++) {
+                const x = (i / (SMETER_MAX_POINTS - 1)) * w;
+                const y = h - (smeterHistory[i] / maxS) * h * 0.9 - h * 0.05;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Fill under curve
+            ctx.lineTo((smeterHistory.length - 1) / (SMETER_MAX_POINTS - 1) * w, h);
+            ctx.lineTo(0, h);
+            ctx.closePath();
+            const fillGrad = ctx.createLinearGradient(0, h, 0, 0);
+            fillGrad.addColorStop(0, 'rgba(0,200,100,0.05)');
+            fillGrad.addColorStop(1, 'rgba(255,168,0,0.2)');
+            ctx.fillStyle = fillGrad;
+            ctx.fill();
+
+            // Update peak/avg labels
+            const avg = smeterHistory.reduce((a, b) => a + b, 0) / smeterHistory.length;
+            const peakEl = document.getElementById('smeterPeak');
+            const avgEl = document.getElementById('smeterAvg');
+            if (peakEl) peakEl.textContent = 'PEAK: ' + sUnitFromRaw(smeterPeakVal);
+            if (avgEl) avgEl.textContent = 'AVG: ' + sUnitFromRaw(Math.round(avg));
+        }
+
+        function sUnitFromRaw(sm) {
+            if (sm < 20) return 'S0';
+            if (sm < 40) return 'S1';
+            if (sm < 60) return 'S2';
+            if (sm < 80) return 'S3';
+            if (sm < 100) return 'S4';
+            if (sm < 120) return 'S5';
+            if (sm < 140) return 'S6';
+            if (sm < 160) return 'S7';
+            if (sm < 180) return 'S8';
+            if (sm < 200) return 'S9';
+            return 'S9+' + Math.round((sm - 200) / 5);
+        }
+
+        // Hook smeter into the status update cycle
+        setInterval(() => {
+            if (radioStatus && typeof radioStatus.s_meter !== 'undefined') {
+                updateSmeterHistory(radioStatus.s_meter);
+                drawSmeterChart();
+            }
+        }, 500);
 
         // ── Audio Waterfall Functions ──────────────────────────
         function initWaterfall() {
