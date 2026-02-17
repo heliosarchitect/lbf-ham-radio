@@ -1272,6 +1272,7 @@
                 <a href="#" class="lcars-nav-item" data-tab="tx-pwr">TX PWR</a>
                 <a href="#" class="lcars-nav-item" data-tab="meters">METERS</a>
                 <a href="#" class="lcars-nav-item" data-tab="audio">AUDIO</a>
+                <a href="#" class="lcars-nav-item" data-tab="sdr">SDR</a>
                 <a href="#" class="lcars-nav-item" data-tab="scanner">SCANNER</a>
                 <a href="#" class="lcars-nav-item" data-tab="system">SYSTEM</a>
                 <a href="#" class="lcars-nav-item" data-tab="config">CONFIG</a>
@@ -1309,6 +1310,7 @@
                     <button class="mobile-nav-item" data-tab="tx-pwr" title="TX Power Control - Transmitter power settings">TX PWR</button>
                     <button class="mobile-nav-item" data-tab="meters" title="Meters - S-meter, SWR, power output">METERS</button>
                     <button class="mobile-nav-item" data-tab="audio" title="Audio Waterfall - Real-time spectrum display">AUDIO</button>
+                    <button class="mobile-nav-item" data-tab="sdr" title="SDR Waterfall - Panadapter display from RSP2pro">SDR</button>
                     <button class="mobile-nav-item" data-tab="scanner" title="Band Scanner - Scan frequency ranges for active signals">SCANNER</button>
                     <button class="mobile-nav-item" data-tab="memory" title="Memory Channels - Store, recall and manage memory channels">MEMORY</button>
                     <button class="mobile-nav-item" data-tab="system" title="System - Memory channels and radio settings">SYSTEM</button>
@@ -1867,6 +1869,226 @@
                             <div style="position: absolute; top: 0.5rem; right: 0.8rem; color: var(--lcars-peach); font-size: 0.65rem; pointer-events: none;">
                                 <span id="smeterPeak" title="Peak signal strength">PEAK: S0</span> · 
                                 <span id="smeterAvg" title="Average signal strength">AVG: S0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SDR WATERFALL Tab -->
+            <div class="tab-content" id="sdr">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator blue"></div>
+                        <div class="lcars-panel-title">📡 SDR Panadapter (RSP2pro)</div>
+                    </div>
+
+                    <!-- SDR VFO Tuner Strip -->
+                    <div class="lcars-panel full-width" id="sdrTuner">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator gold"></div>
+                            <div class="lcars-panel-title">⚡ SDR VFO TUNER</div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; padding: 0.5rem 0;">
+                            <!-- Frequency Display (clickable to edit) -->
+                            <div style="flex: 0 0 auto; text-align: center;">
+                                <div id="sdrFreqDisplay" style="font-family: 'Antonio', monospace; font-size: 2.2rem; color: var(--lcars-gold); letter-spacing: 2px; cursor: pointer; user-select: none; text-shadow: 0 0 10px rgba(255,168,0,0.4);" 
+                                     onclick="showSDRFreqInput()" title="Click to enter frequency directly - centers SDR on this frequency">
+                                    14.250.000
+                                </div>
+                                <div style="font-size: 0.7rem; color: var(--lcars-orange); letter-spacing: 3px;">MHz (CENTER)</div>
+                                <input type="text" id="sdrFreqInput" style="display:none; font-family:'Antonio',monospace; font-size:1.8rem; background:rgba(0,0,0,0.8); color:var(--lcars-gold); border:2px solid var(--lcars-orange); border-radius:var(--radius-sm); text-align:center; width:12ch; padding:0.2rem;"
+                                       placeholder="14.250.000" title="Enter center frequency in MHz (e.g. 14.250.000)" 
+                                       onkeydown="if(event.key==='Enter')submitSDRFreq(); if(event.key==='Escape')hideSDRFreqInput();"
+                                       onblur="hideSDRFreqInput()">
+                            </div>
+
+                            <!-- Mode badge -->
+                            <div id="sdrModeBadge" style="flex: 0 0 auto; background: var(--lcars-blue); color: #000; font-weight: 900; font-size: 0.9rem; padding: 0.3rem 0.8rem; border-radius: var(--radius-sm); letter-spacing: 2px;" title="Current radio operating mode">
+                                USB
+                            </div>
+
+                            <!-- Bandwidth selector -->
+                            <div style="flex: 1 1 auto; display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
+                                <span style="color: var(--lcars-peach); font-size: 0.7rem; margin-right: 0.3rem;">BANDWIDTH:</span>
+                                <button class="selector-btn" onclick="setSDRBandwidth(500000, this)" title="500 kHz SDR bandwidth">500k</button>
+                                <button class="selector-btn" onclick="setSDRBandwidth(1000000, this)" title="1 MHz SDR bandwidth">1M</button>
+                                <button class="selector-btn active" onclick="setSDRBandwidth(2000000, this)" title="2 MHz SDR bandwidth">2M</button>
+                                <button class="selector-btn" onclick="setSDRBandwidth(5000000, this)" title="5 MHz SDR bandwidth">5M</button>
+                                <button class="selector-btn" onclick="setSDRBandwidth(10000000, this)" title="10 MHz SDR bandwidth">10M</button>
+                            </div>
+
+                            <!-- Click-to-tune indicator -->
+                            <div style="flex: 0 0 auto;">
+                                <div style="font-size: 0.6rem; color: var(--lcars-peach); text-align: center; margin-bottom: 2px;">CLICK WATERFALL</div>
+                                <div style="font-size: 0.6rem; color: var(--lcars-gold); text-align: center;">TO TUNE RADIO</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SDR Waterfall Display -->
+                    <div class="lcars-panel full-width">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator blue"></div>
+                            <div class="lcars-panel-title">RF Spectrum Waterfall</div>
+                        </div>
+                        
+                        <!-- Waterfall Canvas Container -->
+                        <div style="background: rgba(0, 0, 0, 0.8); border: 2px solid var(--lcars-orange); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; position: relative;">
+                            <canvas id="sdrWaterfallCanvas" width="800" height="400" 
+                                    style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block; cursor: crosshair;"
+                                    title="SDR panadapter waterfall - click to tune radio to frequency"
+                                    onclick="handleSDRClick(event)">
+                            </canvas>
+                            
+                            <!-- Frequency axis labels -->
+                            <div id="sdrFreqAxis" style="position: absolute; bottom: 1rem; left: 1rem; right: 1rem; height: 20px; pointer-events: none;">
+                                <!-- Frequency labels will be inserted here by JavaScript -->
+                            </div>
+                            
+                            <!-- Radio frequency indicator line -->
+                            <div id="sdrRadioFreqLine" style="position: absolute; top: 1rem; bottom: 3rem; width: 2px; background: var(--lcars-red); pointer-events: none; display: none;">
+                                <div style="position: absolute; top: -20px; left: -30px; width: 60px; text-align: center; font-size: 0.7rem; color: var(--lcars-red); font-weight: bold;">RADIO</div>
+                            </div>
+                            
+                            <!-- Status indicator -->
+                            <div id="sdrWaterfallStatus" style="position: absolute; top: 1rem; right: 1rem; color: var(--lcars-red); font-weight: 700; font-size: 0.8rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                                ● SDR OFFLINE
+                            </div>
+                        </div>
+
+                        <!-- SDR Controls -->
+                        <div class="main-grid">
+                            <div class="lcars-panel">
+                                <div class="lcars-panel-header">
+                                    <div class="lcars-panel-indicator orange"></div>
+                                    <div class="lcars-panel-title">SDR Controls</div>
+                                </div>
+
+                                <div class="form-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button class="btn success" id="sdrStartButton" onclick="toggleSDRWaterfall()" 
+                                            title="Start/stop SDR stream and waterfall display">▶ START SDR</button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>FFT Resolution</label>
+                                    <div class="selector-grid">
+                                        <button class="selector-btn" onclick="setSDRFFTSize(256, this)" title="FFT resolution - less detail, faster">256</button>
+                                        <button class="selector-btn" onclick="setSDRFFTSize(512, this)" title="FFT resolution - balanced">512</button>
+                                        <button class="selector-btn active" onclick="setSDRFFTSize(1024, this)" title="FFT resolution - more detail">1024</button>
+                                        <button class="selector-btn" onclick="setSDRFFTSize(2048, this)" title="FFT resolution - highest detail, more CPU">2048</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Waterfall Speed</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="volume-slider" id="sdrSpeedSlider" min="1" max="20" value="10" 
+                                               oninput="updateSDRSpeed(this.value)" title="Adjust waterfall scroll speed">
+                                        <span id="sdrSpeedValue" style="min-width: 50px; text-align: right; color: var(--lcars-green); font-weight: bold; font-size: 1rem;">10</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Canvas Height</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="power-slider" id="sdrHeightSlider" min="200" max="800" value="400" step="50"
+                                               oninput="updateSDRCanvasHeight(this.value)" title="Adjust waterfall display height">
+                                        <span id="sdrHeightValue" style="min-width: 60px; text-align: right; color: var(--lcars-gold); font-weight: bold; font-size: 1rem;">400px</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="lcars-panel">
+                                <div class="lcars-panel-header">
+                                    <div class="lcars-panel-indicator purple"></div>
+                                    <div class="lcars-panel-title">Display Options</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Color Palette</label>
+                                    <div class="selector-grid">
+                                        <button class="selector-btn active" onclick="setSDRColorPalette('radio', this)" title="FT-991A radio-style heat map (blue→cyan→green→yellow→red)">RADIO</button>
+                                        <button class="selector-btn" onclick="setSDRColorPalette('amber', this)" title="LCARS amber color scheme">AMBER</button>
+                                        <button class="selector-btn" onclick="setSDRColorPalette('blue', this)" title="Blue color scheme">BLUE</button>
+                                        <button class="selector-btn" onclick="setSDRColorPalette('green', this)" title="Green color scheme">GREEN</button>
+                                        <button class="selector-btn" onclick="setSDRColorPalette('gray', this)" title="Grayscale color scheme">GRAY</button>
+                                    </div>
+                                </div>
+
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">SDR Status</div>
+                                        <div class="status-value" id="sdrStreamStatus">STOPPED</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Bandwidth</div>
+                                        <div class="status-value" id="sdrBandwidthDisplay">2 MHz</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">FFT Size</div>
+                                        <div class="status-value" id="sdrFFTSizeDisplay">1024</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Frame Rate</div>
+                                        <div class="status-value" id="sdrFrameRateDisplay">~10 fps</div>
+                                    </div>
+                                </div>
+
+                                <div class="diagnostic-item">
+                                    <h4>Signal Level</h4>
+                                    <div class="meter">
+                                        <div class="meter-label">
+                                            <span>Peak Signal</span>
+                                            <span class="meter-value" id="sdrSignalLevelValue">-∞ dB</span>
+                                        </div>
+                                        <div class="meter-bar">
+                                            <div class="meter-fill" id="sdrSignalLevelBar" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lcars-panel full-width">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">SDRplay RSP2pro Status</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Device Status</div>
+                                    <div class="status-value" id="sdrDeviceStatus">DETECTING...</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Serial</div>
+                                    <div class="status-value" id="sdrSerial">1717050C11</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Driver</div>
+                                    <div class="status-value" id="sdrDriver">SoapySDR</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Connection</div>
+                                    <div class="status-value" id="sdrConnection">USB</div>
+                                </div>
+                            </div>
+
+                            <!-- SoapySDR Code Block -->
+                            <div class="audio-code-block" style="font-size: 0.85rem;">
+                                <div class="audio-code-comment"># SDRplay RSP2pro SoapySDR Commands:</div>
+                                <div><span style="color: var(--lcars-gold);">SoapySDRUtil --find</span>  # List all SDR devices</div>
+                                <div><span style="color: var(--lcars-gold);">SoapySDRUtil --probe="driver=sdrplay"</span>  # Probe RSP2pro</div>
+                                <br>
+                                <div class="audio-code-comment"># Python SoapySDR (backend uses this):</div>
+                                <div>import SoapySDR</div>
+                                <div>sdr = SoapySDR.Device(dict(driver="sdrplay"))</div>
+                                <div>sdr.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, 2000000)  # 2 MHz</div>
+                                <div>sdr.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, 14074000)  # 20m FT8</div>
+                                <br>
+                                <div class="audio-code-comment"># Gain settings (IF/RF):</div>
+                                <div style="color: var(--lcars-peach); font-size: 0.8rem;">IFGR: 20-59 dB (IF Gain) | RFGR: 0-9 (RF Gain)</div>
                             </div>
                         </div>
                     </div>
@@ -2681,6 +2903,22 @@
         let audioLevel = 0;
         let frequencyData = null;
 
+        // ── SDR Waterfall State ─────────────────────────────────
+        let sdrWs = null;
+        let sdrCanvas = null;
+        let sdrCtx = null;
+        let sdrRunning = false;
+        let sdrWaterfallData = [];
+        let sdrConfig = {
+            bandwidth: 2000000,  // 2 MHz default
+            fftSize: 1024,
+            scrollSpeed: 10,
+            colorPalette: 'radio',
+            canvasHeight: 400,
+            centerFreq: 14250000  // Default center frequency
+        };
+        let sdrSignalLevel = -100;  // dB
+
         // ── Tab Management ──────────────────────────────────────
         function switchTab(tabId) {
             // Hide all tabs
@@ -2710,6 +2948,10 @@
                 updateVfoForMemory();
             } else if (tabId === 'diag') {
                 updateDiagnosticsTab();
+            } else if (tabId === 'sdr') {
+                initSDRWaterfall();
+                updateSDRBandwidthDisplay();
+                updateSDRFFTDisplay();
             }
         }
 
@@ -2793,6 +3035,14 @@
             document.getElementById('currentMode').textContent = status.mode;
             if (document.getElementById('statusMode')) {
                 document.getElementById('statusMode').textContent = status.mode;
+            }
+            
+            // Update SDR displays
+            if (document.getElementById('sdrFreqDisplay')) {
+                document.getElementById('sdrFreqDisplay').textContent = formatFrequencyPrecise(status.frequency_a);
+            }
+            if (document.getElementById('sdrModeBadge')) {
+                document.getElementById('sdrModeBadge').textContent = status.mode;
             }
             
             // Update TX status
@@ -4906,6 +5156,447 @@
         }
 
         let scanStartTime = 0; // Track scan start time for ETA calculation
+
+        // ── SDR Functions ───────────────────────────────────────
+        function connectSDRWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/sdr`;
+            
+            sdrWs = new WebSocket(wsUrl);
+            
+            sdrWs.onopen = function() {
+                console.log('SDR WebSocket connected');
+                updateSDRConnectionStatus(true);
+            };
+            
+            sdrWs.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleSDRMessage(data);
+            };
+            
+            sdrWs.onclose = function() {
+                console.log('SDR WebSocket disconnected');
+                updateSDRConnectionStatus(false);
+                // Attempt reconnection after 3 seconds
+                setTimeout(connectSDRWebSocket, 3000);
+            };
+            
+            sdrWs.onerror = function(error) {
+                console.error('SDR WebSocket error:', error);
+                updateSDRConnectionStatus(false);
+                logError('SDR WebSocket error: ' + error.message);
+            };
+        }
+
+        function handleSDRMessage(data) {
+            switch(data.type) {
+                case 'sdr_info':
+                    updateSDRInfo(data);
+                    break;
+                case 'sdr_fft':
+                    updateSDRWaterfall(data);
+                    break;
+                case 'sdr_error':
+                    logError('SDR Error: ' + data.message);
+                    updateSDRConnectionStatus(false);
+                    break;
+                case 'sdr_status':
+                    updateSDRStatus(data);
+                    break;
+                case 'bandwidth_changed':
+                    sdrConfig.bandwidth = data.bandwidth;
+                    updateSDRBandwidthDisplay();
+                    break;
+                case 'fft_size_changed':
+                    sdrConfig.fftSize = data.fft_size;
+                    updateSDRFFTDisplay();
+                    break;
+                default:
+                    console.log('Unknown SDR message type:', data.type);
+            }
+        }
+
+        function updateSDRConnectionStatus(connected) {
+            const status = document.getElementById('sdrWaterfallStatus');
+            const deviceStatus = document.getElementById('sdrDeviceStatus');
+            const streamStatus = document.getElementById('sdrStreamStatus');
+            
+            if (connected) {
+                status.textContent = '● SDR ONLINE';
+                status.style.color = 'var(--lcars-green)';
+                if (deviceStatus) deviceStatus.textContent = 'CONNECTED';
+                if (streamStatus) streamStatus.textContent = 'READY';
+            } else {
+                status.textContent = '● SDR OFFLINE';
+                status.style.color = 'var(--lcars-red)';
+                if (deviceStatus) deviceStatus.textContent = 'DISCONNECTED';
+                if (streamStatus) streamStatus.textContent = 'STOPPED';
+            }
+        }
+
+        function updateSDRInfo(data) {
+            console.log('SDR Info:', data);
+            
+            // Update device status displays
+            document.getElementById('sdrDeviceStatus').textContent = data.available ? 'AVAILABLE' : 'NOT AVAILABLE';
+            document.getElementById('sdrSerial').textContent = data.serial || 'Unknown';
+            document.getElementById('sdrDriver').textContent = data.driver || 'Unknown';
+            
+            // Update config
+            sdrConfig.bandwidth = data.bandwidth || 2000000;
+            sdrConfig.fftSize = data.fft_size || 1024;
+            
+            updateSDRBandwidthDisplay();
+            updateSDRFFTDisplay();
+        }
+
+        function updateSDRWaterfall(data) {
+            if (!sdrRunning || !sdrCtx) return;
+            
+            const bins = data.bins;
+            const centerFreq = data.center_freq;
+            const bandwidth = data.bandwidth;
+            
+            // Update center frequency display
+            document.getElementById('sdrFreqDisplay').textContent = formatFrequencyPrecise(centerFreq);
+            sdrConfig.centerFreq = centerFreq;
+            
+            // Convert FFT bins to waterfall line
+            const canvasWidth = sdrCanvas.width;
+            const imageData = sdrCtx.createImageData(canvasWidth, 1);
+            
+            for (let i = 0; i < canvasWidth; i++) {
+                const binIndex = Math.floor((i / canvasWidth) * bins.length);
+                const magnitude = bins[binIndex] || -100;  // dB
+                
+                // Normalize magnitude (-100 dB to -20 dB range)
+                const normalizedMag = Math.max(0, Math.min(1, (magnitude + 100) / 80));
+                
+                // Apply color mapping
+                const color = getSDRColor(normalizedMag);
+                const pixelIndex = i * 4;
+                imageData.data[pixelIndex] = color.r;
+                imageData.data[pixelIndex + 1] = color.g;
+                imageData.data[pixelIndex + 2] = color.b;
+                imageData.data[pixelIndex + 3] = 255; // Alpha
+            }
+            
+            // Scroll waterfall down
+            const canvasHeight = sdrCanvas.height;
+            const existingData = sdrCtx.getImageData(0, 0, canvasWidth, canvasHeight - 1);
+            sdrCtx.putImageData(existingData, 0, 1);
+            
+            // Add new line at top
+            sdrCtx.putImageData(imageData, 0, 0);
+            
+            // Update signal level indicator
+            const maxSignal = Math.max(...bins);
+            sdrSignalLevel = maxSignal;
+            updateSDRSignalLevelDisplay(maxSignal);
+            
+            // Update radio frequency indicator
+            updateSDRRadioFreqIndicator();
+            
+            // Update frequency axis labels
+            updateSDRFreqAxisLabels();
+        }
+
+        function getSDRColor(magnitude) {
+            // Color mapping based on selected palette
+            const palette = sdrConfig.colorPalette;
+            
+            if (palette === 'radio') {
+                // FT-991A style: Blue -> Cyan -> Green -> Yellow -> Red
+                if (magnitude < 0.2) {
+                    return { r: 0, g: 0, b: Math.floor(255 * magnitude * 5) };
+                } else if (magnitude < 0.4) {
+                    const t = (magnitude - 0.2) * 5;
+                    return { r: 0, g: Math.floor(255 * t), b: 255 };
+                } else if (magnitude < 0.6) {
+                    const t = (magnitude - 0.4) * 5;
+                    return { r: 0, g: 255, b: Math.floor(255 * (1 - t)) };
+                } else if (magnitude < 0.8) {
+                    const t = (magnitude - 0.6) * 5;
+                    return { r: Math.floor(255 * t), g: 255, b: 0 };
+                } else {
+                    const t = (magnitude - 0.8) * 5;
+                    return { r: 255, g: Math.floor(255 * (1 - t)), b: 0 };
+                }
+            } else {
+                // Simple grayscale for other palettes for now
+                const intensity = Math.floor(255 * magnitude);
+                return { r: intensity, g: intensity, b: intensity };
+            }
+        }
+
+        function updateSDRRadioFreqIndicator() {
+            if (!radioStatus || !radioStatus.frequency_a) return;
+            
+            const radioFreq = radioStatus.frequency_a;
+            const centerFreq = sdrConfig.centerFreq;
+            const bandwidth = sdrConfig.bandwidth;
+            
+            const freqOffset = radioFreq - centerFreq;
+            const maxOffset = bandwidth / 2;
+            
+            // Check if radio frequency is within SDR bandwidth
+            if (Math.abs(freqOffset) <= maxOffset) {
+                const canvasWidth = sdrCanvas.width;
+                const position = (freqOffset / maxOffset) * (canvasWidth / 2) + (canvasWidth / 2);
+                
+                const indicator = document.getElementById('sdrRadioFreqLine');
+                indicator.style.left = `${position + 1}rem`;
+                indicator.style.display = 'block';
+            } else {
+                document.getElementById('sdrRadioFreqLine').style.display = 'none';
+            }
+        }
+
+        function updateSDRFreqAxisLabels() {
+            const axisDiv = document.getElementById('sdrFreqAxis');
+            if (!axisDiv) return;
+            
+            const centerFreq = sdrConfig.centerFreq;
+            const bandwidth = sdrConfig.bandwidth;
+            const startFreq = centerFreq - bandwidth / 2;
+            const endFreq = centerFreq + bandwidth / 2;
+            
+            // Clear existing labels
+            axisDiv.innerHTML = '';
+            
+            // Add frequency labels
+            const numLabels = 5;
+            for (let i = 0; i < numLabels; i++) {
+                const freq = startFreq + (bandwidth * i / (numLabels - 1));
+                const position = (i / (numLabels - 1)) * 100;
+                
+                const label = document.createElement('div');
+                label.style.position = 'absolute';
+                label.style.left = `${position}%`;
+                label.style.transform = 'translateX(-50%)';
+                label.style.fontSize = '0.7rem';
+                label.style.color = 'var(--lcars-peach)';
+                label.style.textAlign = 'center';
+                label.textContent = (freq / 1000000).toFixed(3);
+                
+                axisDiv.appendChild(label);
+            }
+        }
+
+        function updateSDRSignalLevelDisplay(level) {
+            const levelValue = document.getElementById('sdrSignalLevelValue');
+            const levelBar = document.getElementById('sdrSignalLevelBar');
+            
+            if (levelValue) {
+                levelValue.textContent = `${level.toFixed(1)} dB`;
+            }
+            
+            if (levelBar) {
+                // Convert dB to percentage (assume -100 dB to -20 dB range)
+                const percentage = Math.max(0, Math.min(100, (level + 100) * 1.25));
+                levelBar.style.width = `${percentage}%`;
+            }
+        }
+
+        function toggleSDRWaterfall() {
+            const button = document.getElementById('sdrStartButton');
+            
+            if (sdrRunning) {
+                // Stop SDR
+                sdrRunning = false;
+                button.textContent = '▶ START SDR';
+                button.classList.remove('danger');
+                button.classList.add('success');
+                document.getElementById('sdrStreamStatus').textContent = 'STOPPED';
+                
+                // Disconnect SDR WebSocket
+                if (sdrWs) {
+                    sdrWs.close();
+                    sdrWs = null;
+                }
+            } else {
+                // Start SDR
+                sdrRunning = true;
+                button.textContent = '⏹ STOP SDR';
+                button.classList.remove('success');
+                button.classList.add('danger');
+                document.getElementById('sdrStreamStatus').textContent = 'STREAMING';
+                
+                // Initialize canvas if needed
+                if (!sdrCanvas) {
+                    initSDRWaterfall();
+                }
+                
+                // Connect SDR WebSocket
+                connectSDRWebSocket();
+            }
+        }
+
+        function initSDRWaterfall() {
+            sdrCanvas = document.getElementById('sdrWaterfallCanvas');
+            if (sdrCanvas) {
+                sdrCtx = sdrCanvas.getContext('2d');
+                sdrCtx.fillStyle = '#000';
+                sdrCtx.fillRect(0, 0, sdrCanvas.width, sdrCanvas.height);
+                console.log('SDR waterfall initialized');
+            }
+        }
+
+        function setSDRBandwidth(bandwidth, button) {
+            sdrConfig.bandwidth = bandwidth;
+            
+            // Update active button
+            document.querySelectorAll('#sdr [onclick*="setSDRBandwidth"] .selector-btn').forEach(btn => 
+                btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Send to backend
+            if (sdrWs) {
+                sdrWs.send(JSON.stringify({
+                    type: "set_bandwidth",
+                    bandwidth: bandwidth
+                }));
+            }
+            
+            updateSDRBandwidthDisplay();
+        }
+
+        function setSDRFFTSize(fftSize, button) {
+            sdrConfig.fftSize = fftSize;
+            
+            // Update active button
+            document.querySelectorAll('#sdr [onclick*="setSDRFFTSize"] .selector-btn').forEach(btn => 
+                btn.classList.remove('active'));
+            button.classList.add('active');
+            
+            // Send to backend
+            if (sdrWs) {
+                sdrWs.send(JSON.stringify({
+                    type: "set_fft_size",
+                    fft_size: fftSize
+                }));
+            }
+            
+            updateSDRFFTDisplay();
+        }
+
+        function setSDRColorPalette(palette, button) {
+            sdrConfig.colorPalette = palette;
+            
+            // Update active button
+            document.querySelectorAll('#sdr [onclick*="setSDRColorPalette"] .selector-btn').forEach(btn => 
+                btn.classList.remove('active'));
+            button.classList.add('active');
+        }
+
+        function updateSDRSpeed(speed) {
+            sdrConfig.scrollSpeed = parseInt(speed);
+            document.getElementById('sdrSpeedValue').textContent = speed;
+        }
+
+        function updateSDRCanvasHeight(height) {
+            document.getElementById('sdrHeightValue').textContent = `${height}px`;
+            if (sdrCanvas) {
+                sdrCanvas.style.height = `${height}px`;
+                sdrConfig.canvasHeight = parseInt(height);
+            }
+        }
+
+        function updateSDRBandwidthDisplay() {
+            const bandwidth = sdrConfig.bandwidth;
+            let display;
+            
+            if (bandwidth >= 1000000) {
+                display = `${bandwidth / 1000000} MHz`;
+            } else if (bandwidth >= 1000) {
+                display = `${bandwidth / 1000} kHz`;
+            } else {
+                display = `${bandwidth} Hz`;
+            }
+            
+            document.getElementById('sdrBandwidthDisplay').textContent = display;
+        }
+
+        function updateSDRFFTDisplay() {
+            document.getElementById('sdrFFTSizeDisplay').textContent = sdrConfig.fftSize.toString();
+        }
+
+        function handleSDRClick(event) {
+            if (!sdrRunning) return;
+            
+            const rect = sdrCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const canvasWidth = rect.width;
+            
+            // Calculate clicked frequency
+            const clickPosition = x / canvasWidth; // 0 to 1
+            const bandwidth = sdrConfig.bandwidth;
+            const centerFreq = sdrConfig.centerFreq;
+            
+            const freqOffset = (clickPosition - 0.5) * bandwidth;
+            const targetFreq = centerFreq + freqOffset;
+            
+            // Tune radio to clicked frequency
+            console.log(`SDR click: tuning to ${targetFreq} Hz`);
+            apiCall('/frequency/a', 'POST', { frequency: Math.round(targetFreq) })
+                .then(() => {
+                    logError(`Tuned to ${formatFrequencyPrecise(targetFreq)} via SDR waterfall`);
+                })
+                .catch(error => {
+                    console.error('SDR tune failed:', error);
+                    logError('SDR tune failed: ' + error.message);
+                });
+        }
+
+        function showSDRFreqInput() {
+            document.getElementById('sdrFreqDisplay').style.display = 'none';
+            const input = document.getElementById('sdrFreqInput');
+            input.style.display = 'inline-block';
+            input.focus();
+            input.select();
+        }
+
+        function hideSDRFreqInput() {
+            document.getElementById('sdrFreqInput').style.display = 'none';
+            document.getElementById('sdrFreqDisplay').style.display = 'block';
+        }
+
+        function submitSDRFreq() {
+            const input = document.getElementById('sdrFreqInput');
+            const freqStr = input.value.replace(/[^\d.]/g, ''); // Remove non-numeric
+            const freqMHz = parseFloat(freqStr);
+            
+            if (isNaN(freqMHz) || freqMHz < 0.03 || freqMHz > 470) {
+                alert('Invalid frequency. Enter frequency in MHz (0.03 - 470)');
+                return;
+            }
+            
+            const freqHz = Math.round(freqMHz * 1000000);
+            console.log(`Setting SDR center frequency to ${freqHz} Hz`);
+            
+            // Update radio frequency (SDR will follow)
+            apiCall('/frequency/a', 'POST', { frequency: freqHz })
+                .then(() => {
+                    hideSDRFreqInput();
+                    logError(`SDR centered on ${formatFrequencyPrecise(freqHz)}`);
+                })
+                .catch(error => {
+                    console.error('SDR frequency set failed:', error);
+                    logError('SDR frequency set failed: ' + error.message);
+                });
+        }
+
+        function updateSDRStatus(data) {
+            console.log('SDR Status update:', data);
+            if (data.status === 'stopped') {
+                sdrRunning = false;
+                const button = document.getElementById('sdrStartButton');
+                button.textContent = '▶ START SDR';
+                button.classList.remove('danger');
+                button.classList.add('success');
+                document.getElementById('sdrStreamStatus').textContent = 'STOPPED';
+            }
+        }
 
         // ── Initialization ──────────────────────────────────────
         function init() {

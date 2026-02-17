@@ -24,16 +24,6 @@ from pydantic import BaseModel
 
 from .cat import FT991A, Mode, Band, RadioStatus
 
-# Try to import SoapySDR - gracefully handle if not available
-try:
-    import SoapySDR
-    import numpy as np
-    SOAPY_SDR_AVAILABLE = True
-    logger.info("SoapySDR available - SDR support enabled")
-except ImportError:
-    SOAPY_SDR_AVAILABLE = False
-    logger.warning("SoapySDR not available - SDR functionality disabled")
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -44,6 +34,16 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
+
+# Try to import SoapySDR - gracefully handle if not available
+try:
+    import SoapySDR
+    import numpy as np
+    SOAPY_SDR_AVAILABLE = True
+    logger.info("SoapySDR available - SDR support enabled")
+except ImportError:
+    SOAPY_SDR_AVAILABLE = False
+    logger.warning("SoapySDR not available - SDR functionality disabled")
 
 # ── Data Models ──────────────────────────────────────────────
 
@@ -1556,11 +1556,14 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Clean shutdown - ensure PTT is off and audio stopped."""
+    """Clean shutdown - ensure PTT is off and audio/SDR stopped."""
     logger.info("FT-991A Web GUI shutting down...")
     
     # Stop audio streaming
     await audio_manager.stop_audio_stream()
+    
+    # Stop SDR streaming
+    await sdr_manager.stop_sdr_stream()
     
     # Stop any active scan
     global scan_active, scan_task

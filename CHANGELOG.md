@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.7.0] - 2026-02-17
+
+### ✨ Features
+
+- **SDR Panadapter Waterfall** — Wideband spectrum display via SDRplay RSP2pro (SoapySDR)
+  - New "SDR" tab in LCARS interface
+  - Real-time FFT waterfall with heat map visualization
+  - Click-to-tune: click anywhere on waterfall to set VFO-A frequency
+  - Bandwidth selector: 500 kHz, 1 MHz, 2 MHz, 5 MHz, 10 MHz
+  - FFT resolution: 256, 512, 1024, 2048 bins
+  - 5 color palettes: RADIO, AMBER, BLUE, GREEN, GRAY
+  - Frequency axis labels (MHz) across bandwidth
+  - Radio frequency indicator (red line showing current VFO-A)
+  - Automatic frequency tracking — SDR follows radio's VFO-A
+  - Signal level meter with peak strength display
+- **New API endpoints**: `/api/sdr/status`, `/api/sdr/bandwidth`, `/api/sdr/fft_size`
+- **New WebSocket**: `/ws/sdr` for real-time IQ → FFT streaming (~10-15 fps)
+- **SDRConnectionManager**: Graceful SoapySDR initialization with fallback
+
+---
+
 ## [v0.6.1] - 2026-02-17
 
 ### 🐛 Bug Fixes
