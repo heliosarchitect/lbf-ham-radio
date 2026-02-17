@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0,<75.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "ft991a-control"
 version = "0.3.5"
 description = "AI-controllable Yaesu FT-991A transceiver interface with web GUI, CLI, and MCP server"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     { name = "LBF / Matthew", email = "heliosarchitectlbf@gmail.com" }
 ]
