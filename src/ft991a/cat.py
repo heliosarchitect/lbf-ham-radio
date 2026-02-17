@@ -328,7 +328,29 @@ class FT991A:
         resp = self._read("ID;")
         return resp
 
-    # ── Convenience ───────────────────────────────────────────
+    # ── Antenna Tuner ─────────────────────────────────────────
+
+    def tuner_on(self):
+        """Turn antenna tuner ON."""
+        self._send("AC001;")
+        logger.info("Antenna tuner ON")
+
+    def tuner_off(self):
+        """Turn antenna tuner OFF."""
+        self._send("AC000;")
+        logger.info("Antenna tuner OFF")
+
+    def tuner_start(self):
+        """Start antenna auto-tune (tuner must be ON first)."""
+        self._send("AC001;")  # ensure tuner is on
+        self._send("AC002;")  # start tuning
+        logger.info("Antenna auto-tune started")
+
+    def tuner_status(self) -> str:
+        """Get tuner status. Note: FT-991A AC command is write-only, no query support."""
+        return "unknown"
+
+# ── Convenience ───────────────────────────────────────────
 
     def tune_ft8(self, band_mhz: float = 14.074):
         """Quick tune to FT8 frequency on a given band."""

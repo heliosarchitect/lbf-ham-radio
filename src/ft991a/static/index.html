@@ -1400,6 +1400,9 @@
                                     title="Swap VFO-A and VFO-B frequencies">A⇄B SWAP</button>
                             <button class="btn primary" onclick="copyAtoB()" 
                                     title="Copy VFO-A frequency to VFO-B">A→B COPY</button>
+                            <button id="autoTuneBtnVfo" class="btn" onclick="startAutoTune()" 
+                                    style="background: var(--lcars-gold); color: #000; font-weight: bold;"
+                                    title="Start antenna auto-tune (ATU)">⚡ AUTO TUNE</button>
                         </div>
 
                         <!-- VFO-B Display -->
@@ -1657,19 +1660,20 @@
                             <!-- Step size selector -->
                             <div style="flex: 1 1 auto; display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap;">
                                 <span style="color: var(--lcars-peach); font-size: 0.7rem; margin-right: 0.3rem;">STEP:</span>
-                                <button class="selector-btn" onclick="setTunerStep(10)" title="10 Hz tuning step">10</button>
-                                <button class="selector-btn active" onclick="setTunerStep(100)" title="100 Hz tuning step">100</button>
-                                <button class="selector-btn" onclick="setTunerStep(1000)" title="1 kHz tuning step">1k</button>
-                                <button class="selector-btn" onclick="setTunerStep(5000)" title="5 kHz tuning step">5k</button>
-                                <button class="selector-btn" onclick="setTunerStep(10000)" title="10 kHz tuning step">10k</button>
-                                <button class="selector-btn" onclick="setTunerStep(100000)" title="100 kHz tuning step">100k</button>
-                                <button class="selector-btn" onclick="setTunerStep(1000000)" title="1 MHz tuning step">1M</button>
+                                <button class="selector-btn" onclick="setTunerStep(10, this)" title="10 Hz tuning step">10</button>
+                                <button class="selector-btn active" onclick="setTunerStep(100, this)" title="100 Hz tuning step">100</button>
+                                <button class="selector-btn" onclick="setTunerStep(1000, this)" title="1 kHz tuning step">1k</button>
+                                <button class="selector-btn" onclick="setTunerStep(5000, this)" title="5 kHz tuning step">5k</button>
+                                <button class="selector-btn" onclick="setTunerStep(10000, this)" title="10 kHz tuning step">10k</button>
+                                <button class="selector-btn" onclick="setTunerStep(100000, this)" title="100 kHz tuning step">100k</button>
+                                <button class="selector-btn" onclick="setTunerStep(1000000, this)" title="1 MHz tuning step">1M</button>
                             </div>
 
                             <!-- Tune Up/Down buttons -->
                             <div style="flex: 0 0 auto; display: flex; gap: 0.4rem;">
                                 <button class="btn" onclick="tuneDown()" style="font-size: 1.4rem; padding: 0.3rem 1rem; background: var(--lcars-lavender);" title="Tune down by selected step size">◀ DN</button>
                                 <button class="btn" onclick="tuneUp()" style="font-size: 1.4rem; padding: 0.3rem 1rem; background: var(--lcars-lavender);" title="Tune up by selected step size">UP ▶</button>
+                                <button id="autoTuneBtn" class="btn" onclick="startAutoTune()" style="font-size: 1.2rem; padding: 0.3rem 1rem; background: var(--lcars-gold); color: #000; font-weight: bold; margin-left: 1rem;" title="Start antenna auto-tune (ATU)">⚡ AUTO TUNE</button>
                             </div>
 
                             <!-- S-meter mini bar -->
@@ -2964,6 +2968,21 @@
         }
 
         // ── VFO Operations ──────────────────────────────────────
+        async function startAutoTune() {
+            const btns = document.querySelectorAll('#autoTuneBtn, #autoTuneBtnVfo');
+            btns.forEach(b => { b.textContent = '⚡ TUNING...'; b.style.background = 'var(--lcars-red)'; b.style.color = '#fff'; b.disabled = true; });
+            try {
+                const resp = await apiCall('/tuner/start', 'POST');
+                // FT-991A ATU typically takes 3-8 seconds; no status query available
+                setTimeout(() => {
+                    btns.forEach(b => { b.textContent = '⚡ AUTO TUNE'; b.style.background = 'var(--lcars-gold)'; b.style.color = '#000'; b.disabled = false; });
+                }, 8000);
+            } catch(e) {
+                console.error('Auto-tune error:', e);
+                btns.forEach(b => { b.textContent = '⚡ AUTO TUNE'; b.style.background = 'var(--lcars-gold)'; b.style.color = '#000'; b.disabled = false; });
+            }
+        }
+
         function swapVfo() {
             apiCall('/vfo/swap', 'POST');
         }
@@ -3421,22 +3440,28 @@
         // ── Inline Tuner (Audio Tab) ──────────────────────────
         let tunerStep = 100; // Hz
 
-        function setTunerStep(hz) {
+        function setTunerStep(hz, el) {
             tunerStep = hz;
             document.querySelectorAll('#waterfallTuner .selector-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            if (el) el.classList.add('active');
         }
 
         function tuneUp() {
-            if (!radioStatus || !radioStatus.frequency_a) return;
+            if (!radioStatus || !radioStatus.frequency_a) { console.warn('tuneUp: no radioStatus'); return; }
             const newFreq = radioStatus.frequency_a + tunerStep;
-            fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) });
+            console.log(`tuneUp: ${radioStatus.frequency_a} + ${tunerStep} = ${newFreq}`);
+            fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) })
+                .then(r => r.json()).then(d => console.log('tuneUp result:', d)).catch(e => console.error('tuneUp error:', e));
         }
 
         function tuneDown() {
-            if (!radioStatus || !radioStatus.frequency_a) return;
+            if (!radioStatus || !radioStatus.frequency_a) { console.warn('tuneDown: no radioStatus'); return; }
             const newFreq = radioStatus.frequency_a - tunerStep;
-            if (newFreq > 0) fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) });
+            if (newFreq > 0) {
+                console.log(`tuneDown: ${radioStatus.frequency_a} - ${tunerStep} = ${newFreq}`);
+                fetch('/api/frequency/a', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({frequency: newFreq}) })
+                    .then(r => r.json()).then(d => console.log('tuneDown result:', d)).catch(e => console.error('tuneDown error:', e));
+            }
         }
 
         function showFreqInput() {
@@ -3485,12 +3510,15 @@
         }
 
         function updateTunerStrip(status) {
-            if (!status) return;
+            if (!status || !status.frequency_a) return;
             // Frequency
             const mhz = status.frequency_a / 1000000;
             const formatted = mhz.toFixed(6).replace(/(\d)(?=(\d{3})+\.)/g, '$1.');
             const el = document.getElementById('tunerFreqDisplay');
             if (el) el.textContent = formatted;
+            // Also update waterfall center frequency display
+            const cfd = document.getElementById('currentFreqDisplay');
+            if (cfd) cfd.textContent = formatted + ' MHz';
             // Mode
             const mode = document.getElementById('tunerModeBadge');
             if (mode) mode.textContent = status.mode || 'N/A';
