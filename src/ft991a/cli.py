@@ -114,7 +114,7 @@ def cli_main():
     
     # Connect to radio
     try:
-        radio = FT991A(port=args.port, baud=args.baud)
+        radio = FT991A(port=args.port, baudrate=args.baud)
         if not radio.connect():
             print(f"Error: Could not connect to radio on {args.port}")
             return 1
