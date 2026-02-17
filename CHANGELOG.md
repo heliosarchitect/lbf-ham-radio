@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.6.1] - 2026-02-17
+
+### 🐛 Bug Fixes
+
+- **NaN frequency display**: `updateTunerStrip()` was called before WebSocket status arrived, causing `undefined / 1000000 = NaN`
+- **Waterfall center frequency**: Was hardcoded to `14.074.000 MHz` instead of tracking actual VFO-A frequency
+- **Tuner step selector**: `setTunerStep()` used implicit `event` variable — now passes `this` from onclick
+- **`radioStatus` guard**: All tuner functions now check for valid status before accessing `frequency_a`
+
+### ✨ Features
+
+- **Antenna Auto-Tune button**: Gold ⚡ AUTO TUNE button on both Audio and VFO tabs
+  - Sends CAT `AC001;` (tuner ON) + `AC002;` (start tune)
+  - Visual feedback: turns red "TUNING..." for 8 seconds
+  - FT-991A AC command is write-only (no status query available)
+- **Console logging**: `tuneUp`/`tuneDown` now log frequency changes to browser console for debugging
+- **CI/CD**: GitHub Actions → PyPI publish on `v*` tag push
+
+### 🛠️ Maintenance
+
+- Version bump: `__init__.py` synced to 0.6.1
+- Both Gitea and GitHub remotes synced
+
+---
+
 ## [v0.6.0] - 2026-02-16
 
 ### ✨ Features

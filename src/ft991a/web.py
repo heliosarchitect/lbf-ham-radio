@@ -24,6 +24,16 @@ from pydantic import BaseModel
 
 from .cat import FT991A, Mode, Band, RadioStatus
 
+# Try to import SoapySDR - gracefully handle if not available
+try:
+    import SoapySDR
+    import numpy as np
+    SOAPY_SDR_AVAILABLE = True
+    logger.info("SoapySDR available - SDR support enabled")
+except ImportError:
+    SOAPY_SDR_AVAILABLE = False
+    logger.warning("SoapySDR not available - SDR functionality disabled")
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -264,8 +274,213 @@ class AudioConnectionManager:
             
         logger.info("Audio streaming stopped")
 
+class SDRConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        self.sdr_device = None
+        self.streaming_task: Optional[asyncio.Task] = None
+        self.bandwidth = 2000000  # Default 2 MHz
+        self.fft_size = 1024  # Default FFT size
+        self.frame_rate = 10  # Target ~10 fps
+        
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        
+        # Start SDR streaming if this is the first client
+        if len(self.active_connections) == 1:
+            await self.start_sdr_stream()
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        
+        # Stop SDR streaming if no more clients
+        if len(self.active_connections) == 0:
+            asyncio.ensure_future(self.stop_sdr_stream())
+
+    async def broadcast_sdr_data(self, data: dict):
+        if not self.active_connections:
+            return
+        
+        dead_connections = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_text(json.dumps(data))
+            except Exception as e:
+                logger.warning(f"SDR WebSocket send failed: {e}")
+                dead_connections.append(connection)
+        
+        for conn in dead_connections:
+            if conn in self.active_connections:
+                self.active_connections.remove(conn)
+
+    async def start_sdr_stream(self):
+        """Start SDR streaming from RSP2pro using SoapySDR"""
+        if not SOAPY_SDR_AVAILABLE:
+            logger.error("Cannot start SDR stream - SoapySDR not available")
+            await self.broadcast_sdr_data({
+                "type": "sdr_error",
+                "message": "SoapySDR not available"
+            })
+            return
+            
+        if self.sdr_device or self.streaming_task:
+            return
+        
+        try:
+            # Initialize SDRplay RSP2pro
+            logger.info("Initializing SDRplay RSP2pro...")
+            
+            # Create device handle
+            args = dict(driver="sdrplay")
+            self.sdr_device = SoapySDR.Device(args)
+            
+            # Configure device
+            self.sdr_device.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, self.bandwidth)
+            self.sdr_device.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, 14074000)  # Default to 20m FT8
+            self.sdr_device.setGain(SoapySDR.SOAPY_SDR_RX, 0, "IFGR", 40)  # IF gain
+            self.sdr_device.setGain(SoapySDR.SOAPY_SDR_RX, 0, "RFGR", 7)   # RF gain
+            self.sdr_device.setAntenna(SoapySDR.SOAPY_SDR_RX, 0, "RX")
+            
+            # Setup stream
+            rx_stream = self.sdr_device.setupStream(SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32)
+            self.sdr_device.activateStream(rx_stream)
+            
+            # Start streaming task
+            self.streaming_task = asyncio.create_task(
+                self._stream_sdr_data(rx_stream)
+            )
+            
+            logger.info(f"SDR streaming started: {self.bandwidth/1e6:.1f} MHz bandwidth")
+            
+            # Notify clients
+            await self.broadcast_sdr_data({
+                "type": "sdr_info",
+                "bandwidth": self.bandwidth,
+                "fft_size": self.fft_size,
+                "sample_rate": self.bandwidth,
+                "center_freq": 14074000
+            })
+            
+        except Exception as e:
+            logger.error(f"Failed to start SDR stream: {e}")
+            await self.stop_sdr_stream()
+            await self.broadcast_sdr_data({
+                "type": "sdr_error", 
+                "message": f"SDR initialization failed: {str(e)}"
+            })
+
+    async def _stream_sdr_data(self, rx_stream):
+        """Stream IQ data and perform FFT analysis"""
+        buffer_size = self.fft_size
+        
+        try:
+            while self.sdr_device:
+                # Read IQ samples
+                buffer = np.array([0]*buffer_size, np.complex64)
+                sr = self.sdr_device.readStream(rx_stream, [buffer], buffer_size)
+                
+                if sr.ret != buffer_size:
+                    continue
+                
+                # Perform FFT
+                fft_data = np.fft.fftshift(np.fft.fft(buffer))
+                power_spectrum = 20 * np.log10(np.abs(fft_data) + 1e-10)  # Convert to dB
+                
+                # Get current radio frequency for centering
+                center_freq = 14074000  # Default, will be updated from radioStatus
+                if 'radioStatus' in globals() and radioStatus and hasattr(radioStatus, 'frequency_a'):
+                    center_freq = radioStatus.frequency_a
+                elif radio_connected and radio:
+                    try:
+                        status = radio.get_status()
+                        center_freq = status.frequency_a
+                    except:
+                        pass
+                
+                # Update SDR center frequency to match radio
+                try:
+                    current_sdr_freq = self.sdr_device.getFrequency(SoapySDR.SOAPY_SDR_RX, 0)
+                    if abs(current_sdr_freq - center_freq) > 1000:  # More than 1 kHz difference
+                        self.sdr_device.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, center_freq)
+                except:
+                    pass
+                
+                # Broadcast FFT data
+                await self.broadcast_sdr_data({
+                    "type": "sdr_fft",
+                    "bins": power_spectrum.tolist(),
+                    "center_freq": center_freq,
+                    "bandwidth": self.bandwidth,
+                    "timestamp": time.time()
+                })
+                
+                # Control frame rate
+                await asyncio.sleep(1.0 / self.frame_rate)
+                
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:
+            logger.error(f"SDR streaming error: {e}")
+            await self.broadcast_sdr_data({
+                "type": "sdr_error",
+                "message": f"Streaming error: {str(e)}"
+            })
+        finally:
+            await self.stop_sdr_stream()
+
+    async def stop_sdr_stream(self):
+        """Stop SDR streaming and cleanup"""
+        if self.streaming_task and not self.streaming_task.done():
+            self.streaming_task.cancel()
+            try:
+                await self.streaming_task
+            except asyncio.CancelledError:
+                pass
+        self.streaming_task = None
+            
+        if self.sdr_device:
+            try:
+                # Close all streams
+                self.sdr_device.closeStream()
+                self.sdr_device.deactivateStream()
+                self.sdr_device = None
+            except:
+                pass
+            
+        logger.info("SDR streaming stopped")
+        
+        # Notify clients
+        await self.broadcast_sdr_data({
+            "type": "sdr_status",
+            "status": "stopped"
+        })
+
+    async def set_bandwidth(self, bandwidth_hz: int):
+        """Change SDR bandwidth"""
+        valid_bandwidths = [200000, 500000, 1000000, 2000000, 5000000, 10000000]
+        if bandwidth_hz not in valid_bandwidths:
+            raise ValueError(f"Invalid bandwidth. Must be one of: {valid_bandwidths}")
+        
+        self.bandwidth = bandwidth_hz
+        
+        # Restart stream with new bandwidth if active
+        if self.sdr_device:
+            await self.stop_sdr_stream()
+            await self.start_sdr_stream()
+
+    async def set_fft_size(self, fft_size: int):
+        """Change FFT size"""
+        valid_sizes = [256, 512, 1024, 2048]
+        if fft_size not in valid_sizes:
+            raise ValueError(f"Invalid FFT size. Must be one of: {valid_sizes}")
+        
+        self.fft_size = fft_size
+
 manager = ConnectionManager()
 audio_manager = AudioConnectionManager()
+sdr_manager = SDRConnectionManager()
 
 # ── Radio Control Functions ──────────────────────────────────
 
@@ -1219,6 +1434,116 @@ async def audio_websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         logger.error(f"Audio WebSocket error: {e}")
         audio_manager.disconnect(websocket)
+
+@app.websocket("/ws/sdr")
+async def sdr_websocket_endpoint(websocket: WebSocket):
+    """WebSocket for SDR streaming from RSP2pro."""
+    await sdr_manager.connect(websocket)
+    try:
+        # Send initial SDR info
+        await websocket.send_text(json.dumps({
+            "type": "sdr_info",
+            "driver": "sdrplay",
+            "device": "RSP2pro",
+            "serial": "1717050C11",
+            "available": SOAPY_SDR_AVAILABLE,
+            "bandwidth": sdr_manager.bandwidth,
+            "fft_size": sdr_manager.fft_size
+        }))
+        
+        # Keep connection alive and handle client messages
+        while True:
+            try:
+                message = await websocket.receive_text()
+                data = json.loads(message)
+                
+                if data.get("type") == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+                elif data.get("type") == "set_bandwidth":
+                    try:
+                        await sdr_manager.set_bandwidth(data.get("bandwidth", 2000000))
+                        await websocket.send_text(json.dumps({
+                            "type": "bandwidth_changed",
+                            "bandwidth": sdr_manager.bandwidth
+                        }))
+                    except ValueError as e:
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": str(e)
+                        }))
+                elif data.get("type") == "set_fft_size":
+                    try:
+                        await sdr_manager.set_fft_size(data.get("fft_size", 1024))
+                        await websocket.send_text(json.dumps({
+                            "type": "fft_size_changed", 
+                            "fft_size": sdr_manager.fft_size
+                        }))
+                    except ValueError as e:
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": str(e)
+                        }))
+                        
+            except Exception as e:
+                logger.error(f"SDR WebSocket message error: {e}")
+                break
+                
+    except WebSocketDisconnect:
+        sdr_manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"SDR WebSocket error: {e}")
+        sdr_manager.disconnect(websocket)
+
+# ── SDR API Endpoints ────────────────────────────────────────
+
+@app.get("/api/sdr/status")
+async def get_sdr_status():
+    """Get SDR device status and capabilities."""
+    return {
+        "available": SOAPY_SDR_AVAILABLE,
+        "active_connections": len(sdr_manager.active_connections) if sdr_manager else 0,
+        "streaming": sdr_manager.sdr_device is not None if sdr_manager else False,
+        "bandwidth": sdr_manager.bandwidth if sdr_manager else 2000000,
+        "fft_size": sdr_manager.fft_size if sdr_manager else 1024,
+        "supported_bandwidths": [200000, 500000, 1000000, 2000000, 5000000, 10000000],
+        "supported_fft_sizes": [256, 512, 1024, 2048]
+    }
+
+@app.post("/api/sdr/bandwidth")
+async def set_sdr_bandwidth(data: dict):
+    """Set SDR bandwidth."""
+    if not SOAPY_SDR_AVAILABLE:
+        raise HTTPException(status_code=503, detail="SoapySDR not available")
+    
+    try:
+        bandwidth = data.get("bandwidth")
+        if not bandwidth:
+            raise HTTPException(status_code=400, detail="Bandwidth parameter required")
+        
+        await sdr_manager.set_bandwidth(int(bandwidth))
+        return {"success": True, "bandwidth": sdr_manager.bandwidth}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/sdr/fft_size")
+async def set_sdr_fft_size(data: dict):
+    """Set SDR FFT size."""
+    if not SOAPY_SDR_AVAILABLE:
+        raise HTTPException(status_code=503, detail="SoapySDR not available")
+    
+    try:
+        fft_size = data.get("fft_size")
+        if not fft_size:
+            raise HTTPException(status_code=400, detail="FFT size parameter required")
+        
+        await sdr_manager.set_fft_size(int(fft_size))
+        return {"success": True, "fft_size": sdr_manager.fft_size}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ── Startup/Shutdown ─────────────────────────────────────────
 

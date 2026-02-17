@@ -4,20 +4,44 @@
 [![Python Version](https://img.shields.io/pypi/pyversions/ft991a-control)](https://pypi.org/project/ft991a-control/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-AI-controllable Yaesu FT-991A transceiver interface with **web GUI**, **command-line tools**, and **MCP server** for AI integration.
+AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI**, **command-line tools**, and **MCP server** for AI integration.
 
 > **🤖 AI Assistants:** This package exposes FT-991A ham radio control via MCP (Model Context Protocol). Use `ft991a-mcp` to launch the MCP server, then control frequency, mode, power, PTT, and monitor S-meter readings through standardized MCP tools.
 
 ## Features
 
-- **🌐 Web GUI**: Real-time web interface with WebSocket updates
-- **🖥️ CLI Tools**: Direct command-line control (`ft991a-cli`)  
-- **🤖 MCP Server**: AI integration via Model Context Protocol (`ft991a-mcp`)
-- **📡 Full CAT Control**: Frequency, mode, power, PTT, S-meter, band switching
-- **🔒 Safety Features**: TX lockout, power limits, frequency validation
-- **📊 Real-time Monitoring**: Live status updates and S-meter readings
-- **🎛️ Memory Management**: Access programmed memory channels
-- **🔌 Hardware Interface**: USB serial CAT control (38400 baud)
+### 🌐 LCARS Web GUI (Star Trek Theme)
+- **10+ tabbed interface** — VFO Control, Audio/Waterfall, Band Scanner, Memory Channels, System, Config, Status, Diagnostics
+- **Audio Waterfall** — Real-time spectrogram via PCM2903B USB CODEC + browser-side FFT
+- **Spectrum Analyzer** — Overlay with gradient fill, grid lines, center frequency marker
+- **5 Color Palettes** — RADIO (default), AMBER, BLUE, GREEN, GRAY with pre-computed color LUTs
+- **Inline VFO Tuner** — Click-to-type frequency entry, UP/DN buttons, step selector (10 Hz–1 MHz), arrow key tuning
+- **S-Meter History Chart** — Last 120 readings with peak/avg labels and color gradient
+- **Band Scanner** — Sweep frequency ranges with configurable step size and squelch, click-to-tune results, CSV export
+- **Memory Channel Manager** — List, recall, store, and clear channels 001-099
+- **Antenna Auto-Tune** — ATU control button (AC001/AC002 CAT commands)
+- **SDR Panadapter** — Wideband waterfall via SDRplay RSP2pro (SoapySDR)
+- **Audio Streaming** — Listen to radio audio directly in the browser
+- **WebSocket Real-time Updates** — Live frequency, mode, S-meter, TX status
+- **Mobile Responsive** — Horizontal scrollable tab bar for phone/tablet
+
+### 🖥️ CLI Tools
+- `ft991a-cli status` — Get radio status
+- `ft991a-cli freq set <hz>` — Set frequency
+- `ft991a-cli mode set <mode>` — Change mode
+- `ft991a-cli cw encode/decode/send` — Morse code operations
+
+### 🤖 MCP Server (AI Integration)
+- Full radio control via Model Context Protocol
+- Compatible with Claude, GPT, and other MCP-capable assistants
+
+### 📡 CAT Protocol
+- Complete Yaesu CAT command implementation
+- Frequency, mode, power, PTT, S-meter, band switching
+- Memory channel read/write (MR/MC/MW commands)
+- Antenna tuner control (AC commands)
+- VFO swap, A→B copy
+- TX lockout safety
 
 ## Quick Install
 
@@ -25,268 +49,194 @@ AI-controllable Yaesu FT-991A transceiver interface with **web GUI**, **command-
 # Install from PyPI
 pip install ft991a-control
 
-# Launch web GUI
-ft991a-web
+# Launch LCARS web GUI
+ft991a-web --host 0.0.0.0 --port 8000 --radio-port /dev/ttyUSB0
 
 # Launch MCP server for AI
 ft991a-mcp
 
-# Direct CLI control  
+# Direct CLI control
 ft991a-cli status
 ```
 
-## Quick Start Guide
+## Hardware Setup
 
-### 1. Hardware Setup
+### Required
+1. **Yaesu FT-991A** with USB-A to USB-B cable
+2. **Linux host** (tested on Ubuntu 22.04)
+3. Radio Menu → 031 CAT RATE → **38400 baud**
+4. Add user to `dialout` group: `sudo usermod -a -G dialout $USER`
 
-1. **Connect FT-991A**: USB-A to USB-B cable between radio and computer
-2. **Enable CAT**: Radio Menu → 031 CAT RATE → 38400 baud  
-3. **Check Device**: Verify `/dev/ttyUSB0` appears (Linux)
-4. **Permissions**: Add user to `dialout` group: `sudo usermod -a -G dialout $USER`
+### Recommended
+- **USB Audio CODEC** (e.g., PCM2903B) for audio waterfall
+- **SDRplay RSP2pro** (or compatible SoapySDR device) for wideband panadapter
 
-### 2. Web GUI Mode
-
+### Udev Rules (Stable Device Paths)
 ```bash
-# Start web server
-ft991a-web
-
-# Open browser
-firefox http://localhost:8000
+# /etc/udev/rules.d/99-ft991a.rules
+SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea70", \
+  ATTRS{bInterfaceNumber}=="01", SYMLINK+="ft991a-cat"
 ```
 
-**Web Interface Features:**
-- Real-time frequency/mode display
-- Click-to-tune frequency control  
-- S-meter visualization
-- Mode buttons (LSB/USB/CW/FM/AM/FT8)
-- Power control slider
-- PTT button (with safety confirmation)
-- Band switching buttons
-
-### 3. Command Line Mode
-
-```bash
-# Get radio status
-ft991a-cli status
-
-# Set frequency (20m FT8)
-ft991a-cli freq set 14074000
-
-# Change mode to USB  
-ft991a-cli mode set DATA_USB
-
-# Set power to 50W
-ft991a-cli power set 50
-
-# Switch to 40m band
-ft991a-cli band 40M
-
-# Get S-meter reading
-ft991a-cli smeter
-```
-
-### 4. MCP Server Mode (AI Integration)
-
-```bash
-# Launch MCP server
-ft991a-mcp --port /dev/ttyUSB0 --baud 38400
-```
-
-**Available MCP Tools:**
-- `get_frequency` / `set_frequency` - Tune the radio
-- `get_mode` / `set_mode` - Change operating modes  
-- `get_power` / `set_power` - Control TX power
-- `ptt_on` / `ptt_off` - Key/unkey transmitter
-- `get_smeter` - Read signal strength
-- `get_status` - Complete radio status
-- `set_band` - Switch amateur bands
-- `get_memories` / `recall_memory` - Memory channels
+Then use `--radio-port /dev/ft991a-cat` for stable access regardless of USB enumeration order.
 
 ## Architecture
 
 ```
 ┌─────────────────┐    WebSocket     ┌─────────────────┐
-│   Web Browser   │◄─────────────────┤   FastAPI       │
-│   (ft991a-web)  │    Real-time     │   Web Server    │
-└─────────────────┘    Updates       └─────────────────┘
-                                             │
-┌─────────────────┐                         │
-│   AI Assistant  │◄── MCP Protocol ────────┤
-│   (Claude, etc) │                         │
-└─────────────────┘                         │
-                                             │
-┌─────────────────┐                         │
-│   CLI Tools     │◄── Direct Access ───────┤
-│   (ft991a-cli)  │                         │
-└─────────────────┘                         │
-                                             │
-                          ┌─────────────────┴─────────────────┐
-                          │         FT991A CAT Library        │
-                          │         (ft991a.cat)             │
-                          └─────────────────┬─────────────────┘
-                                           │ USB Serial
-                                           │ 38400 baud 
-                                           │ ASCII CAT
-                                           ▼
-                                     ┌─────────────────┐
-                                     │  Yaesu FT-991A  │
-                                     │  Transceiver    │
-                                     └─────────────────┘
+│   Web Browser   │◄────────────────►│   FastAPI        │
+│   LCARS GUI     │  Real-time       │   Web Server     │
+│                 │  Audio/FFT       │   (ft991a-web)   │
+└─────────────────┘                  └────────┬─────────┘
+                                              │
+┌─────────────────┐                          │
+│   AI Assistant  │◄── MCP Protocol ─────────┤
+│   (Claude, etc) │                          │
+└─────────────────┘                          │
+                                              │
+┌─────────────────┐    ┌─────────────────┐   │
+│   SDRplay       │    │   USB Audio     │   │
+│   RSP2pro       │    │   CODEC         │   │
+│   (SoapySDR)    │    │   (PCM2903B)    │   │
+└────────┬────────┘    └────────┬────────┘   │
+         │ IQ Data              │ PCM Audio  │
+         └──────────────────────┴────────────┤
+                                              │
+                    ┌─────────────────────────┴───────────┐
+                    │         FT991A CAT Library          │
+                    │         (ft991a.cat)                │
+                    └─────────────────┬───────────────────┘
+                                      │ USB Serial
+                                      │ 38400 baud, 2 stop bits
+                                      ▼
+                                ┌─────────────────┐
+                                │  Yaesu FT-991A  │
+                                │  Transceiver    │
+                                └─────────────────┘
 ```
 
-## Installation Options
+## Web GUI Tabs
 
-### From PyPI (Recommended)
+| Tab | Description |
+|-----|-------------|
+| **VFO Control** | Frequency display, mode buttons, band presets, power slider, VFO swap/copy, ATU |
+| **Audio** | Audio waterfall, spectrum analyzer, inline tuner, S-meter history, listen button |
+| **SDR** | Wideband panadapter waterfall via SDRplay (click-to-tune, bandwidth selector) |
+| **Scanner** | Band scanner with preset bands, custom range, step sizes, squelch threshold |
+| **Memory** | Memory channel manager — list, recall, store, clear channels 001-099 |
+| **System** | Audio device config, WebSocket status, connection info |
+| **Config** | Serial port settings, baud rate, connection test |
+| **Status** | Live radio status, VFO-A/B, mode, power, S-meter, SWR |
+| **Diagnostics** | Error log, raw CAT command testing, system health |
+
+## CI/CD
+
+GitHub Actions automatically publishes to PyPI on version tag push:
+
 ```bash
-pip install ft991a-control
-```
-
-### Development Install
-```bash
-git clone https://github.com/heliosarchitect/lbf-ham-radio.git
-cd lbf-ham-radio
-pip install -e .
-```
-
-### With Optional Dependencies
-```bash
-# Development tools
-pip install ft991a-control[dev]
-
-# Audio processing (future)  
-pip install ft991a-control[audio]
+# Bump version in pyproject.toml and __init__.py, then:
+git tag v0.6.2
+git push github main --tags
+# → GitHub Actions builds and publishes to PyPI
 ```
 
 ## Configuration
 
 ### Serial Port Settings
 ```bash
-# Default settings
---port /dev/ttyUSB0
---baud 38400
-
-# Custom settings
-ft991a-cli --port /dev/ttyACM0 --baud 9600 status
-ft991a-web --radio-port /dev/ttyUSB1 --radio-baud 19200
-ft991a-mcp --port /dev/serial/by-id/usb-FTDI... --baud 38400
+ft991a-web --radio-port /dev/ft991a-cat --radio-baud 38400 --host 0.0.0.0 --port 8000
 ```
 
 ### Radio Menu Settings
-- **Menu 031** (CAT RATE): Set to **38400** or match `--baud` parameter
-- **Menu 032** (CAT TOT): **10 min** or longer for continuous operation  
-- **Menu 033** (CAT RTS): **Enable** for hardware flow control
+- **Menu 031** (CAT RATE): **38400** (or match `--radio-baud`)
+- **Menu 032** (CAT TOT): **10 min** or longer
+- **Menu 033** (CAT RTS): **Enable**
 
-## Safety & Best Practices
+## Safety
 
-⚠️ **Important Safety Notes:**
-- **RF Exposure**: Observe FCC/IC RF exposure limits
-- **Antenna**: Always verify proper antenna connection before PTT
-- **Power**: Start with low power (5-10W) for testing
-- **Licensing**: Ensure amateur radio license privileges for frequency/mode
-- **TX Lock**: Use `toggle_tx_lock` tool to prevent accidental transmission
+⚠️ **Important:**
+- Always verify proper antenna connection before TX
+- Use TX lockout when not actively transmitting
+- Ensure amateur radio license privileges for frequency/mode
+- Start with low power (5-10W) for testing
+- **Never transmit without a licensed operator present**
 
-🔒 **Built-in Safety Features:**
-- Frequency range validation (30kHz - 56MHz)
-- Power limits (5-100W) 
+🔒 **Built-in Safety:**
+- Frequency range validation (30 kHz – 470 MHz)
+- Power limits (5-100W)
+- TX lockout toggle
 - Mode validation per frequency
-- TX lockout functionality
 - Serial timeout protection
 
-## Troubleshooting
+## Python API
 
-### Connection Issues
-```bash
-# Check USB device
-lsusb | grep -i ftdi
-
-# Check serial ports  
-ls -la /dev/ttyUSB*
-
-# Test permissions
-groups $USER | grep dialout
-
-# Manual connection test
-ft991a-cli --port /dev/ttyUSB0 status
-```
-
-### Common Problems
-- **Permission denied**: Add user to `dialout` group, logout/login
-- **Device not found**: Check USB cable, try different port
-- **Radio not responding**: Verify CAT enabled (Menu 031), correct baud rate
-- **Web GUI not accessible**: Check firewall, try `--host 0.0.0.0`
-
-## API Reference
-
-### Python Library
 ```python
 from ft991a import FT991A, Mode
 
-# Connect to radio
-radio = FT991A(port="/dev/ttyUSB0", baud=38400)
+radio = FT991A(port="/dev/ft991a-cat", baudrate=38400)
 radio.connect()
 
-# Basic operations
-freq = radio.get_frequency()
-radio.set_frequency(14074000)  # 20m FT8
-radio.set_mode(Mode.DATA_USB)
+# Read status
 status = radio.get_status()
+print(f"Frequency: {status.frequency_a} Hz")
+print(f"Mode: {status.mode}")
+print(f"S-Meter: {status.s_meter}")
+
+# Tune
+radio.set_frequency_a(14_250_000)  # 20m SSB
+radio.set_mode(Mode.USB)
+
+# Antenna tuner
+radio.tuner_start()  # Auto-tune
+
+# Memory channels
+radio.recall_memory(1)
+radio.store_memory(5)
 ```
 
-### REST API (Web Server)
-- `GET /api/status` - Get radio status
-- `POST /api/frequency` - Set frequency  
-- `POST /api/mode` - Set mode
-- `POST /api/power` - Set TX power
-- `WebSocket /ws` - Real-time updates
+## REST API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/status` | GET | Radio status (frequency, mode, S-meter, TX) |
+| `/api/frequency/a` | POST | Set VFO-A frequency |
+| `/api/frequency/b` | POST | Set VFO-B frequency |
+| `/api/mode` | POST | Set operating mode |
+| `/api/power` | POST | Set TX power |
+| `/api/tuner/start` | POST | Start antenna auto-tune |
+| `/api/tuner/on` | POST | Turn ATU on |
+| `/api/tuner/off` | POST | Turn ATU off |
+| `/api/vfo/swap` | POST | Swap VFO-A ⇄ VFO-B |
+| `/api/vfo/a-to-b` | POST | Copy VFO-A → VFO-B |
+| `/api/scan` | POST | Start band scan |
+| `/api/scan/stop` | POST | Stop scan |
+| `/api/memory/list` | GET | List memory channels |
+| `/api/memory/recall` | POST | Recall memory channel |
+| `/api/memory/store` | POST | Store to memory channel |
+| `/api/memory/clear` | POST | Clear memory channel |
+| `/ws` | WebSocket | Real-time status updates |
+| `/ws/audio` | WebSocket | Audio FFT stream |
+| `/ws/sdr` | WebSocket | SDR wideband FFT stream |
 
 ## Contributing
 
 ```bash
-# Development setup
 git clone https://github.com/heliosarchitect/lbf-ham-radio.git
 cd lbf-ham-radio
 pip install -e .[dev]
-
-# Run tests (Note: tests need API signature updates)
 pytest tests/
-
-# Code formatting  
-black src/ tests/
-isort src/ tests/
-
-# Type checking
-mypy src/
 ```
-
-**Note**: Unit tests need to be updated to match the actual FT991A API signatures. Current tests use placeholder signatures and will be fixed in v0.3.1.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file.
+MIT License — see [LICENSE](LICENSE).
 
-## Hardware Support
+## Links
 
-**Tested Hardware:**
-- Yaesu FT-991A (primary target)
-- Linux (Ubuntu 22.04+, Debian 11+)
-- USB-A to USB-B cables
-
-**Future Hardware:** 
-- Other Yaesu radios with compatible CAT
-- Windows/macOS support
-- CI-V interface (Icom)
-
-## Screenshots
-
-*[Screenshots placeholder - will be added after web deployment]*
-
-## Related Projects
-
-- **[Hamlib](https://hamlib.github.io/)**: Cross-platform radio control library
-- **[flrig](https://github.com/w1hkj/flrig)**: Rig control GUI by W1HKJ  
-- **[WSJT-X](https://wsjt.sourceforge.io/)**: Weak signal digital modes
-- **[fldigi](https://sourceforge.net/projects/fldigi/)**: Multi-mode digital modem
+- **PyPI**: https://pypi.org/project/ft991a-control/
+- **GitHub**: https://github.com/heliosarchitect/lbf-ham-radio
+- **Gitea**: https://gitea.fleet.wood/Helios/lbf-ham-radio
 
 ---
 
-**73!** 📡 *Happy hamming with AI-controlled FT-991A*
+**73 de KO4TUV!** 📡 *AI-controlled ham radio with LCARS style*
