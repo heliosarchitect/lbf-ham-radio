@@ -608,6 +608,51 @@ async def vfo_a_to_b():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/tuner/on")
+async def tuner_on():
+    """Turn antenna tuner ON."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    try:
+        radio.tuner_on()
+        return {"success": True, "tuner": "on"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tuner/off")
+async def tuner_off():
+    """Turn antenna tuner OFF."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    try:
+        radio.tuner_off()
+        return {"success": True, "tuner": "off"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/tuner/start")
+async def tuner_start():
+    """Start antenna auto-tune."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    try:
+        radio.tuner_start()
+        return {"success": True, "tuner": "tuning"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/tuner/status")
+async def tuner_status():
+    """Get tuner status."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    try:
+        status = radio.tuner_status()
+        labels = {"0": "off", "1": "on", "2": "tuning"}
+        return {"status": labels.get(status, "unknown"), "raw": status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/api/config")
 async def update_config(req: ConfigRequest):
     """Update radio connection configuration."""
