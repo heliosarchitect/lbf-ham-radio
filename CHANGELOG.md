@@ -7,15 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.3.4] - 2026-02-16
+
+### ✨ Features
+
+- add automated CHANGELOG generation system [`3b4503ff`]
+
+### 🐛 Bug Fixes
+
+- restore LICENSE and fix metadata 2.4 compatibility [`76e9cbe7`]
+- make Traefik hostname configurable via config.env [`d4c8ae3b`]
+
+### ♻️ Code Refactoring
+
+- remove standalone Traefik — use fleet's central Traefik instance [`195ea62e`]
+
+---
+
 ## [v0.3.3] - 2026-02-16
 
 ### ✨ Features
 
-- add Traefik reverse proxy config for HTTPS [`687c9617`]
+- add automated CHANGELOG generation system [`3b4503ff`]
 
-### 🛠️ Maintenance
+### 🐛 Bug Fixes
 
-- bump v0.3.3 — Traefik HTTPS config [`3c60e91f`]
+- restore LICENSE and fix metadata 2.4 compatibility [`76e9cbe7`]
+- make Traefik hostname configurable via config.env [`d4c8ae3b`]
+
+### ♻️ Code Refactoring
+
+- remove standalone Traefik — use fleet's central Traefik instance [`195ea62e`]
 
 ---
 
