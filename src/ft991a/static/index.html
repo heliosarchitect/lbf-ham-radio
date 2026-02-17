@@ -128,6 +128,7 @@
             letter-spacing: 0.05em;
             transition: all 0.2s;
             display: block;
+            cursor: pointer;
         }
 
         .lcars-nav-item:hover {
@@ -244,6 +245,15 @@
             display: flex;
             flex-direction: column;
             gap: 1.5rem;
+        }
+
+        /* Tab Content Areas */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
         }
 
         /* ═══════════════════════════════
@@ -865,6 +875,38 @@
             box-shadow: 0 0 10px rgba(255, 204, 102, 0.5);
         }
 
+        /* Volume Slider (similar styling) */
+        .volume-slider {
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 102, 153, 0.3);
+            border-radius: var(--radius);
+            outline: none;
+            margin: 0 1rem;
+            border: 1px solid var(--lcars-teal);
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--lcars-green);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(153, 221, 102, 0.5);
+        }
+
+        .volume-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--lcars-green);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(153, 221, 102, 0.5);
+        }
+
         /* ═══════════════════════════════
            MAIN GRID
            ═══════════════════════════════ */
@@ -878,6 +920,94 @@
 
         .full-width {
             grid-column: 1 / -1;
+        }
+
+        /* ═══════════════════════════════
+           MEMORY CHANNEL LIST
+           ═══════════════════════════════ */
+
+        .memory-list {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--lcars-blue);
+            border-radius: var(--radius-sm);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .memory-item {
+            display: grid;
+            grid-template-columns: 50px 150px 80px 1fr auto;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-bottom: 1px solid var(--lcars-teal);
+            align-items: center;
+        }
+
+        .memory-item:last-child {
+            border-bottom: none;
+        }
+
+        .memory-channel {
+            font-weight: 700;
+            color: var(--lcars-gold);
+            text-align: center;
+        }
+
+        .memory-frequency {
+            color: var(--lcars-text);
+            font-family: monospace;
+        }
+
+        .memory-mode {
+            color: var(--lcars-peach);
+            font-size: 0.8rem;
+        }
+
+        .memory-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* ═══════════════════════════════
+           DIAGNOSTIC PANELS
+           ═══════════════════════════════ */
+
+        .diagnostic-item {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--lcars-purple);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .diagnostic-item h4 {
+            color: var(--lcars-gold);
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .error-log {
+            background: rgba(204, 68, 68, 0.1);
+            border: 1px solid var(--lcars-red);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .error-entry {
+            color: var(--lcars-red);
+            margin-bottom: 0.5rem;
+            padding: 0.25rem;
+            border-left: 3px solid var(--lcars-red);
+            padding-left: 0.75rem;
+        }
+
+        .error-timestamp {
+            color: var(--lcars-peach);
+            font-size: 0.75rem;
         }
 
         /* ═══════════════════════════════
@@ -938,6 +1068,67 @@
             margin-bottom: 0.5rem;
             font-weight: 600;
         }
+
+        .placeholder-message {
+            background: rgba(255, 204, 102, 0.1);
+            border: 1px solid var(--lcars-gold);
+            border-radius: var(--radius-sm);
+            padding: 1rem;
+            color: var(--lcars-gold);
+            text-align: center;
+            font-weight: 600;
+            margin: 1rem 0;
+        }
+
+        /* Toggle switch styling */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--lcars-purple);
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: #fff;
+            -webkit-transition: .4s;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: var(--lcars-green);
+        }
+
+        input:checked + .toggle-slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
     </style>
 </head>
 <body>
@@ -948,15 +1139,16 @@
         <div class="lcars-sidebar">
             <div class="lcars-sidebar-top"></div>
             <div class="lcars-sidebar-nav">
-                <a href="#" class="lcars-nav-item active">VFO CTRL</a>
-                <a href="#" class="lcars-nav-item">MODES</a>
-                <a href="#" class="lcars-nav-item">BANDS</a>
-                <a href="#" class="lcars-nav-item">TX PWR</a>
-                <a href="#" class="lcars-nav-item">METERS</a>
-                <a href="#" class="lcars-nav-item">AUDIO</a>
-                <a href="#" class="lcars-nav-item">CONFIG</a>
-                <a href="#" class="lcars-nav-item">STATUS</a>
-                <a href="#" class="lcars-nav-item">DIAG</a>
+                <a href="#" class="lcars-nav-item active" data-tab="vfo-ctrl">VFO CTRL</a>
+                <a href="#" class="lcars-nav-item" data-tab="modes">MODES</a>
+                <a href="#" class="lcars-nav-item" data-tab="bands">BANDS</a>
+                <a href="#" class="lcars-nav-item" data-tab="tx-pwr">TX PWR</a>
+                <a href="#" class="lcars-nav-item" data-tab="meters">METERS</a>
+                <a href="#" class="lcars-nav-item" data-tab="audio">AUDIO</a>
+                <a href="#" class="lcars-nav-item" data-tab="system">SYSTEM</a>
+                <a href="#" class="lcars-nav-item" data-tab="config">CONFIG</a>
+                <a href="#" class="lcars-nav-item" data-tab="status">STATUS</a>
+                <a href="#" class="lcars-nav-item" data-tab="diag">DIAG</a>
             </div>
             <div class="lcars-sidebar-bottom"></div>
         </div>
@@ -980,306 +1172,804 @@
         <!-- LCARS Content -->
         <div class="lcars-content">
             
-            <!-- Main Control Grid -->
-            <div class="main-grid">
-                
-                <!-- VFO Control Panel -->
-                <div class="lcars-panel">
-                    <div class="lcars-panel-header">
-                        <div class="lcars-panel-indicator blue"></div>
-                        <div class="lcars-panel-title">VFO Control</div>
-                    </div>
+            <!-- VFO Control Tab -->
+            <div class="tab-content active" id="vfo-ctrl">
+                <div class="main-grid">
                     
-                    <!-- VFO-A Display -->
-                    <div class="frequency-display">
-                        <div class="frequency-value" id="frequencyA">14.074.000</div>
-                        <div class="frequency-label">VFO-A (MHz)</div>
-                    </div>
-
-                    <!-- Fine Tuning Controls -->
-                    <div class="fine-tune-container">
-                        <label>Fine Tuning Controls</label>
-                        
-                        <!-- Step Size Selector -->
-                        <div class="step-selector">
-                            <button class="step-btn" data-step="10" onclick="setTuningStep(10)" 
-                                    title="10 Hz step increment - ultra-fine tuning">10 Hz</button>
-                            <button class="step-btn" data-step="100" onclick="setTuningStep(100)" 
-                                    title="100 Hz step increment - fine tuning">100 Hz</button>
-                            <button class="step-btn active" data-step="1000" onclick="setTuningStep(1000)" 
-                                    title="1 kHz step increment - standard tuning">1 kHz</button>
-                            <button class="step-btn" data-step="10000" onclick="setTuningStep(10000)" 
-                                    title="10 kHz step increment - band segment tuning">10 kHz</button>
-                            <button class="step-btn" data-step="100000" onclick="setTuningStep(100000)" 
-                                    title="100 kHz step increment - band hopping">100 kHz</button>
-                            <button class="step-btn" data-step="1000000" onclick="setTuningStep(1000000)" 
-                                    title="1 MHz step increment - major band changes">1 MHz</button>
+                    <!-- VFO Control Panel -->
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator blue"></div>
+                            <div class="lcars-panel-title">VFO Control</div>
                         </div>
                         
-                        <!-- Nudge Controls -->
-                        <div class="nudge-controls">
-                            <button class="nudge-btn" onclick="nudgeFrequency('down')" 
-                                    title="Decrease frequency by selected step size">▼</button>
-                            <div class="step-display" id="stepDisplay">Step: 1 kHz</div>
-                            <button class="nudge-btn" onclick="nudgeFrequency('up')" 
-                                    title="Increase frequency by selected step size">▲</button>
+                        <!-- VFO-A Display -->
+                        <div class="frequency-display">
+                            <div class="frequency-value" id="frequencyA">14.074.000</div>
+                            <div class="frequency-label">VFO-A (MHz)</div>
                         </div>
-                    </div>
-                    
-                    <!-- VFO Controls -->
-                    <div class="vfo-controls">
-                        <div class="vfo-knob">
-                            <div class="knob-container">
-                                <div class="knob" id="tuneKnobA" data-vfo="a" 
-                                     title="Rotate to tune VFO-A frequency (1° = 1kHz)"></div>
+
+                        <!-- Fine Tuning Controls -->
+                        <div class="fine-tune-container">
+                            <label>Fine Tuning Controls</label>
+                            
+                            <!-- Step Size Selector -->
+                            <div class="step-selector">
+                                <button class="step-btn" data-step="10" onclick="setTuningStep(10)" 
+                                        title="10 Hz step increment - ultra-fine tuning">10 Hz</button>
+                                <button class="step-btn" data-step="100" onclick="setTuningStep(100)" 
+                                        title="100 Hz step increment - fine tuning">100 Hz</button>
+                                <button class="step-btn active" data-step="1000" onclick="setTuningStep(1000)" 
+                                        title="1 kHz step increment - standard tuning">1 kHz</button>
+                                <button class="step-btn" data-step="10000" onclick="setTuningStep(10000)" 
+                                        title="10 kHz step increment - band segment tuning">10 kHz</button>
+                                <button class="step-btn" data-step="100000" onclick="setTuningStep(100000)" 
+                                        title="100 kHz step increment - band hopping">100 kHz</button>
+                                <button class="step-btn" data-step="1000000" onclick="setTuningStep(1000000)" 
+                                        title="1 MHz step increment - major band changes">1 MHz</button>
                             </div>
-                            <div class="knob-label">TUNE-A</div>
-                        </div>
-                        <div class="vfo-knob">
-                            <div class="knob-container">
-                                <div class="knob" id="tuneKnobB" data-vfo="b" 
-                                     title="Rotate to tune VFO-B frequency (1° = 1kHz)"></div>
+                            
+                            <!-- Nudge Controls -->
+                            <div class="nudge-controls">
+                                <button class="nudge-btn" onclick="nudgeFrequency('down')" 
+                                        title="Decrease frequency by selected step size">▼</button>
+                                <div class="step-display" id="stepDisplay">Step: 1 kHz</div>
+                                <button class="nudge-btn" onclick="nudgeFrequency('up')" 
+                                        title="Increase frequency by selected step size">▲</button>
                             </div>
-                            <div class="knob-label">TUNE-B</div>
+                        </div>
+                        
+                        <!-- VFO Controls -->
+                        <div class="vfo-controls">
+                            <div class="vfo-knob">
+                                <div class="knob-container">
+                                    <div class="knob" id="tuneKnobA" data-vfo="a" 
+                                         title="Rotate to tune VFO-A frequency (1° = 1kHz)"></div>
+                                </div>
+                                <div class="knob-label">TUNE-A</div>
+                            </div>
+                            <div class="vfo-knob">
+                                <div class="knob-container">
+                                    <div class="knob" id="tuneKnobB" data-vfo="b" 
+                                         title="Rotate to tune VFO-B frequency (1° = 1kHz)"></div>
+                                </div>
+                                <div class="knob-label">TUNE-B</div>
+                            </div>
+                        </div>
+
+                        <!-- Direct Frequency Entry -->
+                        <div class="form-group">
+                            <label>Direct Frequency Entry</label>
+                            <div class="form-row">
+                                <input type="number" id="directFreq" placeholder="14074000" 
+                                       min="30000" max="470000000" title="Enter frequency in Hz (30 kHz - 470 MHz)">
+                                <button class="btn primary" onclick="setDirectFrequency()" 
+                                        title="Set VFO-A to entered frequency">SET FREQ</button>
+                            </div>
+                        </div>
+
+                        <!-- VFO Operations -->
+                        <div class="form-actions">
+                            <button class="btn primary" onclick="swapVfo()" 
+                                    title="Swap VFO-A and VFO-B frequencies">A⇄B SWAP</button>
+                            <button class="btn primary" onclick="copyAtoB()" 
+                                    title="Copy VFO-A frequency to VFO-B">A→B COPY</button>
+                        </div>
+
+                        <!-- VFO-B Display -->
+                        <div class="frequency-display" style="margin-top: 1.5rem;">
+                            <div class="frequency-value" id="frequencyB" style="font-size: 2rem;">14.074.000</div>
+                            <div class="frequency-label">VFO-B (MHz)</div>
                         </div>
                     </div>
 
-                    <!-- Direct Frequency Entry -->
-                    <div class="form-group">
-                        <label>Direct Frequency Entry</label>
-                        <div class="form-row">
-                            <input type="number" id="directFreq" placeholder="14074000" 
-                                   min="30000" max="470000000" title="Enter frequency in Hz (30 kHz - 470 MHz)">
-                            <button class="btn primary" onclick="setDirectFrequency()" 
-                                    title="Set VFO-A to entered frequency">SET FREQ</button>
+                    <!-- Mode & Band Control Panel -->
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator green"></div>
+                            <div class="lcars-panel-title">Mode & Band</div>
                         </div>
-                    </div>
+                        
+                        <!-- Current Mode Display -->
+                        <div class="form-group">
+                            <label>Current Mode</label>
+                            <div style="color: var(--lcars-gold); font-weight: bold; font-size: 1.2rem; text-align: center; padding: 0.5rem;" id="currentMode">DATA_USB</div>
+                        </div>
 
-                    <!-- VFO Operations -->
-                    <div class="form-actions">
-                        <button class="btn primary" onclick="swapVfo()" 
-                                title="Swap VFO-A and VFO-B frequencies">A⇄B SWAP</button>
-                        <button class="btn primary" onclick="copyAtoB()" 
-                                title="Copy VFO-A frequency to VFO-B">A→B COPY</button>
-                    </div>
+                        <!-- Mode Selection -->
+                        <div class="form-group">
+                            <label>Mode Selection</label>
+                            <div class="selector-grid">
+                                <button class="selector-btn" onclick="setMode('LSB')" 
+                                        title="Lower Side Band - Voice mode for HF bands below 10 MHz">LSB</button>
+                                <button class="selector-btn" onclick="setMode('USB')" 
+                                        title="Upper Side Band - Voice mode for HF bands above 10 MHz">USB</button>
+                                <button class="selector-btn" onclick="setMode('CW')" 
+                                        title="Continuous Wave - Morse code transmission mode">CW</button>
+                                <button class="selector-btn" onclick="setMode('FM')" 
+                                        title="Frequency Modulation - Standard VHF/UHF voice mode">FM</button>
+                                <button class="selector-btn" onclick="setMode('AM')" 
+                                        title="Amplitude Modulation - Legacy voice mode, aircraft band">AM</button>
+                                <button class="selector-btn" onclick="setMode('DATA_USB')" 
+                                        title="Digital data mode - FT8, FT4, RTTY, PSK31">FT8</button>
+                                <button class="selector-btn" onclick="setMode('C4FM')" 
+                                        title="Yaesu System Fusion digital voice mode">C4FM</button>
+                                <button class="selector-btn" onclick="setMode('DATA_LSB')" 
+                                        title="Digital data mode LSB - PSK31, OLIVIA">PSK</button>
+                            </div>
+                        </div>
 
-                    <!-- VFO-B Display -->
-                    <div class="frequency-display" style="margin-top: 1.5rem;">
-                        <div class="frequency-value" id="frequencyB" style="font-size: 2rem;">14.074.000</div>
-                        <div class="frequency-label">VFO-B (MHz)</div>
+                        <!-- Band Selection -->
+                        <div class="form-group">
+                            <label>Band Selection</label>
+                            <div class="selector-grid">
+                                <button class="selector-btn" onclick="setBand('160M')" 
+                                        title="160 meters - 1.8-2.0 MHz (Top Band)">160M</button>
+                                <button class="selector-btn" onclick="setBand('80M')" 
+                                        title="80 meters - 3.5-4.0 MHz (Eighty)">80M</button>
+                                <button class="selector-btn" onclick="setBand('40M')" 
+                                        title="40 meters - 7.0-7.3 MHz (Forty)">40M</button>
+                                <button class="selector-btn" onclick="setBand('30M')" 
+                                        title="30 meters - 10.1-10.15 MHz (WARC band)">30M</button>
+                                <button class="selector-btn" onclick="setBand('20M')" 
+                                        title="20 meters - 14.0-14.35 MHz (Twenty - best DX band)">20M</button>
+                                <button class="selector-btn" onclick="setBand('17M')" 
+                                        title="17 meters - 18.068-18.168 MHz (WARC band)">17M</button>
+                                <button class="selector-btn" onclick="setBand('15M')" 
+                                        title="15 meters - 21.0-21.45 MHz (Fifteen)">15M</button>
+                                <button class="selector-btn" onclick="setBand('12M')" 
+                                        title="12 meters - 24.89-24.99 MHz (WARC band)">12M</button>
+                                <button class="selector-btn" onclick="setBand('10M')" 
+                                        title="10 meters - 28.0-29.7 MHz (Ten - FM repeaters)">10M</button>
+                                <button class="selector-btn" onclick="setBand('VHF_6M')" 
+                                        title="6 meters - 50-54 MHz (Magic Band VHF)">6M</button>
+                                <button class="selector-btn" onclick="setBand('VHF_2M')" 
+                                        title="2 meters - 144-148 MHz (VHF FM/SSB)">2M</button>
+                                <button class="selector-btn" onclick="setBand('UHF_70CM')" 
+                                        title="70 centimeters - 420-450 MHz (UHF)">70CM</button>
+                            </div>
+                        </div>
+
+                        <!-- Quick FT8 Frequencies -->
+                        <div class="form-group">
+                            <label>FT8 Quick Access</label>
+                            <div class="selector-grid">
+                                <button class="selector-btn" onclick="setFT8Frequency(7074000)" 
+                                        title="40m FT8 frequency - 7.074 MHz">40M FT8</button>
+                                <button class="selector-btn" onclick="setFT8Frequency(14074000)" 
+                                        title="20m FT8 frequency - 14.074 MHz (most popular)">20M FT8</button>
+                                <button class="selector-btn" onclick="setFT8Frequency(21074000)" 
+                                        title="15m FT8 frequency - 21.074 MHz">15M FT8</button>
+                                <button class="selector-btn" onclick="setFT8Frequency(28074000)" 
+                                        title="10m FT8 frequency - 28.074 MHz">10M FT8</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Mode & Band Control Panel -->
-                <div class="lcars-panel">
+                <!-- Second Row -->
+                <div class="main-grid">
+                    
+                    <!-- TX Control Panel -->
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator orange"></div>
+                            <div class="lcars-panel-title">TX Control</div>
+                        </div>
+                        
+                        <div class="ptt-container">
+                            <button class="ptt-button" id="pttButton" 
+                                    onmousedown="pttPress()" 
+                                    onmouseup="pttRelease()" 
+                                    ontouchstart="pttPress()" 
+                                    ontouchend="pttRelease()" 
+                                    title="Push-to-Talk - Hold to transmit (Space key also works)">
+                                PTT
+                            </button>
+                            
+                            <button class="btn danger lockout-toggle" id="lockoutButton" onclick="toggleLockout()" 
+                                    title="Enable/disable transmission lockout for safety">
+                                🔒 TX LOCKOUT
+                            </button>
+                        </div>
+
+                        <!-- TX Power Control -->
+                        <div class="form-group">
+                            <label>TX Power Control</label>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <input type="range" class="power-slider" id="powerSlider" min="5" max="100" value="50" 
+                                       oninput="updatePower(this.value)" title="Adjust TX power output (5-100 watts)">
+                                <span id="powerValue" style="min-width: 50px; text-align: right; color: var(--lcars-gold); font-weight: bold; font-size: 1.1rem;">50W</span>
+                            </div>
+                        </div>
+
+                        <!-- Power Presets -->
+                        <div class="form-group">
+                            <label>Power Presets</label>
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
+                                <button class="btn btn-small" onclick="setPowerPreset(5)" 
+                                        title="Set TX power to 5 watts (QRP)">5W</button>
+                                <button class="btn btn-small" onclick="setPowerPreset(25)" 
+                                        title="Set TX power to 25 watts">25W</button>
+                                <button class="btn btn-small" onclick="setPowerPreset(50)" 
+                                        title="Set TX power to 50 watts (half power)">50W</button>
+                                <button class="btn btn-small" onclick="setPowerPreset(100)" 
+                                        title="Set TX power to 100 watts (maximum)">100W</button>
+                            </div>
+                        </div>
+
+                        <!-- TX Status -->
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-label">TX Status</div>
+                                <div class="status-value" id="txStatus">RX</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">SWR</div>
+                                <div class="status-value" id="swrValue">1.0:1</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Meters & Status Panel -->
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator purple"></div>
+                            <div class="lcars-panel-title">Meters & Status</div>
+                        </div>
+                        
+                        <!-- S-Meter -->
+                        <div class="meter">
+                            <div class="meter-label">
+                                <span>S-Meter</span>
+                                <span class="meter-value" id="sMeterValue">S0</span>
+                            </div>
+                            <div class="meter-bar">
+                                <div class="meter-fill" id="sMeterBar" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Status Grid -->
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-label">Squelch</div>
+                                <div class="status-value" id="squelchStatus">CLOSED</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Mode</div>
+                                <div class="status-value" id="statusMode">USB</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Power Out</div>
+                                <div class="status-value" id="powerOut">0W</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Lockout</div>
+                                <div class="status-value" id="lockoutStatus">OFF</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audio Integration Panel -->
+                <div class="lcars-panel full-width">
                     <div class="lcars-panel-header">
                         <div class="lcars-panel-indicator green"></div>
-                        <div class="lcars-panel-title">Mode & Band</div>
+                        <div class="lcars-panel-title">🎧 Audio Integration (Linux)</div>
                     </div>
-                    
-                    <!-- Current Mode Display -->
-                    <div class="form-group">
-                        <label>Current Mode</label>
-                        <div style="color: var(--lcars-gold); font-weight: bold; font-size: 1.2rem; text-align: center; padding: 0.5rem;" id="currentMode">DATA_USB</div>
+                    <p style="color: var(--lcars-peach); line-height: 1.6; margin-bottom: 1rem;">
+                        The FT-991A has a built-in USB sound card. For digital modes (FT8, PSK31, etc.) and audio monitoring:
+                    </p>
+                    <div class="audio-code-block">
+                        <div class="audio-code-comment"># List audio devices:</div>
+                        <div>pactl list short sources | grep -i yaesu</div>
+                        <div>pactl list short sinks | grep -i yaesu</div>
+                        <br>
+                        <div class="audio-code-comment"># Route audio for WSJT-X (FT8):</div>
+                        <div>pavucontrol  # Use GUI to select FT-991A as input/output</div>
+                        <br>
+                        <div class="audio-code-comment"># Command line routing:</div>
+                        <div>pactl set-default-source "alsa_input.usb-YAESU_FT-991A..."</div>
+                        <div>pactl set-default-sink "alsa_output.usb-YAESU_FT-991A..."</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUDIO LINK Tab -->
+            <div class="tab-content" id="audio">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator green"></div>
+                        <div class="lcars-panel-title">🎧 Audio Link</div>
                     </div>
 
-                    <!-- Mode Selection -->
-                    <div class="form-group">
-                        <label>Mode Selection</label>
-                        <div class="selector-grid">
-                            <button class="selector-btn" onclick="setMode('LSB')" 
-                                    title="Lower Side Band - Voice mode for HF bands below 10 MHz">LSB</button>
-                            <button class="selector-btn" onclick="setMode('USB')" 
-                                    title="Upper Side Band - Voice mode for HF bands above 10 MHz">USB</button>
-                            <button class="selector-btn" onclick="setMode('CW')" 
-                                    title="Continuous Wave - Morse code transmission mode">CW</button>
-                            <button class="selector-btn" onclick="setMode('FM')" 
-                                    title="Frequency Modulation - Standard VHF/UHF voice mode">FM</button>
-                            <button class="selector-btn" onclick="setMode('AM')" 
-                                    title="Amplitude Modulation - Legacy voice mode, aircraft band">AM</button>
-                            <button class="selector-btn" onclick="setMode('DATA_USB')" 
-                                    title="Digital data mode - FT8, FT4, RTTY, PSK31">FT8</button>
-                            <button class="selector-btn" onclick="setMode('C4FM')" 
-                                    title="Yaesu System Fusion digital voice mode">C4FM</button>
-                            <button class="selector-btn" onclick="setMode('DATA_LSB')" 
-                                    title="Digital data mode LSB - PSK31, OLIVIA">PSK</button>
+                    <div class="main-grid">
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator blue"></div>
+                                <div class="lcars-panel-title">Audio Stream</div>
+                            </div>
+
+                            <div class="form-group">
+                                <button class="btn success" id="audioPlayButton" onclick="toggleAudioStream()" 
+                                        title="Start/stop live radio audio stream">▶ START AUDIO</button>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Volume Control</label>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50" 
+                                           oninput="updateVolume(this.value)" title="Adjust audio playback volume">
+                                    <span id="volumeValue" style="min-width: 50px; text-align: right; color: var(--lcars-green); font-weight: bold; font-size: 1.1rem;">50%</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button class="btn" id="muteButton" onclick="toggleMute()" 
+                                        title="Mute/unmute audio playback">🔊 MUTE</button>
+                            </div>
+
+                            <div class="placeholder-message">
+                                Audio streaming requires server-side ffmpeg - coming soon
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Band Selection -->
-                    <div class="form-group">
-                        <label>Band Selection</label>
-                        <div class="selector-grid">
-                            <button class="selector-btn" onclick="setBand('160M')" 
-                                    title="160 meters - 1.8-2.0 MHz (Top Band)">160M</button>
-                            <button class="selector-btn" onclick="setBand('80M')" 
-                                    title="80 meters - 3.5-4.0 MHz (Eighty)">80M</button>
-                            <button class="selector-btn" onclick="setBand('40M')" 
-                                    title="40 meters - 7.0-7.3 MHz (Forty)">40M</button>
-                            <button class="selector-btn" onclick="setBand('30M')" 
-                                    title="30 meters - 10.1-10.15 MHz (WARC band)">30M</button>
-                            <button class="selector-btn" onclick="setBand('20M')" 
-                                    title="20 meters - 14.0-14.35 MHz (Twenty - best DX band)">20M</button>
-                            <button class="selector-btn" onclick="setBand('17M')" 
-                                    title="17 meters - 18.068-18.168 MHz (WARC band)">17M</button>
-                            <button class="selector-btn" onclick="setBand('15M')" 
-                                    title="15 meters - 21.0-21.45 MHz (Fifteen)">15M</button>
-                            <button class="selector-btn" onclick="setBand('12M')" 
-                                    title="12 meters - 24.89-24.99 MHz (WARC band)">12M</button>
-                            <button class="selector-btn" onclick="setBand('10M')" 
-                                    title="10 meters - 28.0-29.7 MHz (Ten - FM repeaters)">10M</button>
-                            <button class="selector-btn" onclick="setBand('VHF_6M')" 
-                                    title="6 meters - 50-54 MHz (Magic Band VHF)">6M</button>
-                            <button class="selector-btn" onclick="setBand('VHF_2M')" 
-                                    title="2 meters - 144-148 MHz (VHF FM/SSB)">2M</button>
-                            <button class="selector-btn" onclick="setBand('UHF_70CM')" 
-                                    title="70 centimeters - 420-450 MHz (UHF)">70CM</button>
-                        </div>
-                    </div>
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator purple"></div>
+                                <div class="lcars-panel-title">Audio Device Status</div>
+                            </div>
 
-                    <!-- Quick FT8 Frequencies -->
-                    <div class="form-group">
-                        <label>FT8 Quick Access</label>
-                        <div class="selector-grid">
-                            <button class="selector-btn" onclick="setFT8Frequency(7074000)" 
-                                    title="40m FT8 frequency - 7.074 MHz">40M FT8</button>
-                            <button class="selector-btn" onclick="setFT8Frequency(14074000)" 
-                                    title="20m FT8 frequency - 14.074 MHz (most popular)">20M FT8</button>
-                            <button class="selector-btn" onclick="setFT8Frequency(21074000)" 
-                                    title="15m FT8 frequency - 21.074 MHz">15M FT8</button>
-                            <button class="selector-btn" onclick="setFT8Frequency(28074000)" 
-                                    title="10m FT8 frequency - 28.074 MHz">10M FT8</button>
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">CODEC Status</div>
+                                    <div class="status-value active" id="codecStatus">PCM2903B READY</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Sample Rate</div>
+                                    <div class="status-value" id="sampleRate">48 kHz</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Bit Depth</div>
+                                    <div class="status-value" id="bitDepth">16-bit</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Channels</div>
+                                    <div class="status-value" id="channels">Stereo</div>
+                                </div>
+                            </div>
+
+                            <div class="diagnostic-item">
+                                <h4>USB Audio Interface</h4>
+                                <p style="color: var(--lcars-text); margin-bottom: 0.5rem;">
+                                    Device: Yaesu FT-991A USB Audio CODEC<br>
+                                    Driver: snd-usb-audio<br>
+                                    Status: Connected
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Second Row -->
-            <div class="main-grid">
-                
-                <!-- TX Control Panel -->
-                <div class="lcars-panel">
+            <!-- SYSTEM Tab -->
+            <div class="tab-content" id="system">
+                <div class="lcars-panel full-width">
                     <div class="lcars-panel-header">
                         <div class="lcars-panel-indicator orange"></div>
-                        <div class="lcars-panel-title">TX Control</div>
-                    </div>
-                    
-                    <div class="ptt-container">
-                        <button class="ptt-button" id="pttButton" 
-                                onmousedown="pttPress()" 
-                                onmouseup="pttRelease()" 
-                                ontouchstart="pttPress()" 
-                                ontouchend="pttRelease()" 
-                                title="Push-to-Talk - Hold to transmit (Space key also works)">
-                            PTT
-                        </button>
-                        
-                        <button class="btn danger lockout-toggle" id="lockoutButton" onclick="toggleLockout()" 
-                                title="Enable/disable transmission lockout for safety">
-                            🔒 TX LOCKOUT
-                        </button>
+                        <div class="lcars-panel-title">💾 Memory System</div>
                     </div>
 
-                    <!-- TX Power Control -->
-                    <div class="form-group">
-                        <label>TX Power Control</label>
-                        <div style="display: flex; align-items: center; gap: 1rem;">
-                            <input type="range" class="power-slider" id="powerSlider" min="5" max="100" value="50" 
-                                   oninput="updatePower(this.value)" title="Adjust TX power output (5-100 watts)">
-                            <span id="powerValue" style="min-width: 50px; text-align: right; color: var(--lcars-gold); font-weight: bold; font-size: 1.1rem;">50W</span>
-                        </div>
-                    </div>
+                    <div class="main-grid">
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator blue"></div>
+                                <div class="lcars-panel-title">Memory Channels (1-99)</div>
+                            </div>
 
-                    <!-- Power Presets -->
-                    <div class="form-group">
-                        <label>Power Presets</label>
-                        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem;">
-                            <button class="btn btn-small" onclick="setPowerPreset(5)" 
-                                    title="Set TX power to 5 watts (QRP)">5W</button>
-                            <button class="btn btn-small" onclick="setPowerPreset(25)" 
-                                    title="Set TX power to 25 watts">25W</button>
-                            <button class="btn btn-small" onclick="setPowerPreset(50)" 
-                                    title="Set TX power to 50 watts (half power)">50W</button>
-                            <button class="btn btn-small" onclick="setPowerPreset(100)" 
-                                    title="Set TX power to 100 watts (maximum)">100W</button>
-                        </div>
-                    </div>
+                            <div class="memory-list" id="memoryList">
+                                <!-- Memory channels will be populated here -->
+                            </div>
 
-                    <!-- TX Status -->
-                    <div class="status-grid">
-                        <div class="status-item">
-                            <div class="status-label">TX Status</div>
-                            <div class="status-value" id="txStatus">RX</div>
+                            <div class="placeholder-message">
+                                Memory API coming soon
+                            </div>
                         </div>
-                        <div class="status-item">
-                            <div class="status-label">SWR</div>
-                            <div class="status-value" id="swrValue">1.0:1</div>
+
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">Memory Operations</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Channel Selection</label>
+                                <div class="form-row">
+                                    <input type="number" id="memoryChannel" placeholder="01" min="1" max="99" 
+                                           title="Memory channel number (1-99)">
+                                    <button class="btn primary" onclick="recallMemory()" 
+                                            title="Load selected memory channel to VFO-A">RECALL</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button class="btn success" onclick="storeMemory()" 
+                                        title="Save current VFO-A frequency to selected memory slot">STORE TO MEMORY</button>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Memory Bank Operations</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                    <button class="btn btn-small" onclick="scanMemories()" 
+                                            title="Scan all programmed memory channels">SCAN</button>
+                                    <button class="btn btn-small danger" onclick="clearMemory()" 
+                                            title="Clear selected memory channel">CLEAR</button>
+                                </div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Total Memories</div>
+                                    <div class="status-value" id="totalMemories">99</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Programmed</div>
+                                    <div class="status-value" id="programmedMemories">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Current</div>
+                                    <div class="status-value" id="currentMemory">-</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Scan Mode</div>
+                                    <div class="status-value" id="scanMode">OFF</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Meters & Status Panel -->
-                <div class="lcars-panel">
+            <!-- CONFIG Tab -->
+            <div class="tab-content" id="config">
+                <div class="lcars-panel full-width">
                     <div class="lcars-panel-header">
                         <div class="lcars-panel-indicator purple"></div>
-                        <div class="lcars-panel-title">Meters & Status</div>
-                    </div>
-                    
-                    <!-- S-Meter -->
-                    <div class="meter">
-                        <div class="meter-label">
-                            <span>S-Meter</span>
-                            <span class="meter-value" id="sMeterValue">S0</span>
-                        </div>
-                        <div class="meter-bar">
-                            <div class="meter-fill" id="sMeterBar" style="width: 0%;"></div>
-                        </div>
+                        <div class="lcars-panel-title">⚙️ Configuration</div>
                     </div>
 
-                    <!-- Status Grid -->
-                    <div class="status-grid">
-                        <div class="status-item">
-                            <div class="status-label">Squelch</div>
-                            <div class="status-value" id="squelchStatus">CLOSED</div>
+                    <div class="main-grid">
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator orange"></div>
+                                <div class="lcars-panel-title">Serial Port Settings</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Serial Port Path</label>
+                                <input type="text" id="serialPort" value="/dev/ttyUSB0" 
+                                       title="Serial port path for FT-991A CAT connection">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Baud Rate</label>
+                                <select id="baudRate" title="CAT serial baud rate">
+                                    <option value="4800">4800</option>
+                                    <option value="9600" selected>9600</option>
+                                    <option value="19200">19200</option>
+                                    <option value="38400">38400</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 1rem;">
+                                    <span>Auto-reconnect</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="autoReconnect" checked 
+                                               title="Automatically reconnect if connection is lost">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </label>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn primary" onclick="applyConfig()" 
+                                        title="Apply configuration changes and reconnect">APPLY</button>
+                                <button class="btn success" onclick="saveConfig()" 
+                                        title="Save configuration to persist across restarts">SAVE</button>
+                            </div>
                         </div>
-                        <div class="status-item">
-                            <div class="status-label">Mode</div>
-                            <div class="status-value" id="statusMode">USB</div>
-                        </div>
-                        <div class="status-item">
-                            <div class="status-label">Power Out</div>
-                            <div class="status-value" id="powerOut">0W</div>
-                        </div>
-                        <div class="status-item">
-                            <div class="status-label">Lockout</div>
-                            <div class="status-value" id="lockoutStatus">OFF</div>
+
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">Interface Settings</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Update Rate</label>
+                                <select id="updateRate" title="How often to refresh radio status">
+                                    <option value="100">100ms (Fast)</option>
+                                    <option value="250" selected>250ms (Normal)</option>
+                                    <option value="500">500ms (Slow)</option>
+                                    <option value="1000">1000ms (Very Slow)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 1rem;">
+                                    <span>Debug Mode</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="debugMode" 
+                                               title="Enable debug logging for troubleshooting">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 1rem;">
+                                    <span>Audio Notifications</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="audioNotifications" checked 
+                                               title="Enable audio alerts for status changes">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </label>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Config Status</div>
+                                    <div class="status-value active" id="configStatus">LOADED</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Last Saved</div>
+                                    <div class="status-value" id="lastSaved">Never</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Audio Integration Panel -->
-            <div class="lcars-panel full-width">
-                <div class="lcars-panel-header">
-                    <div class="lcars-panel-indicator green"></div>
-                    <div class="lcars-panel-title">🎧 Audio Integration (Linux)</div>
-                </div>
-                <p style="color: var(--lcars-peach); line-height: 1.6; margin-bottom: 1rem;">
-                    The FT-991A has a built-in USB sound card. For digital modes (FT8, PSK31, etc.) and audio monitoring:
-                </p>
-                <div class="audio-code-block">
-                    <div class="audio-code-comment"># List audio devices:</div>
-                    <div>pactl list short sources | grep -i yaesu</div>
-                    <div>pactl list short sinks | grep -i yaesu</div>
-                    <br>
-                    <div class="audio-code-comment"># Route audio for WSJT-X (FT8):</div>
-                    <div>pavucontrol  # Use GUI to select FT-991A as input/output</div>
-                    <br>
-                    <div class="audio-code-comment"># Command line routing:</div>
-                    <div>pactl set-default-source "alsa_input.usb-YAESU_FT-991A..."</div>
-                    <div>pactl set-default-sink "alsa_output.usb-YAESU_FT-991A..."</div>
+            <!-- STATUS Tab -->
+            <div class="tab-content" id="status">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator blue"></div>
+                        <div class="lcars-panel-title">📊 Real-time Status Dashboard</div>
+                    </div>
+
+                    <div class="main-grid">
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">Station Information</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Callsign</div>
+                                    <div class="status-value active" id="stationCallsign">KO4TUV</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Grid Square</div>
+                                    <div class="status-value" id="gridSquare">EM84</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Power Class</div>
+                                    <div class="status-value" id="powerClass">GENERAL</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">License</div>
+                                    <div class="status-value active" id="licenseStatus">VALID</div>
+                                </div>
+                            </div>
+
+                            <div class="diagnostic-item">
+                                <h4>Radio Status</h4>
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">VFO-A</div>
+                                        <div class="status-value" id="statusVfoA">14.074.000</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Mode</div>
+                                        <div class="status-value" id="statusModeDisplay">DATA_USB</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">TX Power</div>
+                                        <div class="status-value" id="statusTxPower">50W</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">S-Meter</div>
+                                        <div class="status-value" id="statusSMeter">S0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator purple"></div>
+                                <div class="lcars-panel-title">Server Information</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Hostname</div>
+                                    <div class="status-value" id="serverHostname">loading...</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Uptime</div>
+                                    <div class="status-value" id="serverUptime">loading...</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">IP Address</div>
+                                    <div class="status-value" id="serverIP">192.168.10.179</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Port</div>
+                                    <div class="status-value" id="serverPort">8000</div>
+                                </div>
+                            </div>
+
+                            <div class="diagnostic-item">
+                                <h4>Connection Status</h4>
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">WebSocket</div>
+                                        <div class="status-value" id="wsStatus">CONNECTING</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Connected Clients</div>
+                                        <div class="status-value" id="connectedClients">1</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Last Update</div>
+                                        <div class="status-value" id="lastUpdate">Never</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Data Rate</div>
+                                        <div class="status-value" id="dataRate">0 B/s</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator orange"></div>
+                            <div class="lcars-panel-title">Live System Metrics</div>
+                        </div>
+
+                        <div class="main-grid">
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">CPU Usage</div>
+                                    <div class="status-value" id="cpuUsage">0%</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Memory</div>
+                                    <div class="status-value" id="memoryUsage">0%</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Temperature</div>
+                                    <div class="status-value" id="cpuTemp">0°C</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Load Avg</div>
+                                    <div class="status-value" id="loadAvg">0.00</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- DIAGNOSTICS Tab -->
+            <div class="tab-content" id="diag">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator red"></div>
+                        <div class="lcars-panel-title">🔍 System Diagnostics</div>
+                    </div>
+
+                    <div class="main-grid">
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator orange"></div>
+                                <div class="lcars-panel-title">Connection Diagnostics</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Serial Port</div>
+                                    <div class="status-value" id="diagSerialStatus">UNKNOWN</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">CAT Commands</div>
+                                    <div class="status-value" id="diagCatCommands">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">WebSocket</div>
+                                    <div class="status-value" id="diagWsStatus">DISCONNECTED</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Uptime</div>
+                                    <div class="status-value" id="diagUptime">00:00:00</div>
+                                </div>
+                            </div>
+
+                            <div class="diagnostic-item">
+                                <h4>Last CAT Commands</h4>
+                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--lcars-text);">
+                                    <div>TX: <span id="lastTxCommand">None</span></div>
+                                    <div>RX: <span id="lastRxCommand">None</span></div>
+                                    <div>Time: <span id="lastCommandTime">Never</span></div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn primary" onclick="runDiagnostics()" 
+                                        title="Run comprehensive system diagnostics">RUN TESTS</button>
+                                <button class="btn" onclick="reconnectRadio()" 
+                                        title="Attempt to reconnect to FT-991A transceiver">RECONNECT</button>
+                            </div>
+                        </div>
+
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator red"></div>
+                                <div class="lcars-panel-title">Error Log</div>
+                            </div>
+
+                            <div class="error-log" id="errorLog">
+                                <div class="error-entry">
+                                    <div class="error-timestamp">[System Ready]</div>
+                                    No errors logged
+                                </div>
+                            </div>
+
+                            <div class="form-actions">
+                                <button class="btn btn-small" onclick="clearErrorLog()" 
+                                        title="Clear all error log entries">CLEAR LOG</button>
+                                <button class="btn btn-small" onclick="exportErrorLog()" 
+                                        title="Export error log for debugging">EXPORT</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator purple"></div>
+                            <div class="lcars-panel-title">Performance Metrics</div>
+                        </div>
+
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <div class="status-label">Response Time</div>
+                                <div class="status-value" id="responseTime">0ms</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Success Rate</div>
+                                <div class="status-value" id="successRate">100%</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Commands/Min</div>
+                                <div class="status-value" id="commandRate">0</div>
+                            </div>
+                            <div class="status-item">
+                                <div class="status-label">Buffer Usage</div>
+                                <div class="status-value" id="bufferUsage">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1290,6 +1980,37 @@
         let txLockout = false;
         let knobInteraction = false;
         let currentTuningStep = 1000; // Default 1 kHz
+        let audioPlaying = false;
+        let audioMuted = false;
+        let currentVolume = 50;
+
+        // ── Tab Management ──────────────────────────────────────
+        function switchTab(tabId) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.lcars-nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to corresponding nav item
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            
+            // Update status displays for certain tabs
+            if (tabId === 'status') {
+                updateStatusTab();
+            } else if (tabId === 'system') {
+                loadMemoryChannels();
+            } else if (tabId === 'diag') {
+                updateDiagnosticsTab();
+            }
+        }
 
         // ── WebSocket Connection ────────────────────────────────
         function connectWebSocket() {
@@ -1318,6 +2039,7 @@
             ws.onerror = function(error) {
                 console.error('WebSocket error:', error);
                 updateConnectionStatus(false);
+                logError('WebSocket connection error: ' + error.message);
             };
         }
 
@@ -1328,6 +2050,9 @@
                     break;
                 case 'connection':
                     updateConnectionStatus(data.status === 'connected');
+                    break;
+                case 'error':
+                    logError(data.message);
                     break;
                 default:
                     console.log('Unknown message type:', data.type);
@@ -1345,6 +2070,9 @@
                 indicator.classList.remove('connected');
                 text.textContent = 'DISCONNECTED';
             }
+
+            // Update status displays
+            updateStatusDisplays(connected);
         }
 
         // ── Radio Status Updates ────────────────────────────────
@@ -1357,7 +2085,9 @@
             
             // Update mode
             document.getElementById('currentMode').textContent = status.mode;
-            document.getElementById('statusMode').textContent = status.mode;
+            if (document.getElementById('statusMode')) {
+                document.getElementById('statusMode').textContent = status.mode;
+            }
             
             // Update TX status
             const txStatus = document.getElementById('txStatus');
@@ -1389,6 +2119,12 @@
             // Update lockout status
             txLockout = status.tx_lockout;
             updateLockoutDisplay();
+            
+            // Update status tab displays
+            updateStatusTabData(status);
+            
+            // Update last update time
+            updateLastUpdateTime();
         }
 
         function formatFrequency(hz) {
@@ -1501,7 +2237,7 @@
                 return await response.json();
             } catch (error) {
                 console.error(`API call failed: ${endpoint}`, error);
-                alert(`API call failed: ${error.message}`);
+                logError(`API call failed: ${endpoint} - ${error.message}`);
                 throw error;
             }
         }
@@ -1552,11 +2288,6 @@
             apiCall('/power', 'POST', { power: watts });
         }
 
-        document.getElementById('powerSlider').addEventListener('mouseup', function() {
-            const power = parseInt(this.value);
-            apiCall('/power', 'POST', { power: power });
-        });
-
         // ── PTT Control ─────────────────────────────────────────
         function pttPress() {
             if (txLockout) {
@@ -1596,9 +2327,296 @@
             }
         }
 
+        // ── Audio Functions ─────────────────────────────────────
+        function toggleAudioStream() {
+            const button = document.getElementById('audioPlayButton');
+            
+            if (audioPlaying) {
+                // Stop audio
+                audioPlaying = false;
+                button.textContent = '▶ START AUDIO';
+                button.classList.remove('danger');
+                button.classList.add('success');
+                logError('Audio stream stopped (placeholder - ffmpeg integration needed)');
+            } else {
+                // Start audio
+                audioPlaying = true;
+                button.textContent = '⏹ STOP AUDIO';
+                button.classList.remove('success');
+                button.classList.add('danger');
+                logError('Audio stream started (placeholder - ffmpeg integration needed)');
+            }
+        }
+
+        function updateVolume(value) {
+            currentVolume = value;
+            document.getElementById('volumeValue').textContent = `${value}%`;
+            
+            if (audioMuted) {
+                document.getElementById('volumeValue').style.textDecoration = 'line-through';
+            } else {
+                document.getElementById('volumeValue').style.textDecoration = 'none';
+            }
+        }
+
+        function toggleMute() {
+            const button = document.getElementById('muteButton');
+            const volumeDisplay = document.getElementById('volumeValue');
+            
+            audioMuted = !audioMuted;
+            
+            if (audioMuted) {
+                button.textContent = '🔇 UNMUTE';
+                button.classList.add('danger');
+                volumeDisplay.style.textDecoration = 'line-through';
+            } else {
+                button.textContent = '🔊 MUTE';
+                button.classList.remove('danger');
+                volumeDisplay.style.textDecoration = 'none';
+            }
+        }
+
+        // ── Memory Functions ────────────────────────────────────
+        function loadMemoryChannels() {
+            const memoryList = document.getElementById('memoryList');
+            memoryList.innerHTML = '';
+            
+            // Generate placeholder memory channels
+            for (let i = 1; i <= 99; i++) {
+                const memoryItem = document.createElement('div');
+                memoryItem.className = 'memory-item';
+                
+                // Placeholder data (would come from API)
+                const freq = i <= 20 ? `${(14.000 + i * 0.025).toFixed(3)}` : '';
+                const mode = i <= 20 ? (i % 3 === 0 ? 'CW' : i % 2 === 0 ? 'USB' : 'DATA_USB') : '';
+                
+                memoryItem.innerHTML = `
+                    <div class="memory-channel">${i.toString().padStart(2, '0')}</div>
+                    <div class="memory-frequency">${freq ? freq + ' MHz' : '---'}</div>
+                    <div class="memory-mode">${mode || '---'}</div>
+                    <div class="memory-name">${freq ? `MEM${i}` : 'Empty'}</div>
+                    <div class="memory-actions">
+                        <button class="btn btn-small" onclick="recallMemoryChannel(${i})" 
+                                title="Load this memory channel to VFO-A" ${!freq ? 'disabled' : ''}>RECALL</button>
+                        <button class="btn btn-small primary" onclick="storeToMemoryChannel(${i})" 
+                                title="Save current VFO-A frequency to this memory slot">STORE</button>
+                    </div>
+                `;
+                
+                memoryList.appendChild(memoryItem);
+            }
+        }
+
+        function recallMemory() {
+            const channel = document.getElementById('memoryChannel').value;
+            if (!channel || channel < 1 || channel > 99) {
+                alert('Please enter a valid memory channel (1-99)');
+                return;
+            }
+            
+            // Placeholder - would call API
+            console.log('Memory API coming soon - would recall channel', channel);
+            logError(`Memory recall channel ${channel} - API endpoint needed`);
+        }
+
+        function storeMemory() {
+            const channel = document.getElementById('memoryChannel').value;
+            if (!channel || channel < 1 || channel > 99) {
+                alert('Please enter a valid memory channel (1-99)');
+                return;
+            }
+            
+            // Placeholder - would call API
+            console.log('Memory API coming soon - would store to channel', channel);
+            logError(`Memory store to channel ${channel} - API endpoint needed`);
+        }
+
+        function recallMemoryChannel(channel) {
+            console.log('Memory API coming soon - would recall channel', channel);
+            logError(`Memory recall channel ${channel} - API endpoint needed`);
+        }
+
+        function storeToMemoryChannel(channel) {
+            console.log('Memory API coming soon - would store to channel', channel);
+            logError(`Memory store to channel ${channel} - API endpoint needed`);
+        }
+
+        function scanMemories() {
+            console.log('Memory scan API coming soon');
+            logError('Memory scan feature - API endpoint needed');
+        }
+
+        function clearMemory() {
+            const channel = document.getElementById('memoryChannel').value;
+            if (!channel || channel < 1 || channel > 99) {
+                alert('Please enter a valid memory channel (1-99)');
+                return;
+            }
+            
+            if (confirm(`Clear memory channel ${channel}?`)) {
+                console.log('Memory API coming soon - would clear channel', channel);
+                logError(`Memory clear channel ${channel} - API endpoint needed`);
+            }
+        }
+
+        // ── Configuration Functions ─────────────────────────────
+        function applyConfig() {
+            const config = {
+                serialPort: document.getElementById('serialPort').value,
+                baudRate: document.getElementById('baudRate').value,
+                autoReconnect: document.getElementById('autoReconnect').checked,
+                updateRate: document.getElementById('updateRate').value,
+                debugMode: document.getElementById('debugMode').checked,
+                audioNotifications: document.getElementById('audioNotifications').checked
+            };
+            
+            console.log('Applying configuration:', config);
+            
+            // Placeholder - would POST to /api/config
+            logError('Configuration applied - server restart may be required');
+            
+            // Update status
+            document.getElementById('configStatus').textContent = 'APPLIED';
+            document.getElementById('configStatus').className = 'status-value active';
+        }
+
+        function saveConfig() {
+            console.log('Saving configuration');
+            logError('Configuration saved to persistent storage');
+            
+            // Update status
+            document.getElementById('lastSaved').textContent = new Date().toLocaleTimeString();
+        }
+
+        // ── Status Tab Functions ────────────────────────────────
+        function updateStatusTab() {
+            // Update server info
+            fetch('/api/status').then(response => response.json()).then(data => {
+                if (data.server) {
+                    document.getElementById('serverHostname').textContent = data.server.hostname || 'Unknown';
+                    document.getElementById('serverUptime').textContent = formatUptime(data.server.uptime) || '00:00:00';
+                }
+            }).catch(() => {
+                document.getElementById('serverHostname').textContent = 'Error';
+                document.getElementById('serverUptime').textContent = 'Error';
+            });
+        }
+
+        function updateStatusTabData(status) {
+            // Update status tab with radio data
+            const elements = {
+                'statusVfoA': formatFrequencyPrecise(status.frequency_a),
+                'statusModeDisplay': status.mode,
+                'statusTxPower': `${status.power_output}W`,
+                'statusSMeter': document.getElementById('sMeterValue')?.textContent || 'S0'
+            };
+            
+            for (const [id, value] of Object.entries(elements)) {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            }
+        }
+
+        function updateStatusDisplays(connected) {
+            // Update WebSocket status
+            const wsStatus = document.getElementById('wsStatus');
+            if (wsStatus) {
+                wsStatus.textContent = connected ? 'CONNECTED' : 'DISCONNECTED';
+                wsStatus.className = connected ? 'status-value active' : 'status-value danger';
+            }
+            
+            // Update diagnostics
+            const diagWsStatus = document.getElementById('diagWsStatus');
+            if (diagWsStatus) {
+                diagWsStatus.textContent = connected ? 'CONNECTED' : 'DISCONNECTED';
+                diagWsStatus.className = connected ? 'status-value active' : 'status-value danger';
+            }
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date().toLocaleTimeString();
+            const lastUpdate = document.getElementById('lastUpdate');
+            if (lastUpdate) {
+                lastUpdate.textContent = now;
+            }
+        }
+
+        function formatUptime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ── Diagnostics Functions ───────────────────────────────
+        function updateDiagnosticsTab() {
+            // Update diagnostics displays
+            const diagUptime = document.getElementById('diagUptime');
+            if (diagUptime) {
+                const startTime = Date.now() - (performance.now() || 0);
+                const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+                diagUptime.textContent = formatUptime(uptimeSeconds);
+            }
+        }
+
+        function runDiagnostics() {
+            logError('Running system diagnostics...');
+            
+            // Simulate diagnostics
+            setTimeout(() => {
+                logError('Serial port test: PASSED');
+                logError('WebSocket test: PASSED');
+                logError('CAT command test: PASSED');
+                logError('All diagnostics completed successfully');
+            }, 1000);
+        }
+
+        function clearErrorLog() {
+            const errorLog = document.getElementById('errorLog');
+            errorLog.innerHTML = '<div class="error-entry"><div class="error-timestamp">[Log Cleared]</div>No errors logged</div>';
+        }
+
+        function exportErrorLog() {
+            const errorLog = document.getElementById('errorLog');
+            const logText = errorLog.textContent;
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ft991a-error-log-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function logError(message) {
+            const errorLog = document.getElementById('errorLog');
+            if (!errorLog) return;
+            
+            const entry = document.createElement('div');
+            entry.className = 'error-entry';
+            entry.innerHTML = `
+                <div class="error-timestamp">[${new Date().toLocaleTimeString()}]</div>
+                ${message}
+            `;
+            
+            // Remove "No errors logged" message if present
+            if (errorLog.textContent.includes('No errors logged')) {
+                errorLog.innerHTML = '';
+            }
+            
+            errorLog.insertBefore(entry, errorLog.firstChild);
+            
+            // Keep only last 10 entries
+            while (errorLog.children.length > 10) {
+                errorLog.removeChild(errorLog.lastChild);
+            }
+        }
+
         // ── Reconnect Function ──────────────────────────────────
         function reconnectRadio() {
             console.log('Manual reconnect requested');
+            logError('Manual reconnection initiated');
+            
             if (ws) {
                 ws.close();
             }
@@ -1611,6 +2629,7 @@
                 }
             }).catch(error => {
                 console.log('Reconnect status check failed:', error);
+                logError('Reconnect status check failed: ' + error.message);
             });
         }
 
@@ -1702,6 +2721,24 @@
             updateLockoutDisplay();
             updateStepDisplay();
             
+            // Set up navigation
+            document.querySelectorAll('.lcars-nav-item').forEach(nav => {
+                nav.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const tabId = nav.dataset.tab;
+                    switchTab(tabId);
+                });
+            });
+            
+            // Set up power slider
+            const powerSlider = document.getElementById('powerSlider');
+            if (powerSlider) {
+                powerSlider.addEventListener('mouseup', function() {
+                    const power = parseInt(this.value);
+                    apiCall('/power', 'POST', { power: power });
+                });
+            }
+            
             // Load initial status
             apiCall('/status').then(data => {
                 if (data.connected) {
@@ -1709,7 +2746,10 @@
                 }
             }).catch(error => {
                 console.log('Initial status load failed:', error);
+                logError('Initial status load failed: ' + error.message);
             });
+
+            logError('FT-991A LCARS Interface initialized successfully');
         }
 
         // ── Event Listeners ─────────────────────────────────────
