@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -110,7 +111,133 @@ class ConnectionManager:
         for conn in dead_connections:
             self.disconnect(conn)
 
+class AudioConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+        self.audio_process: Optional[subprocess.Popen] = None
+        self.streaming_task: Optional[asyncio.Task] = None
+        
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        
+        # Start audio streaming if this is the first client
+        if len(self.active_connections) == 1:
+            await self.start_audio_stream()
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+        
+        # Stop audio streaming if no more clients
+        if len(self.active_connections) == 0:
+            self.stop_audio_stream()
+
+    async def broadcast_audio(self, data: bytes):
+        if not self.active_connections:
+            return
+        
+        dead_connections = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_bytes(data)
+            except Exception as e:
+                logger.warning(f"Audio WebSocket send failed: {e}")
+                dead_connections.append(connection)
+        
+        # Clean up dead connections
+        for conn in dead_connections:
+            self.disconnect(conn)
+
+    async def start_audio_stream(self):
+        """Start audio capture from PCM2903B CODEC"""
+        if self.audio_process or self.streaming_task:
+            return
+        
+        try:
+            # Try different possible device names for PCM2903B
+            audio_devices = [
+                "hw:CARD=CODEC",
+                "hw:CARD=Device", 
+                "hw:CARD=USB",
+                "hw:1,0",  # Common fallback
+                "hw:0,0"   # Another fallback
+            ]
+            
+            device_found = None
+            for device in audio_devices:
+                try:
+                    # Test the device quickly
+                    test_proc = subprocess.Popen([
+                        "arecord", "-D", device, "-f", "S16_LE", "-r", "48000", 
+                        "-c", "1", "-t", "raw", "--duration=1"
+                    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    test_proc.wait(timeout=2)
+                    if test_proc.returncode == 0:
+                        device_found = device
+                        logger.info(f"Found audio device: {device}")
+                        break
+                except (subprocess.TimeoutExpired, Exception):
+                    test_proc.kill() if test_proc else None
+                    continue
+            
+            if not device_found:
+                logger.error("No compatible audio device found")
+                return
+                
+            # Start the audio capture process
+            self.audio_process = subprocess.Popen([
+                "arecord", 
+                "-D", device_found,
+                "-f", "S16_LE",      # 16-bit signed little-endian
+                "-r", "48000",       # 48 kHz sample rate
+                "-c", "1",           # Mono
+                "-t", "raw"          # Raw PCM output
+            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            # Start streaming task
+            self.streaming_task = asyncio.create_task(self._stream_audio())
+            logger.info(f"Audio streaming started with device: {device_found}")
+            
+        except Exception as e:
+            logger.error(f"Failed to start audio stream: {e}")
+            self.stop_audio_stream()
+
+    async def _stream_audio(self):
+        """Stream audio data to WebSocket clients"""
+        chunk_size = 4096
+        
+        try:
+            while self.audio_process and self.audio_process.poll() is None:
+                data = self.audio_process.stdout.read(chunk_size)
+                if data:
+                    await self.broadcast_audio(data)
+                else:
+                    await asyncio.sleep(0.01)  # Small delay to prevent busy loop
+                    
+        except Exception as e:
+            logger.error(f"Audio streaming error: {e}")
+        finally:
+            self.stop_audio_stream()
+
+    def stop_audio_stream(self):
+        """Stop audio capture and streaming"""
+        if self.streaming_task:
+            self.streaming_task.cancel()
+            self.streaming_task = None
+            
+        if self.audio_process:
+            self.audio_process.terminate()
+            try:
+                self.audio_process.wait(timeout=2)
+            except subprocess.TimeoutExpired:
+                self.audio_process.kill()
+            self.audio_process = None
+            
+        logger.info("Audio streaming stopped")
+
 manager = ConnectionManager()
+audio_manager = AudioConnectionManager()
 
 # ── Radio Control Functions ──────────────────────────────────
 
@@ -364,6 +491,71 @@ async def get_bands():
         "bands": [band.name for band in Band]
     }
 
+@app.get("/api/audio/devices")
+async def get_audio_devices():
+    """List available ALSA capture devices for audio setup."""
+    try:
+        # Get detailed device list
+        result = subprocess.run(['arecord', '-l'], capture_output=True, text=True)
+        if result.returncode != 0:
+            return {"success": False, "error": "arecord not available"}
+            
+        devices = []
+        current_card = None
+        
+        for line in result.stdout.split('\n'):
+            line = line.strip()
+            if line.startswith('card '):
+                # Parse card line: "card 1: Device [USB Audio CODEC], device 0: USB Audio [USB Audio]"
+                parts = line.split(':', 2)
+                if len(parts) >= 2:
+                    card_info = parts[0]  # "card 1"
+                    device_info = parts[1].strip()  # "Device [USB Audio CODEC]"
+                    
+                    card_num = card_info.split()[1]
+                    if '[' in device_info and ']' in device_info:
+                        device_name = device_info.split('[')[1].split(']')[0]
+                    else:
+                        device_name = device_info
+                    
+                    current_card = {
+                        "card_num": int(card_num),
+                        "name": device_name,
+                        "devices": []
+                    }
+                    
+            elif line.startswith('  Subdevices:') and current_card:
+                # Parse subdevice info
+                subdevice_count = line.split(':')[1].strip().split('/')[0]
+                current_card["subdevices"] = int(subdevice_count)
+                
+                # Create device entry
+                device_entry = {
+                    "card": current_card["card_num"],
+                    "device": 0,  # Usually device 0 for audio
+                    "name": current_card["name"],
+                    "hw_name": f"hw:{current_card['card_num']},0",
+                    "card_name": f"hw:CARD={current_card['name'].replace(' ', '').replace('-', '')[:8]}",
+                    "is_usb_codec": "USB Audio CODEC" in current_card["name"] or "PCM2903B" in current_card["name"],
+                    "subdevices": current_card.get("subdevices", 1)
+                }
+                devices.append(device_entry)
+                current_card = None
+        
+        # Also get PCM device list for additional info
+        pcm_result = subprocess.run(['arecord', '-L'], capture_output=True, text=True)
+        pcm_info = pcm_result.stdout if pcm_result.returncode == 0 else ""
+        
+        return {
+            "success": True, 
+            "devices": devices,
+            "raw_output": result.stdout,
+            "pcm_info": pcm_info
+        }
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
 @app.post("/api/vfo/swap")
 async def swap_vfo():
     """Swap VFO-A and VFO-B."""
@@ -558,6 +750,38 @@ async def websocket_endpoint(websocket: WebSocket):
         logger.error(f"WebSocket error: {e}")
         manager.disconnect(websocket)
 
+@app.websocket("/ws/audio")
+async def audio_websocket_endpoint(websocket: WebSocket):
+    """WebSocket for audio streaming from PCM2903B CODEC."""
+    await audio_manager.connect(websocket)
+    try:
+        # Send initial audio info
+        await websocket.send_text(json.dumps({
+            "type": "audio_info",
+            "format": "S16_LE",
+            "sample_rate": 48000,
+            "channels": 1,
+            "chunk_size": 4096
+        }))
+        
+        # Keep connection alive and handle client messages
+        while True:
+            try:
+                message = await websocket.receive_text()
+                # Handle client control messages if needed
+                data = json.loads(message)
+                if data.get("type") == "ping":
+                    await websocket.send_text(json.dumps({"type": "pong"}))
+            except Exception:
+                # Client disconnected or sent binary data
+                break
+                
+    except WebSocketDisconnect:
+        audio_manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"Audio WebSocket error: {e}")
+        audio_manager.disconnect(websocket)
+
 # ── Startup/Shutdown ─────────────────────────────────────────
 
 @app.on_event("startup")
@@ -569,8 +793,13 @@ async def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Clean shutdown - ensure PTT is off."""
+    """Clean shutdown - ensure PTT is off and audio stopped."""
     logger.info("FT-991A Web GUI shutting down...")
+    
+    # Stop audio streaming
+    audio_manager.stop_audio_stream()
+    
+    # Disconnect radio safely
     if radio_connected and radio:
         try:
             radio.ptt_off()  # Safety
