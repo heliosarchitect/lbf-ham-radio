@@ -14,6 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+import serial.tools.list_ports
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -52,6 +53,15 @@ class PTTRequest(BaseModel):
 class ConfigRequest(BaseModel):
     port: str = "/dev/ttyUSB0"
     baudrate: int = 38400
+
+class SetupTestRequest(BaseModel):
+    port: str
+    baudrate: int
+
+class SetupSaveRequest(BaseModel):
+    port: str
+    baudrate: int
+    callsign: Optional[str] = None
 
 # ── Global State ─────────────────────────────────────────────
 
@@ -403,6 +413,115 @@ async def get_config():
         "config": radio_config,
         "connected": radio_connected
     }
+
+# ── Setup Wizard Endpoints ───────────────────────────────────
+
+@app.get("/api/setup/ports")
+async def get_setup_ports():
+    """List available serial ports for setup wizard."""
+    try:
+        ports = []
+        for port in serial.tools.list_ports.comports():
+            port_info = {
+                "device": port.device,
+                "description": port.description or "Unknown device",
+                "manufacturer": port.manufacturer or "Unknown",
+                "vid": port.vid,
+                "pid": port.pid
+            }
+            # Add helpful info for common devices
+            if "CP210" in port.description or "Silicon Labs" in (port.manufacturer or ""):
+                port_info["likely_ft991a"] = True
+                port_info["description"] += " (CP2105 - likely FT-991A)"
+            else:
+                port_info["likely_ft991a"] = False
+            
+            ports.append(port_info)
+        
+        return {"success": True, "ports": ports}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@app.post("/api/setup/test")
+async def test_setup_connection(req: SetupTestRequest):
+    """Test a port+baud combination for setup wizard."""
+    test_radio = None
+    try:
+        # Create temporary radio connection
+        test_radio = FT991A(req.port, req.baudrate)
+        
+        # Attempt connection
+        if test_radio.connect():
+            # Test basic CAT command
+            status = test_radio.get_status()
+            
+            # Get radio identification if possible
+            radio_info = {
+                "model": "FT-991A",  # We know this from the CAT implementation
+                "frequency_a": status.frequency_a,
+                "mode": status.mode,
+                "connected": True
+            }
+            
+            test_radio.disconnect()
+            return {
+                "success": True,
+                "connected": True,
+                "radio_info": radio_info
+            }
+        else:
+            if test_radio:
+                test_radio.disconnect()
+            return {
+                "success": False,
+                "connected": False,
+                "error": "No response from radio"
+            }
+            
+    except Exception as e:
+        if test_radio:
+            try:
+                test_radio.disconnect()
+            except:
+                pass
+        return {
+            "success": False,
+            "connected": False,
+            "error": str(e)
+        }
+
+@app.post("/api/setup/save")
+async def save_setup_config(req: SetupSaveRequest):
+    """Save setup wizard configuration."""
+    global radio_config
+    
+    try:
+        # Disconnect current radio if connected
+        if radio_connected:
+            await disconnect_radio()
+        
+        # Update configuration
+        radio_config["port"] = req.port
+        radio_config["baudrate"] = req.baudrate
+        
+        # Store callsign in config if provided
+        if req.callsign:
+            radio_config["callsign"] = req.callsign.upper()
+        
+        # Attempt connection
+        await connect_radio()
+        
+        return {
+            "success": True,
+            "connected": radio_connected,
+            "config": radio_config
+        }
+        
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
 
 # ── WebSocket Endpoint ───────────────────────────────────────
 
