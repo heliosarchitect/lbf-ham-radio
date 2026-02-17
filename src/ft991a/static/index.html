@@ -1780,7 +1780,8 @@
                                 <div class="form-group">
                                     <label>Color Palette</label>
                                     <div class="selector-grid">
-                                        <button class="selector-btn active" onclick="setColorPalette('amber')" title="LCARS amber color scheme">AMBER</button>
+                                        <button class="selector-btn active" onclick="setColorPalette('radio')" title="FT-991A radio-style heat map (blue→cyan→green→yellow→red)">RADIO</button>
+                                        <button class="selector-btn" onclick="setColorPalette('amber')" title="LCARS amber color scheme">AMBER</button>
                                         <button class="selector-btn" onclick="setColorPalette('blue')" title="Blue color scheme">BLUE</button>
                                         <button class="selector-btn" onclick="setColorPalette('green')" title="Green color scheme">GREEN</button>
                                         <button class="selector-btn" onclick="setColorPalette('gray')" title="Grayscale color scheme">GRAY</button>
@@ -2670,7 +2671,7 @@
             fftSize: 1024,
             zoomLevel: 1,
             scrollSpeed: 5,
-            colorPalette: 'amber',
+            colorPalette: 'radio',
             canvasHeight: 400
         };
         let audioLevel = 0;
@@ -3833,19 +3834,74 @@
             const ctx = waterfallCtx;
             const width = canvas.width;
             const height = canvas.height;
+            const spectrumHeight = Math.floor(height * 0.25); // Top 25% = spectrum analyzer
+            const waterfallTop = spectrumHeight;
+            const waterfallHeight = height - spectrumHeight;
             
-            // Scroll existing data up
-            const imageData = ctx.getImageData(0, 0, width, height - waterfallConfig.scrollSpeed);
-            ctx.clearRect(0, 0, width, height);
-            ctx.putImageData(imageData, 0, waterfallConfig.scrollSpeed);
-            
-            // Draw new line at top
-            if (waterfallData.length > 0) {
-                const latestData = waterfallData[waterfallData.length - 1];
-                drawWaterfallLine(ctx, latestData, 0, width);
+            // Scroll waterfall portion down
+            if (waterfallHeight > waterfallConfig.scrollSpeed) {
+                const imgData = ctx.getImageData(0, waterfallTop, width, waterfallHeight - waterfallConfig.scrollSpeed);
+                ctx.putImageData(imgData, 0, waterfallTop + waterfallConfig.scrollSpeed);
             }
             
-            // Continue animation
+            // Draw new waterfall line
+            if (waterfallData.length > 0) {
+                const latestData = waterfallData[waterfallData.length - 1];
+                drawWaterfallLine(ctx, latestData, waterfallTop, width);
+                
+                // Draw spectrum analyzer (top section)
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                ctx.fillRect(0, 0, width, spectrumHeight);
+                
+                // Grid lines
+                ctx.strokeStyle = 'rgba(255, 168, 0, 0.12)';
+                ctx.lineWidth = 1;
+                for (let g = 0; g < 5; g++) {
+                    const gy = spectrumHeight * (1 - g / 4) * 0.9 + spectrumHeight * 0.05;
+                    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(width, gy); ctx.stroke();
+                }
+                
+                // Spectrum fill (semi-transparent)
+                const grad = ctx.createLinearGradient(0, spectrumHeight, 0, 0);
+                grad.addColorStop(0, 'rgba(0, 100, 200, 0.1)');
+                grad.addColorStop(0.5, 'rgba(0, 200, 100, 0.15)');
+                grad.addColorStop(1, 'rgba(200, 50, 50, 0.2)');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.moveTo(0, spectrumHeight);
+                for (let x = 0; x < width; x++) {
+                    const binIndex = Math.floor((x / width) * latestData.length);
+                    const val = (latestData[binIndex] || 0) / 255.0;
+                    const y = spectrumHeight - val * spectrumHeight * 0.9;
+                    ctx.lineTo(x, y);
+                }
+                ctx.lineTo(width, spectrumHeight);
+                ctx.closePath();
+                ctx.fill();
+                
+                // Spectrum line (bright)
+                ctx.strokeStyle = 'rgba(100, 220, 255, 0.9)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                for (let x = 0; x < width; x++) {
+                    const binIndex = Math.floor((x / width) * latestData.length);
+                    const val = (latestData[binIndex] || 0) / 255.0;
+                    const y = spectrumHeight - val * spectrumHeight * 0.9;
+                    if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                
+                // Center frequency marker
+                ctx.strokeStyle = 'rgba(0, 255, 0, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(width / 2, 0);
+                ctx.lineTo(width / 2, spectrumHeight);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
             requestAnimationFrame(renderWaterfall);
         }
         
@@ -3870,33 +3926,85 @@
             ctx.putImageData(imageData, 0, y);
         }
         
-        function getWaterfallColor(intensity) {
-            const normalized = intensity / 255.0;
-            
-            switch (waterfallConfig.colorPalette) {
-                case 'amber':
-                    return {
-                        r: Math.floor(normalized * 255),
-                        g: Math.floor(normalized * 204),
-                        b: Math.floor(normalized * 102)
-                    };
-                case 'blue':
-                    return {
-                        r: Math.floor(normalized * 153),
-                        g: Math.floor(normalized * 204),
-                        b: 255
-                    };
-                case 'green':
-                    return {
-                        r: 0,
-                        g: Math.floor(normalized * 255),
-                        b: Math.floor(normalized * 153)
-                    };
-                case 'gray':
-                default:
-                    const gray = Math.floor(normalized * 255);
-                    return { r: gray, g: gray, b: gray };
+        // Pre-computed color lookup tables for speed (256 entries each)
+        const waterfallColorLUTs = {};
+        
+        function buildColorLUT(palette) {
+            const lut = new Array(256);
+            for (let i = 0; i < 256; i++) {
+                const n = i / 255.0;
+                switch (palette) {
+                    case 'radio': // FT-991A style: dark blue → blue → cyan → green → yellow → red → white
+                        if (n < 0.1) {
+                            lut[i] = {r: 0, g: 0, b: Math.floor(n * 10 * 80)};
+                        } else if (n < 0.25) {
+                            const t = (n - 0.1) / 0.15;
+                            lut[i] = {r: 0, g: 0, b: 80 + Math.floor(t * 175)};
+                        } else if (n < 0.4) {
+                            const t = (n - 0.25) / 0.15;
+                            lut[i] = {r: 0, g: Math.floor(t * 255), b: 255};
+                        } else if (n < 0.55) {
+                            const t = (n - 0.4) / 0.15;
+                            lut[i] = {r: 0, g: 255, b: 255 - Math.floor(t * 255)};
+                        } else if (n < 0.7) {
+                            const t = (n - 0.55) / 0.15;
+                            lut[i] = {r: Math.floor(t * 255), g: 255, b: 0};
+                        } else if (n < 0.85) {
+                            const t = (n - 0.7) / 0.15;
+                            lut[i] = {r: 255, g: 255 - Math.floor(t * 200), b: 0};
+                        } else {
+                            const t = (n - 0.85) / 0.15;
+                            lut[i] = {r: 255, g: 55 + Math.floor(t * 200), b: Math.floor(t * 255)};
+                        }
+                        break;
+                    case 'amber': // LCARS amber: black → deep orange → amber → gold → white
+                        if (n < 0.3) {
+                            const t = n / 0.3;
+                            lut[i] = {r: Math.floor(t * 180), g: Math.floor(t * 80), b: 0};
+                        } else if (n < 0.6) {
+                            const t = (n - 0.3) / 0.3;
+                            lut[i] = {r: 180 + Math.floor(t * 75), g: 80 + Math.floor(t * 120), b: Math.floor(t * 50)};
+                        } else {
+                            const t = (n - 0.6) / 0.4;
+                            lut[i] = {r: 255, g: 200 + Math.floor(t * 55), b: 50 + Math.floor(t * 205)};
+                        }
+                        break;
+                    case 'blue': // Deep blue → electric blue → cyan → white
+                        if (n < 0.33) {
+                            const t = n / 0.33;
+                            lut[i] = {r: 0, g: Math.floor(t * 50), b: Math.floor(t * 200)};
+                        } else if (n < 0.66) {
+                            const t = (n - 0.33) / 0.33;
+                            lut[i] = {r: Math.floor(t * 50), g: 50 + Math.floor(t * 200), b: 200 + Math.floor(t * 55)};
+                        } else {
+                            const t = (n - 0.66) / 0.34;
+                            lut[i] = {r: 50 + Math.floor(t * 205), g: 250 + Math.floor(t * 5), b: 255};
+                        }
+                        break;
+                    case 'green': // Matrix green
+                        if (n < 0.5) {
+                            const t = n / 0.5;
+                            lut[i] = {r: 0, g: Math.floor(t * 200), b: Math.floor(t * 50)};
+                        } else {
+                            const t = (n - 0.5) / 0.5;
+                            lut[i] = {r: Math.floor(t * 150), g: 200 + Math.floor(t * 55), b: 50 + Math.floor(t * 100)};
+                        }
+                        break;
+                    case 'gray':
+                    default:
+                        lut[i] = {r: i, g: i, b: i};
+                }
             }
+            return lut;
+        }
+        
+        // Pre-build all LUTs
+        ['radio', 'amber', 'blue', 'green', 'gray'].forEach(p => { waterfallColorLUTs[p] = buildColorLUT(p); });
+        
+        function getWaterfallColor(intensity) {
+            const idx = Math.min(255, Math.max(0, Math.floor(intensity)));
+            const lut = waterfallColorLUTs[waterfallConfig.colorPalette] || waterfallColorLUTs['radio'];
+            return lut[idx];
         }
         
         function updateWaterfallStatus(text, color) {
