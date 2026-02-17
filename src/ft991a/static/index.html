@@ -1475,77 +1475,164 @@
                 </div>
             </div>
 
-            <!-- AUDIO LINK Tab -->
+            <!-- AUDIO WATERFALL Tab -->
             <div class="tab-content" id="audio">
                 <div class="lcars-panel full-width">
                     <div class="lcars-panel-header">
                         <div class="lcars-panel-indicator green"></div>
-                        <div class="lcars-panel-title">🎧 Audio Link</div>
+                        <div class="lcars-panel-title">📡 Audio Waterfall Display</div>
                     </div>
 
-                    <div class="main-grid">
-                        <div class="lcars-panel">
-                            <div class="lcars-panel-header">
-                                <div class="lcars-panel-indicator blue"></div>
-                                <div class="lcars-panel-title">Audio Stream</div>
+                    <!-- Waterfall Display -->
+                    <div class="lcars-panel full-width">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator blue"></div>
+                            <div class="lcars-panel-title">FFT Spectrum Waterfall</div>
+                        </div>
+                        
+                        <!-- Waterfall Canvas Container -->
+                        <div style="background: rgba(0, 0, 0, 0.8); border: 2px solid var(--lcars-orange); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; position: relative;">
+                            <canvas id="waterfallCanvas" width="800" height="400" 
+                                    style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block;"
+                                    title="Real-time audio spectrum waterfall display">
+                            </canvas>
+                            
+                            <!-- Frequency overlay -->
+                            <div id="frequencyOverlay" style="position: absolute; top: 1rem; left: 1rem; color: var(--lcars-gold); font-weight: 700; font-size: 0.9rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); pointer-events: none;">
+                                <div id="currentFreqDisplay">14.074.000 MHz</div>
+                                <div id="currentModeDisplay" style="font-size: 0.8rem; color: var(--lcars-orange);">DATA_USB</div>
                             </div>
-
-                            <div class="form-group">
-                                <button class="btn success" id="audioPlayButton" onclick="toggleAudioStream()" 
-                                        title="Start/stop live radio audio stream">▶ START AUDIO</button>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Volume Control</label>
-                                <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50" 
-                                           oninput="updateVolume(this.value)" title="Adjust audio playback volume">
-                                    <span id="volumeValue" style="min-width: 50px; text-align: right; color: var(--lcars-green); font-weight: bold; font-size: 1.1rem;">50%</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <button class="btn" id="muteButton" onclick="toggleMute()" 
-                                        title="Mute/unmute audio playback">🔊 MUTE</button>
-                            </div>
-
-                            <div class="placeholder-message">
-                                Audio streaming requires server-side ffmpeg - coming soon
+                            
+                            <!-- Status indicator -->
+                            <div id="waterfallStatus" style="position: absolute; top: 1rem; right: 1rem; color: var(--lcars-red); font-weight: 700; font-size: 0.8rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
+                                ● OFFLINE
                             </div>
                         </div>
 
-                        <div class="lcars-panel">
+                        <!-- Waterfall Controls -->
+                        <div class="main-grid">
+                            <div class="lcars-panel">
+                                <div class="lcars-panel-header">
+                                    <div class="lcars-panel-indicator orange"></div>
+                                    <div class="lcars-panel-title">Waterfall Controls</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <button class="btn success" id="waterfallPlayButton" onclick="toggleWaterfall()" 
+                                            title="Start/stop audio stream and waterfall display">▶ START WATERFALL</button>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Frequency Zoom</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="power-slider" id="zoomSlider" min="1" max="10" value="1" step="0.5"
+                                               oninput="updateZoom(this.value)" title="Adjust frequency zoom level">
+                                        <span id="zoomValue" style="min-width: 50px; text-align: right; color: var(--lcars-gold); font-weight: bold; font-size: 1rem;">1x</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Scroll Speed</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="volume-slider" id="speedSlider" min="1" max="20" value="5" 
+                                               oninput="updateSpeed(this.value)" title="Adjust waterfall scroll speed">
+                                        <span id="speedValue" style="min-width: 50px; text-align: right; color: var(--lcars-green); font-weight: bold; font-size: 1rem;">5</span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>FFT Resolution</label>
+                                    <div class="selector-grid">
+                                        <button class="selector-btn" onclick="setFFTSize(256)" title="FFT resolution - less detail, faster">256</button>
+                                        <button class="selector-btn" onclick="setFFTSize(512)" title="FFT resolution - balanced">512</button>
+                                        <button class="selector-btn active" onclick="setFFTSize(1024)" title="FFT resolution - more detail">1024</button>
+                                        <button class="selector-btn" onclick="setFFTSize(2048)" title="FFT resolution - highest detail, more CPU">2048</button>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Canvas Height</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="power-slider" id="heightSlider" min="200" max="800" value="400" step="50"
+                                               oninput="updateCanvasHeight(this.value)" title="Adjust waterfall display height">
+                                        <span id="heightValue" style="min-width: 60px; text-align: right; color: var(--lcars-gold); font-weight: bold; font-size: 1rem;">400px</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="lcars-panel">
+                                <div class="lcars-panel-header">
+                                    <div class="lcars-panel-indicator purple"></div>
+                                    <div class="lcars-panel-title">Display Options</div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Color Palette</label>
+                                    <div class="selector-grid">
+                                        <button class="selector-btn active" onclick="setColorPalette('amber')" title="LCARS amber color scheme">AMBER</button>
+                                        <button class="selector-btn" onclick="setColorPalette('blue')" title="Blue color scheme">BLUE</button>
+                                        <button class="selector-btn" onclick="setColorPalette('green')" title="Green color scheme">GREEN</button>
+                                        <button class="selector-btn" onclick="setColorPalette('gray')" title="Grayscale color scheme">GRAY</button>
+                                    </div>
+                                </div>
+
+                                <div class="status-grid">
+                                    <div class="status-item">
+                                        <div class="status-label">Stream Status</div>
+                                        <div class="status-value" id="streamStatus">STOPPED</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Sample Rate</div>
+                                        <div class="status-value" id="audioSampleRate">48 kHz</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">FFT Size</div>
+                                        <div class="status-value" id="fftSizeDisplay">1024</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-label">Bandwidth</div>
+                                        <div class="status-value" id="bandwidthDisplay">24 kHz</div>
+                                    </div>
+                                </div>
+
+                                <div class="diagnostic-item">
+                                    <h4>Audio Level</h4>
+                                    <div class="meter">
+                                        <div class="meter-label">
+                                            <span>Peak Level</span>
+                                            <span class="meter-value" id="audioLevelValue">-∞ dB</span>
+                                        </div>
+                                        <div class="meter-bar">
+                                            <div class="meter-fill" id="audioLevelBar" style="width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lcars-panel full-width">
                             <div class="lcars-panel-header">
-                                <div class="lcars-panel-indicator purple"></div>
+                                <div class="lcars-panel-indicator green"></div>
                                 <div class="lcars-panel-title">Audio Device Status</div>
                             </div>
 
                             <div class="status-grid">
                                 <div class="status-item">
                                     <div class="status-label">CODEC Status</div>
-                                    <div class="status-value active" id="codecStatus">PCM2903B READY</div>
+                                    <div class="status-value" id="codecStatus">DETECTING...</div>
                                 </div>
                                 <div class="status-item">
-                                    <div class="status-label">Sample Rate</div>
-                                    <div class="status-value" id="sampleRate">48 kHz</div>
+                                    <div class="status-label">Device</div>
+                                    <div class="status-value" id="audioDevice">PCM2903B</div>
                                 </div>
                                 <div class="status-item">
-                                    <div class="status-label">Bit Depth</div>
-                                    <div class="status-value" id="bitDepth">16-bit</div>
+                                    <div class="status-label">Format</div>
+                                    <div class="status-value" id="audioFormat">S16_LE</div>
                                 </div>
                                 <div class="status-item">
                                     <div class="status-label">Channels</div>
-                                    <div class="status-value" id="channels">Stereo</div>
+                                    <div class="status-value" id="audioChannels">1 (Mono)</div>
                                 </div>
-                            </div>
-
-                            <div class="diagnostic-item">
-                                <h4>USB Audio Interface</h4>
-                                <p style="color: var(--lcars-text); margin-bottom: 0.5rem;">
-                                    Device: Yaesu FT-991A USB Audio CODEC<br>
-                                    Driver: snd-usb-audio<br>
-                                    Status: Connected
-                                </p>
                             </div>
                         </div>
                     </div>
@@ -1976,6 +2063,7 @@
     <script>
         // ── Global State ────────────────────────────────────────
         let ws = null;
+        let audioWs = null;
         let radioStatus = {};
         let txLockout = false;
         let knobInteraction = false;
@@ -1983,6 +2071,23 @@
         let audioPlaying = false;
         let audioMuted = false;
         let currentVolume = 50;
+
+        // ── Audio Waterfall State ──────────────────────────────
+        let waterfallCanvas = null;
+        let waterfallCtx = null;
+        let audioContext = null;
+        let analyserNode = null;
+        let waterfallRunning = false;
+        let waterfallData = [];
+        let waterfallConfig = {
+            fftSize: 1024,
+            zoomLevel: 1,
+            scrollSpeed: 5,
+            colorPalette: 'amber',
+            canvasHeight: 400
+        };
+        let audioLevel = 0;
+        let frequencyData = null;
 
         // ── Tab Management ──────────────────────────────────────
         function switchTab(tabId) {
@@ -2713,11 +2818,339 @@
             });
         }
 
+        // ── Audio Waterfall Functions ──────────────────────────
+        function initWaterfall() {
+            waterfallCanvas = document.getElementById('waterfallCanvas');
+            waterfallCtx = waterfallCanvas.getContext('2d');
+            
+            // Initialize waterfall data array
+            waterfallData = [];
+            
+            // Set up canvas click handler for frequency selection
+            waterfallCanvas.addEventListener('click', handleWaterfallClick);
+            
+            console.log('Waterfall display initialized');
+        }
+        
+        function toggleWaterfall() {
+            if (waterfallRunning) {
+                stopWaterfall();
+            } else {
+                startWaterfall();
+            }
+        }
+        
+        async function startWaterfall() {
+            if (waterfallRunning) return;
+            
+            try {
+                // Initialize Web Audio API
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyserNode = audioContext.createAnalyser();
+                analyserNode.fftSize = waterfallConfig.fftSize;
+                analyserNode.smoothingTimeConstant = 0.8;
+                
+                // Connect to audio WebSocket
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws/audio`;
+                
+                audioWs = new WebSocket(wsUrl);
+                audioWs.binaryType = 'arraybuffer';
+                
+                audioWs.onopen = function() {
+                    console.log('Audio WebSocket connected');
+                    waterfallRunning = true;
+                    updateWaterfallStatus('● STREAMING', 'var(--lcars-green)');
+                    updateStreamStatus('STREAMING');
+                    
+                    // Update button
+                    const btn = document.getElementById('waterfallPlayButton');
+                    btn.innerHTML = '⏸ STOP WATERFALL';
+                    btn.className = 'btn danger';
+                    
+                    // Start animation loop
+                    requestAnimationFrame(renderWaterfall);
+                };
+                
+                audioWs.onmessage = function(event) {
+                    if (event.data instanceof ArrayBuffer) {
+                        processAudioData(event.data);
+                    }
+                };
+                
+                audioWs.onclose = function() {
+                    console.log('Audio WebSocket disconnected');
+                    stopWaterfall();
+                };
+                
+                audioWs.onerror = function(error) {
+                    console.error('Audio WebSocket error:', error);
+                    stopWaterfall();
+                };
+                
+            } catch (error) {
+                console.error('Failed to start waterfall:', error);
+                updateWaterfallStatus('● ERROR', 'var(--lcars-red)');
+            }
+        }
+        
+        function stopWaterfall() {
+            waterfallRunning = false;
+            
+            if (audioWs) {
+                audioWs.close();
+                audioWs = null;
+            }
+            
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            
+            updateWaterfallStatus('● OFFLINE', 'var(--lcars-red)');
+            updateStreamStatus('STOPPED');
+            
+            // Update button
+            const btn = document.getElementById('waterfallPlayButton');
+            btn.innerHTML = '▶ START WATERFALL';
+            btn.className = 'btn success';
+            
+            console.log('Waterfall stopped');
+        }
+        
+        function processAudioData(arrayBuffer) {
+            // Convert raw PCM to Float32Array for Web Audio API
+            const int16Array = new Int16Array(arrayBuffer);
+            const float32Array = new Float32Array(int16Array.length);
+            
+            // Convert and calculate audio level
+            let maxSample = 0;
+            for (let i = 0; i < int16Array.length; i++) {
+                float32Array[i] = int16Array[i] / 32768.0; // Convert to -1.0 to 1.0
+                maxSample = Math.max(maxSample, Math.abs(float32Array[i]));
+            }
+            
+            // Update audio level
+            audioLevel = maxSample;
+            updateAudioLevel();
+            
+            // Create audio buffer and process through analyser
+            if (audioContext && analyserNode) {
+                const audioBuffer = audioContext.createBuffer(1, float32Array.length, 48000);
+                audioBuffer.copyToChannel(float32Array, 0);
+                
+                // Get frequency data
+                const bufferLength = analyserNode.frequencyBinCount;
+                if (!frequencyData) {
+                    frequencyData = new Uint8Array(bufferLength);
+                }
+                analyserNode.getByteFrequencyData(frequencyData);
+                
+                // Add to waterfall data
+                addWaterfallLine(frequencyData);
+            }
+        }
+        
+        function addWaterfallLine(fftData) {
+            // Apply zoom and create waterfall line
+            const zoomedData = applyZoom(fftData);
+            waterfallData.push(zoomedData);
+            
+            // Keep only necessary lines based on canvas height and scroll speed
+            const maxLines = Math.ceil(waterfallConfig.canvasHeight / waterfallConfig.scrollSpeed) + 10;
+            if (waterfallData.length > maxLines) {
+                waterfallData.shift();
+            }
+        }
+        
+        function applyZoom(fftData) {
+            if (waterfallConfig.zoomLevel === 1) {
+                return Array.from(fftData);
+            }
+            
+            // Zoom into center portion of spectrum
+            const totalBins = fftData.length;
+            const zoomBins = Math.floor(totalBins / waterfallConfig.zoomLevel);
+            const startBin = Math.floor((totalBins - zoomBins) / 2);
+            
+            return Array.from(fftData.slice(startBin, startBin + zoomBins));
+        }
+        
+        function renderWaterfall() {
+            if (!waterfallRunning || !waterfallCtx) return;
+            
+            const canvas = waterfallCanvas;
+            const ctx = waterfallCtx;
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Scroll existing data up
+            const imageData = ctx.getImageData(0, 0, width, height - waterfallConfig.scrollSpeed);
+            ctx.clearRect(0, 0, width, height);
+            ctx.putImageData(imageData, 0, waterfallConfig.scrollSpeed);
+            
+            // Draw new line at top
+            if (waterfallData.length > 0) {
+                const latestData = waterfallData[waterfallData.length - 1];
+                drawWaterfallLine(ctx, latestData, 0, width);
+            }
+            
+            // Continue animation
+            requestAnimationFrame(renderWaterfall);
+        }
+        
+        function drawWaterfallLine(ctx, fftData, y, width) {
+            const imageData = ctx.createImageData(width, waterfallConfig.scrollSpeed);
+            const data = imageData.data;
+            
+            for (let x = 0; x < width; x++) {
+                const binIndex = Math.floor((x / width) * fftData.length);
+                const intensity = fftData[binIndex] || 0;
+                const color = getWaterfallColor(intensity);
+                
+                for (let dy = 0; dy < waterfallConfig.scrollSpeed; dy++) {
+                    const pixelIndex = ((y + dy) * width + x) * 4;
+                    data[pixelIndex] = color.r;     // Red
+                    data[pixelIndex + 1] = color.g; // Green
+                    data[pixelIndex + 2] = color.b; // Blue
+                    data[pixelIndex + 3] = 255;     // Alpha
+                }
+            }
+            
+            ctx.putImageData(imageData, 0, y);
+        }
+        
+        function getWaterfallColor(intensity) {
+            const normalized = intensity / 255.0;
+            
+            switch (waterfallConfig.colorPalette) {
+                case 'amber':
+                    return {
+                        r: Math.floor(normalized * 255),
+                        g: Math.floor(normalized * 204),
+                        b: Math.floor(normalized * 102)
+                    };
+                case 'blue':
+                    return {
+                        r: Math.floor(normalized * 153),
+                        g: Math.floor(normalized * 204),
+                        b: 255
+                    };
+                case 'green':
+                    return {
+                        r: 0,
+                        g: Math.floor(normalized * 255),
+                        b: Math.floor(normalized * 153)
+                    };
+                case 'gray':
+                default:
+                    const gray = Math.floor(normalized * 255);
+                    return { r: gray, g: gray, b: gray };
+            }
+        }
+        
+        function updateWaterfallStatus(text, color) {
+            const status = document.getElementById('waterfallStatus');
+            if (status) {
+                status.textContent = text;
+                status.style.color = color;
+            }
+        }
+        
+        function updateStreamStatus(status) {
+            const element = document.getElementById('streamStatus');
+            if (element) {
+                element.textContent = status;
+                element.className = status === 'STREAMING' ? 'status-value active' : 'status-value';
+            }
+        }
+        
+        function updateAudioLevel() {
+            const levelDb = audioLevel > 0 ? 20 * Math.log10(audioLevel) : -Infinity;
+            const levelPercent = Math.max(0, Math.min(100, (levelDb + 60) / 60 * 100));
+            
+            document.getElementById('audioLevelValue').textContent = 
+                levelDb === -Infinity ? '-∞ dB' : `${levelDb.toFixed(1)} dB`;
+            document.getElementById('audioLevelBar').style.width = `${levelPercent}%`;
+        }
+        
+        function handleWaterfallClick(event) {
+            // Calculate frequency from click position
+            const rect = waterfallCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const clickRatio = x / rect.width;
+            
+            // Calculate frequency based on sample rate and zoom
+            const sampleRate = 48000;
+            const nyquist = sampleRate / 2;
+            const bandwidth = nyquist / waterfallConfig.zoomLevel;
+            const clickedFreq = clickRatio * bandwidth;
+            
+            console.log(`Waterfall click: ${clickedFreq.toFixed(0)} Hz offset`);
+            // TODO: Implement frequency tuning based on click
+        }
+        
+        // Control functions
+        function updateZoom(value) {
+            waterfallConfig.zoomLevel = parseFloat(value);
+            document.getElementById('zoomValue').textContent = `${value}x`;
+        }
+        
+        function updateSpeed(value) {
+            waterfallConfig.scrollSpeed = parseInt(value);
+            document.getElementById('speedValue').textContent = value;
+        }
+        
+        function setFFTSize(size) {
+            waterfallConfig.fftSize = size;
+            document.getElementById('fftSizeDisplay').textContent = size.toString();
+            
+            // Update analyser if running
+            if (analyserNode) {
+                analyserNode.fftSize = size;
+            }
+            
+            // Update button states
+            document.querySelectorAll('.selector-btn').forEach(btn => {
+                if (btn.textContent === size.toString()) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        function setColorPalette(palette) {
+            waterfallConfig.colorPalette = palette;
+            
+            // Update button states
+            document.querySelectorAll('.selector-btn').forEach(btn => {
+                const btnText = btn.textContent.toLowerCase();
+                if ((palette === 'amber' && btnText === 'amber') ||
+                    (palette === 'blue' && btnText === 'blue') ||
+                    (palette === 'green' && btnText === 'green') ||
+                    (palette === 'gray' && btnText === 'gray')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+        
+        function updateCanvasHeight(value) {
+            const height = parseInt(value);
+            waterfallConfig.canvasHeight = height;
+            waterfallCanvas.style.height = `${height}px`;
+            waterfallCanvas.height = height;
+            document.getElementById('heightValue').textContent = `${height}px`;
+        }
+
         // ── Initialization ──────────────────────────────────────
         function init() {
             console.log('Initializing FT-991A LCARS Interface...');
             connectWebSocket();
             initKnobControls();
+            initWaterfall();
             updateLockoutDisplay();
             updateStepDisplay();
             
