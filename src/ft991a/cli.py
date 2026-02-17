@@ -19,11 +19,12 @@ from pathlib import Path
 
 from .cat import FT991A, Mode, Band
 from .mcp import run_server
-from .cw import text_to_morse, morse_to_text, CWKeyer, CWDecoder
-from .digital import DigitalModes
-from .aprs import APRSClient, EmergencyKit
-from .broadcast import Broadcaster, BroadcastError, AudioDeviceError, TTSError
-from .scanner import BandScanner
+# Optional modules (not yet implemented)
+# from .cw import text_to_morse, morse_to_text, CWKeyer, CWDecoder
+# from .digital import DigitalModes
+# from .aprs import APRSClient, EmergencyKit
+# from .broadcast import Broadcaster, BroadcastError, AudioDeviceError, TTSError
+# from .scanner import BandScanner
 
 
 def setup_logging(verbose: bool = False):
@@ -47,8 +48,12 @@ def web_server_main():
     args = parser.parse_args()
     setup_logging(args.verbose)
     
-    # Import and run the web server
-    from .web import app
+    # Import and configure the web server
+    from .web import app, radio_config
+    
+    # Pass CLI args to web module config
+    radio_config["port"] = args.radio_port
+    radio_config["baudrate"] = args.radio_baud
     
     print(f"Starting FT-991A Web GUI on http://{args.host}:{args.port}")
     print(f"Radio: {args.radio_port} @ {args.radio_baud} baud")
