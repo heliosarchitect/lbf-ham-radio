@@ -8,11 +8,16 @@ FastAPI + WebSocket server for real-time control of Yaesu FT-991A ham radio.
 import asyncio
 import json
 import logging
+import os
+import re
 import subprocess
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Set
+
+import httpx
 
 import serial.tools.list_ports
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -99,6 +104,13 @@ class MemoryClearRequest(BaseModel):
     channel: int  # 1-99
 
 
+class MonitorStartRequest(BaseModel):
+    clip_duration: int = 20
+    interval: int = 120
+    language: str = "es"
+    smeter_threshold: int = 20
+
+
 # ── Global State ─────────────────────────────────────────────
 
 
@@ -111,6 +123,13 @@ websocket_clients: Set[WebSocket] = set()
 # Scanner state
 scan_active = False
 scan_task: Optional[asyncio.Task] = None
+
+# Monitor state
+monitor_active = False
+monitor_task: Optional[asyncio.Task] = None
+monitor_websocket_clients: Set[WebSocket] = set()
+monitor_start_time: Optional[datetime] = None
+monitor_clip_count = 0
 
 # Configuration
 radio_config = {"port": "/dev/ttyUSB0", "baudrate": 38400, "auto_reconnect": True}
@@ -607,6 +626,16 @@ async def get_root():
 
 
 # ── API Endpoints ────────────────────────────────────────────
+
+
+@app.get("/api/version")
+async def api_version():
+    """Get package version."""
+    try:
+        from ft991a import __version__
+        return {"version": __version__}
+    except Exception:
+        return {"version": "unknown"}
 
 
 @app.get("/api/status")
@@ -1566,6 +1595,295 @@ async def set_sdr_fft_size(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ── Monitor Functions ────────────────────────────────────────
+
+async def monitor_loop(config: dict):
+    """Main monitor loop - captures, transcribes, and translates audio."""
+    global monitor_clip_count, monitor_start_time
+    
+    radio_host = "192.168.10.179"
+    radio_port = 2222
+    radio_user = "bonsaihorn"
+    audio_device = "hw:CARD=CODEC"
+    
+    # Get OpenAI API key
+    env_path = Path.home() / "Projects" / "helios" / ".env"
+    openai_api_key = None
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                if line.startswith("OPENAI_API_KEY="):
+                    openai_api_key = line.split("=", 1)[1].strip()
+                    break
+    
+    if not openai_api_key:
+        logger.error("OPENAI_API_KEY not found in ~/Projects/helios/.env")
+        return
+    
+    # Setup log directory
+    log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    
+    transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
+    
+    monitor_start_time = datetime.now()
+    
+    async with httpx.AsyncClient() as client:
+        while monitor_active:
+            try:
+                monitor_clip_count += 1
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                
+                # Get radio status
+                try:
+                    response = await client.get(f"http://localhost:8000/api/status")
+                    status = response.json().get("status", {})
+                    freq = status.get("frequency_a", 0)
+                    freq_mhz = freq / 1000000
+                    s_meter = status.get("s_meter", 0)
+                    mode = status.get("mode", "?")
+                except:
+                    freq_mhz = 0.0
+                    s_meter = 0
+                    mode = "?"
+                
+                logger.info(f"Monitor clip {monitor_clip_count}: {freq_mhz:.3f} MHz ({mode}), S-meter: {s_meter}")
+                
+                # Skip if S-meter too low
+                if s_meter < config["smeter_threshold"]:
+                    await asyncio.sleep(config["interval"])
+                    continue
+                
+                # Record audio via SSH
+                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
+                    raw_file = temp_file.name
+                
+                ssh_cmd = f"ssh -p {radio_port} {radio_user}@{radio_host} 'arecord -D {audio_device} -f S16_LE -r 48000 -c 1 -d {config['clip_duration']} /tmp/_radio_clip.wav 2>/dev/null'"
+                scp_cmd = f"scp -P {radio_port} {radio_user}@{radio_host}:/tmp/_radio_clip.wav {raw_file}"
+                
+                try:
+                    # Record
+                    process = await asyncio.create_subprocess_shell(
+                        ssh_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                    )
+                    await process.wait()
+                    
+                    # Copy file
+                    process = await asyncio.create_subprocess_shell(
+                        scp_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                    )
+                    await process.wait()
+                    
+                    # Filter audio with sox
+                    filt_file = raw_file.replace(".wav", "_filt.wav")
+                    sox_cmd = f"sox {raw_file} {filt_file} sinc 200-3400 compand 0.3,1 6:-70,-60,-20 -5 -90 0.2 norm"
+                    process = await asyncio.create_subprocess_shell(
+                        sox_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                    )
+                    await process.wait()
+                    
+                    # Transcribe with OpenAI Whisper
+                    with open(filt_file, "rb") as audio_file:
+                        files = {"file": audio_file}
+                        data = {
+                            "model": "whisper-1",
+                            "language": config["language"] if config["language"] != "auto" else "",
+                            "prompt": "Conversación de radioaficionados en español caribeño. Indicativos KP4, WP4, NP4, W, K, N.",
+                            "response_format": "json"
+                        }
+                        headers = {"Authorization": f"Bearer {openai_api_key}"}
+                        
+                        response = await client.post(
+                            "https://api.openai.com/v1/audio/transcriptions",
+                            files=files,
+                            data=data,
+                            headers=headers
+                        )
+                        
+                        transcription = response.json()
+                        spanish_text = transcription.get("text", "").strip()
+                    
+                    # Validate transcript
+                    if len(spanish_text) < 10 or any(phrase in spanish_text.lower() for phrase in 
+                                                   ["qth.*qth.*qth", "señal report.*señal report", "www.", "visite", "suscríbete"]):
+                        logger.info("Invalid/noise transcript, skipping")
+                        await asyncio.sleep(config["interval"])
+                        continue
+                    
+                    # Translate with GPT-4o-mini
+                    translate_prompt = f"Translate this ham radio conversation from Spanish to English. Preserve any callsigns (like KP4ABC, WP4XYZ, W1ABC) exactly as spoken. Keep it natural.\n\n{spanish_text}"
+                    
+                    translate_response = await client.post(
+                        "https://api.openai.com/v1/chat/completions",
+                        json={
+                            "model": "gpt-4o-mini",
+                            "max_tokens": 500,
+                            "messages": [{"role": "user", "content": translate_prompt}]
+                        },
+                        headers=headers
+                    )
+                    
+                    translation = translate_response.json()
+                    english_text = translation["choices"][0]["message"]["content"]
+                    
+                    # Extract callsigns
+                    callsign_pattern = r'\b[AKNW][A-Z]?[0-9][A-Z]{1,3}\b'
+                    callsigns = list(set(re.findall(callsign_pattern, f"{spanish_text} {english_text}", re.IGNORECASE)))
+                    callsigns = [c.upper() for c in callsigns]
+                    
+                    if callsigns:
+                        logger.info(f"🎯 CALLSIGNS DETECTED: {' '.join(callsigns)}")
+                    
+                    # Create transcript entry
+                    transcript = {
+                        "timestamp": timestamp,
+                        "freq_mhz": f"{freq_mhz:.3f}",
+                        "mode": mode,
+                        "s_meter": s_meter,
+                        "spanish": spanish_text,
+                        "english": english_text,
+                        "callsigns": " ".join(callsigns)
+                    }
+                    
+                    # Save to JSONL
+                    with open(transcript_log, "a") as f:
+                        f.write(json.dumps(transcript) + "\n")
+                    
+                    # Send to WebSocket clients
+                    for websocket in list(monitor_websocket_clients):
+                        try:
+                            await websocket.send_text(json.dumps(transcript))
+                        except:
+                            monitor_websocket_clients.discard(websocket)
+                    
+                    logger.info(f"ES: {spanish_text}")
+                    logger.info(f"EN: {english_text}")
+                    
+                    # Cleanup temp files
+                    os.unlink(raw_file)
+                    os.unlink(filt_file)
+                    
+                except Exception as e:
+                    logger.error(f"Monitor processing error: {e}")
+                
+                await asyncio.sleep(config["interval"])
+                
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Monitor loop error: {e}")
+                await asyncio.sleep(5)
+
+
+@app.post("/api/monitor/start")
+async def start_monitor(request: MonitorStartRequest):
+    """Start radio monitoring."""
+    global monitor_active, monitor_task, monitor_clip_count
+    
+    if monitor_active:
+        raise HTTPException(status_code=400, detail="Monitor already running")
+    
+    config = {
+        "clip_duration": request.clip_duration,
+        "interval": request.interval,
+        "language": request.language,
+        "smeter_threshold": request.smeter_threshold
+    }
+    
+    monitor_active = True
+    monitor_clip_count = 0
+    monitor_task = asyncio.create_task(monitor_loop(config))
+    
+    return {"success": True, "message": "Monitor started"}
+
+
+@app.post("/api/monitor/stop")
+async def stop_monitor():
+    """Stop radio monitoring."""
+    global monitor_active, monitor_task
+    
+    if not monitor_active:
+        raise HTTPException(status_code=400, detail="Monitor not running")
+    
+    monitor_active = False
+    if monitor_task:
+        monitor_task.cancel()
+        try:
+            await monitor_task
+        except asyncio.CancelledError:
+            pass
+        monitor_task = None
+    
+    return {"success": True, "message": "Monitor stopped"}
+
+
+@app.get("/api/monitor/status")
+async def get_monitor_status():
+    """Get monitor status."""
+    duration = 0
+    if monitor_start_time and monitor_active:
+        duration = int((datetime.now() - monitor_start_time).total_seconds())
+    
+    return {
+        "running": monitor_active,
+        "clip_count": monitor_clip_count,
+        "duration": duration,
+        "last_clip": None
+    }
+
+
+@app.get("/api/monitor/transcripts")
+async def get_transcripts(limit: int = 50):
+    """Get recent transcripts."""
+    log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
+    transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
+    
+    if not transcript_log.exists():
+        return {"transcripts": []}
+    
+    transcripts = []
+    with open(transcript_log) as f:
+        lines = f.readlines()
+        for line in lines[-limit:]:
+            try:
+                transcripts.append(json.loads(line.strip()))
+            except json.JSONDecodeError:
+                continue
+    
+    return {"transcripts": list(reversed(transcripts))}
+
+
+@app.get("/api/monitor/transcripts/export")
+async def export_transcripts():
+    """Download transcript log as JSON."""
+    log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
+    transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
+    
+    if not transcript_log.exists():
+        raise HTTPException(status_code=404, detail="No transcript log found")
+    
+    return FileResponse(
+        transcript_log,
+        media_type="application/octet-stream",
+        filename=f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
+    )
+
+
+@app.websocket("/ws/monitor")
+async def websocket_monitor(websocket: WebSocket):
+    """WebSocket endpoint for live monitor updates."""
+    await websocket.accept()
+    monitor_websocket_clients.add(websocket)
+    
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        monitor_websocket_clients.discard(websocket)
+
+
 # ── Startup/Shutdown ─────────────────────────────────────────
 
 
@@ -1595,6 +1913,16 @@ async def shutdown_event():
         scan_task.cancel()
         try:
             await scan_task
+        except asyncio.CancelledError:
+            pass
+
+    # Stop monitor if running
+    global monitor_active, monitor_task
+    if monitor_active and monitor_task:
+        monitor_active = False
+        monitor_task.cancel()
+        try:
+            await monitor_task
         except asyncio.CancelledError:
             pass
 

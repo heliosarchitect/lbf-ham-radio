@@ -1256,6 +1256,82 @@
             -ms-transform: translateX(26px);
             transform: translateX(26px);
         }
+
+        /* ═══════════════════════════════
+           MONITOR TAB STYLES
+           ═══════════════════════════════ */
+
+        .transcript-entry {
+            background: rgba(102, 68, 102, 0.2);
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--lcars-orange);
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .transcript-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .transcript-timestamp {
+            color: var(--lcars-blue);
+            font-weight: bold;
+        }
+
+        .transcript-freq-info {
+            color: var(--lcars-peach);
+        }
+
+        .transcript-spanish {
+            color: var(--lcars-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .transcript-english {
+            color: var(--lcars-green);
+        }
+
+        .transcript-callsigns {
+            margin-top: 0.5rem;
+            color: var(--lcars-gold);
+        }
+
+        .callsign-highlight {
+            color: var(--lcars-gold);
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 204, 102, 0.5);
+        }
+
+        #transcriptFeed {
+            background: rgba(0, 51, 102, 0.3);
+            padding: 1rem;
+            border-radius: var(--radius-sm);
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .placeholder-message {
+            text-align: center;
+            color: var(--lcars-text);
+            opacity: 0.7;
+            font-style: italic;
+            padding: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -1273,6 +1349,7 @@
                 <a href="#" class="lcars-nav-item" data-tab="meters">METERS</a>
                 <a href="#" class="lcars-nav-item" data-tab="audio">AUDIO</a>
                 <a href="#" class="lcars-nav-item" data-tab="sdr">SDR</a>
+                <a href="#" class="lcars-nav-item" data-tab="monitor" title="Radio Channel Monitor - Live audio capture, transcription and translation">MONITOR</a>
                 <a href="#" class="lcars-nav-item" data-tab="scanner">SCANNER</a>
                 <a href="#" class="lcars-nav-item" data-tab="system">SYSTEM</a>
                 <a href="#" class="lcars-nav-item" data-tab="config">CONFIG</a>
@@ -1292,7 +1369,7 @@
                 <div class="lcars-connection-status">
                     <div class="lcars-status-indicator" id="connectionIndicator"></div>
                     <span id="connectionText">CONNECTING...</span>
-                    <span id="versionLabel" style="margin-left: 0.8rem; font-size: 0.75rem; color: var(--lcars-lavender); opacity: 0.7; letter-spacing: 1px;" title="ft991a-control package version">v0.7.2</span>
+                    <span id="versionLabel" style="margin-left: 0.8rem; font-size: 0.75rem; color: var(--lcars-lavender); opacity: 0.7; letter-spacing: 1px;" title="ft991a-control package version"></span>
                     <button class="lcars-reconnect-btn" id="reconnectButton" onclick="reconnectRadio()" 
                             title="Reconnect to FT-991A transceiver">↻ RECONNECT</button>
                 </div>
@@ -1312,6 +1389,7 @@
                     <button class="mobile-nav-item" data-tab="meters" title="Meters - S-meter, SWR, power output">METERS</button>
                     <button class="mobile-nav-item" data-tab="audio" title="Audio Waterfall - Real-time spectrum display">AUDIO</button>
                     <button class="mobile-nav-item" data-tab="sdr" title="SDR Waterfall - Panadapter display from RSP2pro">SDR</button>
+                    <button class="mobile-nav-item" data-tab="monitor" title="Radio Channel Monitor - Live audio capture, transcription and translation">MONITOR</button>
                     <button class="mobile-nav-item" data-tab="scanner" title="Band Scanner - Scan frequency ranges for active signals">SCANNER</button>
                     <button class="mobile-nav-item" data-tab="memory" title="Memory Channels - Store, recall and manage memory channels">MEMORY</button>
                     <button class="mobile-nav-item" data-tab="system" title="System - Memory channels and radio settings">SYSTEM</button>
@@ -2090,6 +2168,104 @@
                                 <br>
                                 <div class="audio-code-comment"># Gain settings (IF/RF):</div>
                                 <div style="color: var(--lcars-peach); font-size: 0.8rem;">IFGR: 20-59 dB (IF Gain) | RFGR: 0-9 (RF Gain)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MONITOR Tab -->
+            <div class="tab-content" id="monitor">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator gold"></div>
+                        <div class="lcars-panel-title">📡 Radio Channel Monitor</div>
+                    </div>
+
+                    <div class="main-grid">
+                        <!-- Monitor Controls -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator blue"></div>
+                                <div class="lcars-panel-title">Monitor Controls</div>
+                            </div>
+
+                            <div class="form-group">
+                                <button class="btn gold" id="monitorStartStopBtn" onclick="toggleMonitoring()" 
+                                        title="Start or stop radio monitoring with transcription">START MONITOR</button>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Clip Duration: <span id="clipDurationValue">20</span>s</label>
+                                <input type="range" id="clipDurationSlider" min="10" max="60" value="20" 
+                                       oninput="updateClipDuration(this.value)" title="Audio clip recording duration in seconds">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Interval: <span id="intervalValue">120</span>s</label>
+                                <input type="range" id="intervalSlider" min="30" max="300" value="120" 
+                                       oninput="updateInterval(this.value)" title="Wait time between recordings in seconds">
+                            </div>
+
+                            <div class="form-group">
+                                <label>Language:</label>
+                                <select id="languageSelector" onchange="updateLanguage(this.value)" title="Transcription language">
+                                    <option value="auto">Auto</option>
+                                    <option value="es" selected>Spanish</option>
+                                    <option value="en">English</option>
+                                    <option value="pt">Portuguese</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>S-Meter Threshold: <span id="smeterThresholdValue">20</span></label>
+                                <input type="range" id="smeterThresholdSlider" min="0" max="100" value="20" 
+                                       oninput="updateSmeterThreshold(this.value)" title="Minimum S-meter reading to trigger recording">
+                            </div>
+                        </div>
+
+                        <!-- Monitor Stats -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">Statistics</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Status</div>
+                                    <div class="status-value" id="monitorStatus">STOPPED</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Total Clips</div>
+                                    <div class="status-value" id="totalClips">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Callsigns Found</div>
+                                    <div class="status-value" id="callsignsFound">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Duration</div>
+                                    <div class="status-value" id="monitorDuration">00:00:00</div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <button class="btn" onclick="exportTranscripts()" title="Export all transcripts as JSON file">EXPORT TRANSCRIPTS</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Transcript Feed -->
+                    <div class="lcars-panel full-width" style="margin-top: 1.5rem;">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator orange"></div>
+                            <div class="lcars-panel-title">Live Transcript Feed</div>
+                        </div>
+
+                        <div id="transcriptFeed" style="max-height: 400px; overflow-y: auto; background: rgba(0, 51, 102, 0.3); padding: 1rem; border-radius: var(--radius-sm);">
+                            <div class="placeholder-message">
+                                Click "START MONITOR" to begin capturing and transcribing audio clips
                             </div>
                         </div>
                     </div>
@@ -3596,6 +3772,13 @@
                 ws.close();
             }
             setTimeout(connectWebSocket, 1000);
+            
+            // Fetch version from API
+            apiCall('/version').then(data => {
+                if (data && data.version) {
+                    document.getElementById('versionLabel').textContent = 'v' + data.version;
+                }
+            }).catch(() => {});
             
             // Also try to refresh radio status
             apiCall('/status').then(data => {
@@ -5307,6 +5490,77 @@
             
             // Update frequency axis labels
             updateSDRFreqAxisLabels();
+            
+            // Draw frequency grid overlay on canvas
+            drawSDRFreqGrid(centerFreq, bandwidth);
+        }
+        
+        function drawSDRFreqGrid(centerFreq, bandwidth) {
+            if (!sdrCtx || !sdrCanvas) return;
+            const w = sdrCanvas.width;
+            const h = sdrCanvas.height;
+            
+            // Pick grid spacing based on bandwidth
+            let gridStep;
+            if (bandwidth <= 500000) gridStep = 50000;        // 50 kHz
+            else if (bandwidth <= 1000000) gridStep = 100000;  // 100 kHz
+            else if (bandwidth <= 2000000) gridStep = 250000;  // 250 kHz
+            else if (bandwidth <= 5000000) gridStep = 500000;  // 500 kHz
+            else gridStep = 1000000;                            // 1 MHz
+            
+            const startFreq = centerFreq - bandwidth / 2;
+            const endFreq = centerFreq + bandwidth / 2;
+            
+            // Find first grid line
+            const firstGrid = Math.ceil(startFreq / gridStep) * gridStep;
+            
+            sdrCtx.save();
+            
+            // Draw grid lines
+            for (let freq = firstGrid; freq <= endFreq; freq += gridStep) {
+                const x = ((freq - startFreq) / bandwidth) * w;
+                
+                // Subtle vertical grid line
+                sdrCtx.strokeStyle = 'rgba(255, 168, 0, 0.15)';
+                sdrCtx.lineWidth = 1;
+                sdrCtx.setLineDash([2, 4]);
+                sdrCtx.beginPath();
+                sdrCtx.moveTo(x, 0);
+                sdrCtx.lineTo(x, h);
+                sdrCtx.stroke();
+                
+                // Frequency label at top
+                sdrCtx.setLineDash([]);
+                sdrCtx.fillStyle = 'rgba(255, 168, 0, 0.5)';
+                sdrCtx.font = '10px monospace';
+                sdrCtx.textAlign = 'center';
+                sdrCtx.fillText((freq / 1e6).toFixed(3), x, 12);
+            }
+            
+            // Draw VFO-A center marker — solid bright line
+            if (radioStatus && radioStatus.frequency_a) {
+                const vfoFreq = radioStatus.frequency_a;
+                if (vfoFreq >= startFreq && vfoFreq <= endFreq) {
+                    const vfoX = ((vfoFreq - startFreq) / bandwidth) * w;
+                    
+                    // Bright green center line
+                    sdrCtx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+                    sdrCtx.lineWidth = 2;
+                    sdrCtx.setLineDash([]);
+                    sdrCtx.beginPath();
+                    sdrCtx.moveTo(vfoX, 0);
+                    sdrCtx.lineTo(vfoX, h);
+                    sdrCtx.stroke();
+                    
+                    // VFO-A label
+                    sdrCtx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+                    sdrCtx.font = 'bold 11px monospace';
+                    sdrCtx.textAlign = 'center';
+                    sdrCtx.fillText('▼ VFO-A', vfoX, 24);
+                }
+            }
+            
+            sdrCtx.restore();
         }
 
         function getSDRColor(magnitude) {
@@ -5604,6 +5858,180 @@
                 button.classList.add('success');
                 document.getElementById('sdrStreamStatus').textContent = 'STOPPED';
             }
+        }
+
+        // ── Monitor Functions ───────────────────────────────────
+
+        let monitorRunning = false;
+        let monitorWebSocket = null;
+
+        function toggleMonitoring() {
+            if (monitorRunning) {
+                stopMonitoring();
+            } else {
+                startMonitoring();
+            }
+        }
+
+        function startMonitoring() {
+            const clipDuration = document.getElementById('clipDurationSlider').value;
+            const interval = document.getElementById('intervalSlider').value;
+            const language = document.getElementById('languageSelector').value;
+            const smeterThreshold = document.getElementById('smeterThresholdSlider').value;
+
+            const config = {
+                clip_duration: parseInt(clipDuration),
+                interval: parseInt(interval),
+                language: language,
+                smeter_threshold: parseInt(smeterThreshold)
+            };
+
+            apiCall('/api/monitor/start', 'POST', config)
+                .then(() => {
+                    monitorRunning = true;
+                    updateMonitorUI();
+                    connectMonitorWebSocket();
+                })
+                .catch(error => {
+                    console.error('Failed to start monitoring:', error);
+                    logError('Failed to start monitoring: ' + error.message);
+                });
+        }
+
+        function stopMonitoring() {
+            apiCall('/api/monitor/stop', 'POST')
+                .then(() => {
+                    monitorRunning = false;
+                    updateMonitorUI();
+                    if (monitorWebSocket) {
+                        monitorWebSocket.close();
+                        monitorWebSocket = null;
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to stop monitoring:', error);
+                    logError('Failed to stop monitoring: ' + error.message);
+                });
+        }
+
+        function updateMonitorUI() {
+            const button = document.getElementById('monitorStartStopBtn');
+            const status = document.getElementById('monitorStatus');
+            
+            if (monitorRunning) {
+                button.textContent = 'STOP MONITOR';
+                button.classList.remove('gold');
+                button.classList.add('danger');
+                status.textContent = 'RUNNING';
+                status.style.color = 'var(--lcars-green)';
+            } else {
+                button.textContent = 'START MONITOR';
+                button.classList.remove('danger');
+                button.classList.add('gold');
+                status.textContent = 'STOPPED';
+                status.style.color = 'var(--lcars-text)';
+            }
+        }
+
+        function updateClipDuration(value) {
+            document.getElementById('clipDurationValue').textContent = value;
+        }
+
+        function updateInterval(value) {
+            document.getElementById('intervalValue').textContent = value;
+        }
+
+        function updateLanguage(value) {
+            console.log('Language changed to:', value);
+        }
+
+        function updateSmeterThreshold(value) {
+            document.getElementById('smeterThresholdValue').textContent = value;
+        }
+
+        function connectMonitorWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/monitor`;
+            
+            monitorWebSocket = new WebSocket(wsUrl);
+            
+            monitorWebSocket.onmessage = function(event) {
+                const transcript = JSON.parse(event.data);
+                addTranscriptToFeed(transcript);
+                updateMonitorStats();
+            };
+            
+            monitorWebSocket.onclose = function() {
+                if (monitorRunning) {
+                    console.log('Monitor WebSocket closed, attempting to reconnect...');
+                    setTimeout(connectMonitorWebSocket, 2000);
+                }
+            };
+            
+            monitorWebSocket.onerror = function(error) {
+                console.error('Monitor WebSocket error:', error);
+            };
+        }
+
+        function addTranscriptToFeed(transcript) {
+            const feed = document.getElementById('transcriptFeed');
+            const placeholderMessage = feed.querySelector('.placeholder-message');
+            
+            // Remove placeholder message if it exists
+            if (placeholderMessage) {
+                placeholderMessage.remove();
+            }
+            
+            const entry = document.createElement('div');
+            entry.style.cssText = 'background: rgba(102, 68, 102, 0.2); margin-bottom: 1rem; padding: 1rem; border-radius: var(--radius-sm); border-left: 4px solid var(--lcars-orange);';
+            
+            const timestamp = new Date(transcript.timestamp).toLocaleTimeString();
+            const callsigns = transcript.callsigns ? transcript.callsigns.split(' ').map(call => 
+                `<span style="color: var(--lcars-gold); font-weight: bold;">${call}</span>`
+            ).join(' ') : '';
+            
+            entry.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="color: var(--lcars-blue); font-weight: bold;">${timestamp}</span>
+                    <span style="color: var(--lcars-peach);">${transcript.freq_mhz} MHz (${transcript.mode}) - S${transcript.s_meter}</span>
+                </div>
+                <div style="color: var(--lcars-text); margin-bottom: 0.5rem;">
+                    <strong>ES:</strong> ${transcript.spanish}
+                </div>
+                <div style="color: var(--lcars-green);">
+                    <strong>EN:</strong> ${transcript.english}
+                </div>
+                ${callsigns ? `<div style="margin-top: 0.5rem; color: var(--lcars-gold);"><strong>🎯 Callsigns:</strong> ${callsigns}</div>` : ''}
+            `;
+            
+            feed.insertBefore(entry, feed.firstChild);
+            
+            // Limit to last 20 entries
+            while (feed.children.length > 20) {
+                feed.removeChild(feed.lastChild);
+            }
+        }
+
+        function updateMonitorStats() {
+            apiCall('/api/monitor/status')
+                .then(data => {
+                    document.getElementById('totalClips').textContent = data.clip_count || 0;
+                    
+                    if (data.duration) {
+                        const hours = Math.floor(data.duration / 3600);
+                        const minutes = Math.floor((data.duration % 3600) / 60);
+                        const seconds = data.duration % 60;
+                        document.getElementById('monitorDuration').textContent = 
+                            `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                })
+                .catch(error => {
+                    console.log('Failed to update monitor stats:', error);
+                });
+        }
+
+        function exportTranscripts() {
+            window.open('/api/monitor/transcripts/export', '_blank');
         }
 
         // ── Initialization ──────────────────────────────────────

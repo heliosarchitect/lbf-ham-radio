@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.8.0] - 2026-02-17 (planned)
+
+### ✨ Features
+
+- **Channel Monitor Tab** — Live radio monitoring with AI transcription & translation
+  - New "Monitor" tab in LCARS interface
+  - Real-time transcript feed: Spanish (original) + English translation side by side
+  - Callsign detection and highlighting (KP4, WP4, W, K, N prefixes)
+  - Start/Stop monitoring controls
+  - Configurable: clip duration, capture interval, language, S-meter threshold
+  - WebSocket push for live transcript updates (`/ws/monitor`)
+  - JSONL transcript logging with export
+  - Stats panel: total clips, callsigns found, monitoring duration
+- **New API endpoints**: `/api/monitor/start`, `/api/monitor/stop`, `/api/monitor/status`, `/api/monitor/transcripts`, `/api/monitor/transcripts/export`
+- **Backend**: Python asyncio monitor (Whisper API + gpt-4o-mini translation)
+- **Standalone script**: `scripts/radio-monitor.sh` for headless monitoring
+
+## [v0.7.2] - 2026-02-17
+
+### 🐛 Bug Fixes
+
+- **Waterfall scroll race**: Audio waterfall was scrolling on every animation frame (~60fps) regardless of new FFT data. Now only scrolls when new data arrives.
+
+### ✨ Features
+
+- **Radio monitor script**: `scripts/radio-monitor.sh` — standalone capture/transcribe/translate pipeline using Whisper API + gpt-4o-mini. JSONL logging, S-meter gating, callsign extraction, hallucination filtering.
+
 ## [v0.7.0] - 2026-02-17
 
 ### ✨ Features
