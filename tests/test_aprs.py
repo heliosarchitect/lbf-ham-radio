@@ -56,8 +56,8 @@ class TestAPRSPacketEncoding(unittest.TestCase):
             "KO4TUV", 35.7796, -78.6382, "House", symbol_code="-"
         )
         
-        # Should contain house symbol
-        self.assertIn("/-", packet)
+        # Should contain house symbol (format: lat/lon-symbol_code)
+        self.assertIn("W-House", packet)  # Symbol code after coordinates
     
     def test_position_encoding_coordinates(self):
         """Test coordinate conversion accuracy"""
@@ -86,7 +86,7 @@ class TestAPRSPacketEncoding(unittest.TestCase):
         
         # Should contain source, destination (padded), message, and ID
         self.assertIn("KO4TUV>APRS", packet)
-        self.assertIn("::N0CALL  :Hello World!{001", packet)
+        self.assertIn("::N0CALL   :Hello World!{001", packet)
     
     def test_message_encoding_no_id(self):
         """Test message encoding without message ID"""
@@ -94,7 +94,7 @@ class TestAPRSPacketEncoding(unittest.TestCase):
             "KO4TUV", "W1AW", "Test message"
         )
         
-        self.assertIn("::W1AW    :Test message", packet)
+        self.assertIn("::W1AW     :Test message", packet)
         self.assertNotIn("{", packet)  # No message ID
     
     def test_message_encoding_padding(self):
@@ -134,7 +134,7 @@ class TestAPRSPacketDecoding(unittest.TestCase):
     
     def test_message_decoding_basic(self):
         """Test basic message packet decoding"""
-        packet = "KO4TUV>APRS,WIDE1-1::N0CALL  :Hello World!{001"
+        packet = "KO4TUV>APRS,WIDE1-1::N0CALL   :Hello World!{001"
         
         decoded = self.aprs_client.decode_aprs_packet(packet)
         
