@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FT-991A Web GUI</title>
+    <title>FT-991A // LCARS INTERFACE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Antonio:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* CSS Reset and Base Styles */
+        /* ── LCARS CSS Reset and Base Styles ────────────────── */
         * {
             margin: 0;
             padding: 0;
@@ -13,659 +14,947 @@
         }
 
         :root {
-            --bg-primary: #1a1a1a;
-            --bg-secondary: #2d2d2d;
-            --bg-tertiary: #404040;
-            --text-primary: #ffffff;
-            --text-secondary: #cccccc;
-            --text-tertiary: #999999;
-            --accent: #007acc;
-            --accent-hover: #005999;
-            --danger: #dc3545;
-            --danger-hover: #c82333;
-            --success: #28a745;
-            --success-hover: #1e7e34;
-            --warning: #ffc107;
-            --warning-hover: #e0a800;
-            --border: #666666;
-            --shadow: 0 2px 10px rgba(0,0,0,0.3);
-            --radius: 6px;
+            --lcars-black: #000000;
+            --lcars-amber: #FF9900;
+            --lcars-lavender: #CC99CC;
+            --lcars-peach: #FFCC99;
+            --lcars-blue: #9999CC;
+            --lcars-tan: #CC6633;
+            --lcars-gray: #333333;
+            --lcars-light-gray: #666666;
+            --lcars-white: #FFFFFF;
+            --lcars-red: #DC143C;
+            --lcars-green: #32CD32;
+            
+            --lcars-pill-radius: 20px;
+            --lcars-small-radius: 10px;
+            --lcars-font: 'Antonio', 'Courier New', monospace;
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            font-family: var(--lcars-font);
+            background: var(--lcars-black);
+            color: var(--lcars-white);
             line-height: 1.4;
+            overflow-x: hidden;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
+        /* ── LCARS Layout Structure ─────────────────────────── */
+        .lcars-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            grid-template-rows: auto 1fr;
+            grid-template-areas: 
+                "header header"
+                "sidebar content";
+            min-height: 100vh;
         }
 
-        /* Header */
-        .header {
+        /* ── LCARS Header Bar with Elbow ────────────────────── */
+        .lcars-header {
+            grid-area: header;
+            background: var(--lcars-amber);
+            height: 60px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            background: var(--bg-secondary);
-            padding: 15px 20px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 20px;
+            position: relative;
+            color: var(--lcars-black);
+            font-weight: 700;
+            font-size: 1.5rem;
         }
 
-        .header h1 {
-            font-size: 1.5rem;
+        .lcars-header::before {
+            content: '';
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 40px;
+            height: 40px;
+            background: var(--lcars-black);
+            border-top-left-radius: 40px;
+        }
+
+        .lcars-header-content {
+            padding-left: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding-right: 60px;
+        }
+
+        .lcars-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 2px;
+        }
+
+        .lcars-connection-status {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: var(--lcars-black);
+            color: var(--lcars-white);
+            padding: 8px 15px;
+            border-radius: var(--lcars-pill-radius);
             font-weight: 600;
         }
 
-        .connection-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .status-indicator {
+        .lcars-status-indicator {
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            background: var(--danger);
+            background: var(--lcars-red);
             transition: background 0.3s ease;
         }
 
-        .status-indicator.connected {
-            background: var(--success);
+        .lcars-status-indicator.connected {
+            background: var(--lcars-green);
         }
 
-        /* Main Grid Layout */
-        .main-grid {
+        /* ── LCARS Sidebar with Navigation Pills ────────────── */
+        .lcars-sidebar {
+            grid-area: sidebar;
+            background: var(--lcars-black);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .lcars-nav-pill {
+            background: var(--lcars-blue);
+            height: 40px;
+            border-radius: 0 var(--lcars-pill-radius) var(--lcars-pill-radius) 0;
+            margin-right: 40px;
+            display: flex;
+            align-items: center;
+            padding-left: 20px;
+            color: var(--lcars-black);
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lcars-nav-pill:nth-child(2n) {
+            background: var(--lcars-lavender);
+        }
+        .lcars-nav-pill:nth-child(3n) {
+            background: var(--lcars-peach);
+        }
+        .lcars-nav-pill:nth-child(4n) {
+            background: var(--lcars-tan);
+        }
+
+        .lcars-nav-pill:hover {
+            margin-right: 20px;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
+        }
+
+        .lcars-nav-pill.active {
+            background: var(--lcars-amber);
+            margin-right: 20px;
+        }
+
+        /* ── LCARS Content Area ─────────────────────────────── */
+        .lcars-content {
+            grid-area: content;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: var(--lcars-black);
+        }
+
+        /* ── LCARS Panels ───────────────────────────────────── */
+        .lcars-panel {
+            background: var(--lcars-gray);
+            border-radius: var(--lcars-pill-radius);
+            padding: 25px;
+            position: relative;
+            border: 2px solid var(--lcars-amber);
+        }
+
+        .lcars-panel::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 6px;
+            background: var(--lcars-amber);
+            border-radius: var(--lcars-pill-radius) var(--lcars-pill-radius) 0 0;
+        }
+
+        .lcars-panel-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--lcars-amber);
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+        }
+
+        .lcars-panel-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 100px;
+            height: 3px;
+            background: var(--lcars-amber);
+            border-radius: 2px;
+        }
+
+        /* ── LCARS Grid Layouts ─────────────────────────────── */
+        .lcars-main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        .lcars-full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* ── LCARS Frequency Display ────────────────────────── */
+        .lcars-frequency-display {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-blue);
+            border-radius: var(--lcars-pill-radius);
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .lcars-frequency-display::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 8px;
+            background: var(--lcars-blue);
+            border-radius: var(--lcars-pill-radius) var(--lcars-pill-radius) 0 0;
+        }
+
+        .lcars-frequency-value {
+            font-size: 2.8rem;
+            font-weight: 700;
+            font-family: 'Antonio', monospace;
+            color: var(--lcars-amber);
+            text-shadow: 0 0 10px var(--lcars-amber);
+            letter-spacing: 3px;
+        }
+
+        .lcars-frequency-label {
+            color: var(--lcars-peach);
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 8px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* ── LCARS Buttons ──────────────────────────────────── */
+        .lcars-button {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
+            border: none;
+            border-radius: var(--lcars-pill-radius);
+            padding: 12px 20px;
+            font-family: var(--lcars-font);
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 44px;
+        }
+
+        .lcars-button:hover {
+            background: var(--lcars-white);
+            box-shadow: 0 0 15px rgba(255, 153, 0, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .lcars-button:active {
+            transform: translateY(0);
+        }
+
+        .lcars-button.primary {
+            background: var(--lcars-blue);
+            color: var(--lcars-white);
+        }
+
+        .lcars-button.danger {
+            background: var(--lcars-red);
+            color: var(--lcars-white);
+        }
+
+        .lcars-button.success {
+            background: var(--lcars-green);
+            color: var(--lcars-black);
+        }
+
+        .lcars-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── LCARS Input Controls ───────────────────────────── */
+        .lcars-input-group {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .lcars-input-group label {
+            min-width: 80px;
+            color: var(--lcars-peach);
+            font-weight: 600;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .lcars-input, .lcars-select {
+            background: var(--lcars-black);
+            color: var(--lcars-white);
+            border: 2px solid var(--lcars-blue);
+            padding: 10px 15px;
+            border-radius: var(--lcars-small-radius);
+            font-family: var(--lcars-font);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .lcars-input:focus, .lcars-select:focus {
+            outline: none;
+            border-color: var(--lcars-amber);
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
+        }
+
+        /* ── LCARS VFO Controls ─────────────────────────────── */
+        .lcars-vfo-controls {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
             margin-bottom: 20px;
         }
 
-        @media (max-width: 768px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Panel Styles */
-        .panel {
-            background: var(--bg-secondary);
-            padding: 20px;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .panel h2 {
-            font-size: 1.2rem;
-            margin-bottom: 15px;
-            color: var(--text-secondary);
-            border-bottom: 2px solid var(--accent);
-            padding-bottom: 5px;
-        }
-
-        /* Frequency Display */
-        .frequency-display {
-            background: var(--bg-tertiary);
-            padding: 15px;
-            border-radius: var(--radius);
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .frequency-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            color: var(--accent);
-        }
-
-        .frequency-label {
-            color: var(--text-tertiary);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        /* VFO Controls */
-        .vfo-controls {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .vfo-knob {
+        .lcars-vfo-knob {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
 
-        .knob-container {
+        .lcars-knob-container {
             position: relative;
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
         }
 
-        .knob {
+        .lcars-knob {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            background: linear-gradient(145deg, #3a3a3a, #2a2a2a);
-            border: 2px solid var(--border);
+            background: radial-gradient(circle at 30% 30%, var(--lcars-light-gray), var(--lcars-black));
+            border: 4px solid var(--lcars-amber);
             cursor: pointer;
             user-select: none;
             position: relative;
-            transition: box-shadow 0.2s ease;
+            transition: all 0.3s ease;
         }
 
-        .knob:hover {
-            box-shadow: 0 0 10px rgba(0,122,204,0.3);
+        .lcars-knob:hover {
+            border-color: var(--lcars-white);
+            box-shadow: 0 0 20px rgba(255, 153, 0, 0.8);
         }
 
-        .knob::after {
+        .lcars-knob::after {
             content: '';
             position: absolute;
             top: 10%;
             left: 50%;
             transform: translateX(-50%);
-            width: 4px;
-            height: 20px;
-            background: var(--accent);
-            border-radius: 2px;
+            width: 6px;
+            height: 25px;
+            background: var(--lcars-amber);
+            border-radius: 3px;
         }
 
-        .knob-label {
-            font-size: 0.8rem;
-            color: var(--text-tertiary);
+        .lcars-knob-label {
+            font-size: 1rem;
+            color: var(--lcars-peach);
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
         }
 
-        /* Input Groups */
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-        }
-
-        .input-group label {
-            min-width: 60px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-        }
-
-        /* Form Controls */
-        input, select, button {
-            background: var(--bg-tertiary);
-            color: var(--text-primary);
-            border: 1px solid var(--border);
-            padding: 8px 12px;
-            border-radius: var(--radius);
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-        }
-
-        input:focus, select:focus {
-            outline: none;
-            border-color: var(--accent);
-            box-shadow: 0 0 5px rgba(0,122,204,0.3);
-        }
-
-        button {
-            cursor: pointer;
-            font-weight: 500;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        button:hover {
-            background: var(--bg-primary);
-        }
-
-        button.primary {
-            background: var(--accent);
-            border-color: var(--accent);
-        }
-
-        button.primary:hover {
-            background: var(--accent-hover);
-        }
-
-        button.danger {
-            background: var(--danger);
-            border-color: var(--danger);
-        }
-
-        button.danger:hover {
-            background: var(--danger-hover);
-        }
-
-        button.success {
-            background: var(--success);
-            border-color: var(--success);
-        }
-
-        button.success:hover {
-            background: var(--success-hover);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* PTT Button */
-        .ptt-container {
+        /* ── LCARS PTT Button ───────────────────────────────── */
+        .lcars-ptt-container {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 15px;
             align-items: center;
         }
 
-        .ptt-button {
-            width: 120px;
-            height: 120px;
+        .lcars-ptt-button {
+            width: 140px;
+            height: 140px;
             border-radius: 50%;
-            background: var(--bg-tertiary);
-            border: 3px solid var(--border);
-            color: var(--text-primary);
-            font-size: 1.2rem;
-            font-weight: bold;
+            background: radial-gradient(circle at 30% 30%, var(--lcars-gray), var(--lcars-black));
+            border: 6px solid var(--lcars-green);
+            color: var(--lcars-white);
+            font-size: 1.4rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 2px;
         }
 
-        .ptt-button:hover:not(:disabled) {
-            border-color: var(--accent);
-            background: var(--bg-primary);
+        .lcars-ptt-button:hover:not(:disabled) {
+            border-color: var(--lcars-amber);
+            box-shadow: 0 0 25px rgba(50, 205, 50, 0.8);
+            transform: scale(1.05);
         }
 
-        .ptt-button.active {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
-            animation: pulse 1s infinite;
+        .lcars-ptt-button.active {
+            background: radial-gradient(circle at 30% 30%, var(--lcars-red), #8B0000);
+            border-color: var(--lcars-red);
+            animation: lcars-pulse 1s infinite;
         }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(220,53,69,0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(220,53,69,0); }
-            100% { box-shadow: 0 0 0 0 rgba(220,53,69,0); }
+        @keyframes lcars-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(220,20,60,0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(220,20,60,0); }
+            100% { box-shadow: 0 0 0 0 rgba(220,20,60,0); }
         }
 
-        .lockout-toggle {
-            background: var(--warning);
-            color: var(--bg-primary);
-            border-color: var(--warning);
+        .lcars-lockout-toggle {
+            background: var(--lcars-tan);
+            color: var(--lcars-white);
+            border-color: var(--lcars-tan);
+            padding: 10px 20px;
+            font-size: 1rem;
         }
 
-        .lockout-toggle.active {
-            background: var(--danger);
-            border-color: var(--danger);
-            color: white;
+        .lcars-lockout-toggle.active {
+            background: var(--lcars-red);
+            border-color: var(--lcars-red);
+            animation: lcars-warning 2s infinite;
         }
 
-        /* Meters */
-        .meter-container {
-            margin-bottom: 20px;
+        @keyframes lcars-warning {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
 
-        .meter {
-            background: var(--bg-tertiary);
-            border-radius: var(--radius);
+        /* ── LCARS Meters ───────────────────────────────────── */
+        .lcars-meter {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-blue);
+            border-radius: var(--lcars-small-radius);
             padding: 15px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            position: relative;
         }
 
-        .meter-label {
+        .lcars-meter::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 6px;
+            background: var(--lcars-blue);
+            border-radius: var(--lcars-small-radius) var(--lcars-small-radius) 0 0;
+        }
+
+        .lcars-meter-label {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--lcars-peach);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .meter-value {
-            font-weight: bold;
-            color: var(--accent);
+        .lcars-meter-value {
+            font-weight: 700;
+            color: var(--lcars-amber);
+            font-size: 1.1rem;
         }
 
-        .meter-bar {
+        .lcars-meter-bar {
+            width: 100%;
+            height: 12px;
+            background: var(--lcars-gray);
+            border-radius: var(--lcars-small-radius);
+            overflow: hidden;
+            border: 1px solid var(--lcars-amber);
+        }
+
+        .lcars-meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--lcars-green), var(--lcars-amber), var(--lcars-red));
+            transition: width 0.3s ease;
+            border-radius: var(--lcars-small-radius);
+        }
+
+        /* ── LCARS Selector Grid ────────────────────────────── */
+        .lcars-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .lcars-selector-button {
+            background: var(--lcars-lavender);
+            color: var(--lcars-black);
+            border: none;
+            border-radius: var(--lcars-small-radius);
+            padding: 10px 8px;
+            font-family: var(--lcars-font);
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 40px;
+        }
+
+        .lcars-selector-button:hover {
+            background: var(--lcars-amber);
+            transform: translateY(-2px);
+        }
+
+        .lcars-selector-button.active {
+            background: var(--lcars-amber);
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.7);
+        }
+
+        /* ── LCARS Status Grid ──────────────────────────────── */
+        .lcars-status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+
+        .lcars-status-item {
+            background: var(--lcars-black);
+            border: 2px solid var(--lcars-blue);
+            padding: 12px;
+            border-radius: var(--lcars-small-radius);
+            text-align: center;
+            position: relative;
+        }
+
+        .lcars-status-item::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 4px;
+            background: var(--lcars-blue);
+            border-radius: var(--lcars-small-radius) var(--lcars-small-radius) 0 0;
+        }
+
+        .lcars-status-label {
+            font-size: 0.9rem;
+            color: var(--lcars-peach);
+            margin-bottom: 6px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lcars-status-value {
+            font-weight: 700;
+            color: var(--lcars-white);
+            font-size: 1.1rem;
+        }
+
+        .lcars-status-value.active {
+            color: var(--lcars-green);
+        }
+
+        .lcars-status-value.danger {
+            color: var(--lcars-red);
+        }
+
+        /* ── LCARS Power Slider ─────────────────────────────── */
+        .lcars-power-slider {
+            appearance: none;
             width: 100%;
             height: 8px;
-            background: var(--bg-primary);
-            border-radius: 4px;
-            overflow: hidden;
+            background: var(--lcars-gray);
+            border-radius: var(--lcars-small-radius);
+            outline: none;
+            margin: 0 10px;
         }
 
-        .meter-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
-            transition: width 0.3s ease;
-            border-radius: 4px;
+        .lcars-power-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: var(--lcars-amber);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
         }
 
-        /* Band and Mode Selectors */
-        .selector-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-            gap: 8px;
-            margin-bottom: 15px;
+        .lcars-power-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: var(--lcars-amber);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
         }
 
-        .selector-button {
-            padding: 8px 4px;
-            font-size: 0.8rem;
-            min-width: unset;
-            text-align: center;
+        /* ── LCARS Audio Panel ──────────────────────────────── */
+        .lcars-audio-panel {
+            background: var(--lcars-gray);
+            border: 2px solid var(--lcars-tan);
+            border-radius: var(--lcars-pill-radius);
+            padding: 25px;
+            position: relative;
         }
 
-        .selector-button.active {
-            background: var(--accent);
-            border-color: var(--accent);
+        .lcars-audio-panel::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            height: 6px;
+            background: var(--lcars-tan);
+            border-radius: var(--lcars-pill-radius) var(--lcars-pill-radius) 0 0;
         }
 
-        /* Status Display */
-        .status-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
+        .lcars-code-block {
+            background: var(--lcars-black);
+            border: 1px solid var(--lcars-light-gray);
+            padding: 20px;
+            border-radius: var(--lcars-small-radius);
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--lcars-white);
+            overflow-x: auto;
         }
 
-        .status-item {
-            background: var(--bg-tertiary);
-            padding: 10px;
-            border-radius: var(--radius);
-            text-align: center;
+        .lcars-code-comment {
+            color: var(--lcars-peach);
+            margin-bottom: 8px;
+            font-weight: 600;
         }
 
-        .status-label {
-            font-size: 0.8rem;
-            color: var(--text-tertiary);
-            margin-bottom: 5px;
-        }
-
-        .status-value {
-            font-weight: bold;
-            color: var(--text-primary);
-        }
-
-        .status-value.active {
-            color: var(--success);
-        }
-
-        .status-value.danger {
-            color: var(--danger);
-        }
-
-        /* Mobile Responsive */
+        /* ── Mobile Responsive ──────────────────────────────── */
         @media (max-width: 768px) {
-            .container {
-                padding: 10px;
+            .lcars-container {
+                grid-template-columns: 1fr;
+                grid-template-areas: 
+                    "header"
+                    "content";
             }
             
-            .header {
-                flex-direction: column;
-                gap: 10px;
-                text-align: center;
+            .lcars-sidebar {
+                display: none;
             }
             
-            .frequency-value {
+            .lcars-main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lcars-frequency-value {
                 font-size: 2rem;
             }
             
-            .ptt-button {
-                width: 100px;
-                height: 100px;
-                font-size: 1rem;
+            .lcars-ptt-button {
+                width: 120px;
+                height: 120px;
+                font-size: 1.2rem;
             }
             
-            .input-group {
+            .lcars-input-group {
                 flex-direction: column;
                 align-items: stretch;
             }
             
-            .input-group label {
+            .lcars-input-group label {
                 min-width: unset;
-                margin-bottom: 5px;
+                margin-bottom: 8px;
             }
         }
 
-        /* Utility Classes */
-        .mt-10 { margin-top: 10px; }
-        .mb-10 { margin-bottom: 10px; }
-        .text-center { text-align: center; }
-        .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .gap-10 { gap: 10px; }
-        .hidden { display: none; }
+        /* ── Utility Classes ────────────────────────────────── */
+        .lcars-mt-20 { margin-top: 20px; }
+        .lcars-mb-20 { margin-bottom: 20px; }
+        .lcars-text-center { text-align: center; }
+        .lcars-hidden { display: none; }
 
-        /* Loading Spinner */
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid var(--border);
-            border-top: 2px solid var(--accent);
+        /* ── LCARS Loading Spinner ──────────────────────────── */
+        .lcars-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--lcars-light-gray);
+            border-top: 3px solid var(--lcars-amber);
             border-radius: 50%;
-            animation: spin 1s linear infinite;
+            animation: lcars-spin 1s linear infinite;
         }
 
-        @keyframes spin {
+        @keyframes lcars-spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <h1>📻 FT-991A Web Control</h1>
-        <div class="connection-status">
-            <div class="status-indicator" id="connectionIndicator"></div>
-            <span id="connectionText">Connecting...</span>
-        </div>
-    </div>
-
-    <div class="container">
-        <!-- Main Control Grid -->
-        <div class="main-grid">
-            <!-- Left Panel: Frequency & VFO -->
-            <div class="panel">
-                <h2>VFO Control</h2>
-                
-                <!-- VFO-A Display -->
-                <div class="frequency-display">
-                    <div class="frequency-value" id="frequencyA">14.074.000</div>
-                    <div class="frequency-label">VFO-A (MHz)</div>
-                </div>
-                
-                <!-- VFO Controls -->
-                <div class="vfo-controls">
-                    <div class="vfo-knob">
-                        <div class="knob-container">
-                            <div class="knob" id="tuneKnobA" data-vfo="a"></div>
-                        </div>
-                        <div class="knob-label">TUNE-A</div>
-                    </div>
-                    <div class="vfo-knob">
-                        <div class="knob-container">
-                            <div class="knob" id="tuneKnobB" data-vfo="b"></div>
-                        </div>
-                        <div class="knob-label">TUNE-B</div>
-                    </div>
-                </div>
-
-                <!-- Direct Frequency Entry -->
-                <div class="input-group">
-                    <label>Freq:</label>
-                    <input type="number" id="directFreq" placeholder="14074000" min="30000" max="470000000">
-                    <button onclick="setDirectFrequency()">Set</button>
-                </div>
-
-                <!-- VFO Operations -->
-                <div class="input-group">
-                    <button onclick="swapVfo()">A⇄B</button>
-                    <button onclick="copyAtoB()">A→B</button>
-                </div>
-
-                <!-- VFO-B Display -->
-                <div class="frequency-display" style="margin-top: 15px;">
-                    <div class="frequency-value" id="frequencyB" style="font-size: 1.8rem;">14.074.000</div>
-                    <div class="frequency-label">VFO-B (MHz)</div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Mode & Band -->
-            <div class="panel">
-                <h2>Mode & Band</h2>
-                
-                <!-- Current Mode Display -->
-                <div class="input-group">
-                    <label>Mode:</label>
-                    <span id="currentMode" style="color: var(--accent); font-weight: bold;">DATA_USB</span>
-                </div>
-
-                <!-- Mode Selection -->
-                <div class="selector-grid">
-                    <button class="selector-button" onclick="setMode('LSB')">LSB</button>
-                    <button class="selector-button" onclick="setMode('USB')">USB</button>
-                    <button class="selector-button" onclick="setMode('CW')">CW</button>
-                    <button class="selector-button" onclick="setMode('FM')">FM</button>
-                    <button class="selector-button" onclick="setMode('AM')">AM</button>
-                    <button class="selector-button" onclick="setMode('DATA_USB')">FT8</button>
-                    <button class="selector-button" onclick="setMode('C4FM')">C4FM</button>
-                    <button class="selector-button" onclick="setMode('DATA_LSB')">PSK</button>
-                </div>
-
-                <!-- Band Selection -->
-                <h2 style="margin-top: 20px;">Band Selection</h2>
-                <div class="selector-grid">
-                    <button class="selector-button" onclick="setBand('160M')">160m</button>
-                    <button class="selector-button" onclick="setBand('80M')">80m</button>
-                    <button class="selector-button" onclick="setBand('40M')">40m</button>
-                    <button class="selector-button" onclick="setBand('30M')">30m</button>
-                    <button class="selector-button" onclick="setBand('20M')">20m</button>
-                    <button class="selector-button" onclick="setBand('17M')">17m</button>
-                    <button class="selector-button" onclick="setBand('15M')">15m</button>
-                    <button class="selector-button" onclick="setBand('12M')">12m</button>
-                    <button class="selector-button" onclick="setBand('10M')">10m</button>
-                    <button class="selector-button" onclick="setBand('VHF_6M')">6m</button>
-                    <button class="selector-button" onclick="setBand('VHF_2M')">2m</button>
-                    <button class="selector-button" onclick="setBand('UHF_70CM')">70cm</button>
-                </div>
-
-                <!-- Quick FT8 Frequencies -->
-                <h2 style="margin-top: 20px;">FT8 Quick</h2>
-                <div class="selector-grid">
-                    <button class="selector-button" onclick="setFT8Frequency(7074000)">40m</button>
-                    <button class="selector-button" onclick="setFT8Frequency(14074000)">20m</button>
-                    <button class="selector-button" onclick="setFT8Frequency(21074000)">15m</button>
-                    <button class="selector-button" onclick="setFT8Frequency(28074000)">10m</button>
+    <!-- LCARS Container -->
+    <div class="lcars-container">
+        <!-- LCARS Header with Elbow -->
+        <div class="lcars-header">
+            <div class="lcars-header-content">
+                <div class="lcars-title">FT-991A // LCARS INTERFACE</div>
+                <div class="lcars-connection-status">
+                    <div class="lcars-status-indicator" id="connectionIndicator"></div>
+                    <span id="connectionText">CONNECTING...</span>
                 </div>
             </div>
         </div>
 
-        <!-- Second Row -->
-        <div class="main-grid">
-            <!-- PTT & TX Control -->
-            <div class="panel">
-                <h2>Transmit Control</h2>
-                
-                <div class="ptt-container">
-                    <button class="ptt-button" id="pttButton" 
-                            onmousedown="pttPress()" 
-                            onmouseup="pttRelease()" 
-                            ontouchstart="pttPress()" 
-                            ontouchend="pttRelease()">
-                        PTT
-                    </button>
+        <!-- LCARS Sidebar Navigation -->
+        <div class="lcars-sidebar">
+            <div class="lcars-nav-pill active">VFO CONTROL</div>
+            <div class="lcars-nav-pill">MODE SELECT</div>
+            <div class="lcars-nav-pill">BAND SELECT</div>
+            <div class="lcars-nav-pill">TX CONTROL</div>
+            <div class="lcars-nav-pill">METERS</div>
+            <div class="lcars-nav-pill">AUDIO LINK</div>
+            <div class="lcars-nav-pill">SYSTEM</div>
+            <div class="lcars-nav-pill">DIAGNOSTICS</div>
+            <div class="lcars-nav-pill">CONFIG</div>
+            <div class="lcars-nav-pill">STATUS</div>
+        </div>
+
+        <!-- LCARS Content Area -->
+        <div class="lcars-content">
+            <!-- Main Control Grid -->
+            <div class="lcars-main-grid">
+                <!-- Left Panel: Frequency & VFO -->
+                <div class="lcars-panel">
+                    <div class="lcars-panel-title">VFO CONTROL</div>
                     
-                    <button class="lockout-toggle" id="lockoutButton" onclick="toggleLockout()">
-                        🔒 TX LOCKOUT
-                    </button>
-                </div>
-
-                <!-- TX Power Control -->
-                <div class="input-group mt-10">
-                    <label>Power:</label>
-                    <input type="range" id="powerSlider" min="5" max="100" value="50" 
-                           oninput="updatePower(this.value)">
-                    <span id="powerValue" style="min-width: 40px; text-align: right;">50W</span>
-                </div>
-
-                <!-- TX Status -->
-                <div class="status-grid mt-10">
-                    <div class="status-item">
-                        <div class="status-label">TX Status</div>
-                        <div class="status-value" id="txStatus">RX</div>
+                    <!-- VFO-A Display -->
+                    <div class="lcars-frequency-display">
+                        <div class="lcars-frequency-value" id="frequencyA">14.074.000</div>
+                        <div class="lcars-frequency-label">VFO-A (MHZ)</div>
                     </div>
-                    <div class="status-item">
-                        <div class="status-label">SWR</div>
-                        <div class="status-value" id="swrValue">1.0:1</div>
+                    
+                    <!-- VFO Controls -->
+                    <div class="lcars-vfo-controls">
+                        <div class="lcars-vfo-knob">
+                            <div class="lcars-knob-container">
+                                <div class="lcars-knob knob" id="tuneKnobA" data-vfo="a"></div>
+                            </div>
+                            <div class="lcars-knob-label">TUNE-A</div>
+                        </div>
+                        <div class="lcars-vfo-knob">
+                            <div class="lcars-knob-container">
+                                <div class="lcars-knob knob" id="tuneKnobB" data-vfo="b"></div>
+                            </div>
+                            <div class="lcars-knob-label">TUNE-B</div>
+                        </div>
+                    </div>
+
+                    <!-- Direct Frequency Entry -->
+                    <div class="lcars-input-group">
+                        <label>FREQ:</label>
+                        <input type="number" class="lcars-input" id="directFreq" placeholder="14074000" min="30000" max="470000000">
+                        <button class="lcars-button" onclick="setDirectFrequency()">SET</button>
+                    </div>
+
+                    <!-- VFO Operations -->
+                    <div class="lcars-input-group">
+                        <button class="lcars-button primary" onclick="swapVfo()">A⇄B</button>
+                        <button class="lcars-button primary" onclick="copyAtoB()">A→B</button>
+                    </div>
+
+                    <!-- VFO-B Display -->
+                    <div class="lcars-frequency-display lcars-mt-20">
+                        <div class="lcars-frequency-value" id="frequencyB" style="font-size: 2rem;">14.074.000</div>
+                        <div class="lcars-frequency-label">VFO-B (MHZ)</div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Mode & Band -->
+                <div class="lcars-panel">
+                    <div class="lcars-panel-title">MODE & BAND</div>
+                    
+                    <!-- Current Mode Display -->
+                    <div class="lcars-input-group">
+                        <label>MODE:</label>
+                        <span id="currentMode" style="color: var(--lcars-amber); font-weight: bold; font-size: 1.2rem;">DATA_USB</span>
+                    </div>
+
+                    <!-- Mode Selection -->
+                    <div class="lcars-selector-grid">
+                        <button class="lcars-selector-button selector-button" onclick="setMode('LSB')">LSB</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('USB')">USB</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('CW')">CW</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('FM')">FM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('AM')">AM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_USB')">FT8</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('C4FM')">C4FM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_LSB')">PSK</button>
+                    </div>
+
+                    <!-- Band Selection -->
+                    <div class="lcars-panel-title" style="margin-top: 30px;">BAND SELECT</div>
+                    <div class="lcars-selector-grid">
+                        <button class="lcars-selector-button selector-button" onclick="setBand('160M')">160M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('80M')">80M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('40M')">40M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('30M')">30M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('20M')">20M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('17M')">17M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('15M')">15M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('12M')">12M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('10M')">10M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_6M')">6M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_2M')">2M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('UHF_70CM')">70CM</button>
+                    </div>
+
+                    <!-- Quick FT8 Frequencies -->
+                    <div class="lcars-panel-title" style="margin-top: 30px;">FT8 QUICK</div>
+                    <div class="lcars-selector-grid">
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(7074000)">40M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(14074000)">20M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(21074000)">15M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(28074000)">10M</button>
                     </div>
                 </div>
             </div>
 
-            <!-- Meters & Status -->
-            <div class="panel">
-                <h2>Meters & Status</h2>
-                
-                <!-- S-Meter -->
-                <div class="meter">
-                    <div class="meter-label">
-                        <span>S-Meter</span>
-                        <span class="meter-value" id="sMeterValue">S0</span>
+            <!-- Second Row -->
+            <div class="lcars-main-grid">
+                <!-- PTT & TX Control -->
+                <div class="lcars-panel">
+                    <div class="lcars-panel-title">TX CONTROL</div>
+                    
+                    <div class="lcars-ptt-container">
+                        <button class="lcars-ptt-button ptt-button" id="pttButton" 
+                                onmousedown="pttPress()" 
+                                onmouseup="pttRelease()" 
+                                ontouchstart="pttPress()" 
+                                ontouchend="pttRelease()">
+                            PTT
+                        </button>
+                        
+                        <button class="lcars-button lcars-lockout-toggle lockout-toggle" id="lockoutButton" onclick="toggleLockout()">
+                            🔒 TX LOCKOUT
+                        </button>
                     </div>
-                    <div class="meter-bar">
-                        <div class="meter-fill" id="sMeterBar" style="width: 0%;"></div>
+
+                    <!-- TX Power Control -->
+                    <div class="lcars-input-group lcars-mt-20">
+                        <label>POWER:</label>
+                        <input type="range" class="lcars-power-slider" id="powerSlider" min="5" max="100" value="50" 
+                               oninput="updatePower(this.value)">
+                        <span id="powerValue" style="min-width: 50px; text-align: right; color: var(--lcars-amber); font-weight: bold;">50W</span>
+                    </div>
+
+                    <!-- TX Status -->
+                    <div class="lcars-status-grid lcars-mt-20">
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">TX STATUS</div>
+                            <div class="lcars-status-value" id="txStatus">RX</div>
+                        </div>
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">SWR</div>
+                            <div class="lcars-status-value" id="swrValue">1.0:1</div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Status Grid -->
-                <div class="status-grid">
-                    <div class="status-item">
-                        <div class="status-label">Squelch</div>
-                        <div class="status-value" id="squelchStatus">CLOSED</div>
+                <!-- Meters & Status -->
+                <div class="lcars-panel">
+                    <div class="lcars-panel-title">METERS & STATUS</div>
+                    
+                    <!-- S-Meter -->
+                    <div class="lcars-meter">
+                        <div class="lcars-meter-label">
+                            <span>S-METER</span>
+                            <span class="lcars-meter-value" id="sMeterValue">S0</span>
+                        </div>
+                        <div class="lcars-meter-bar">
+                            <div class="lcars-meter-fill meter-fill" id="sMeterBar" style="width: 0%;"></div>
+                        </div>
                     </div>
-                    <div class="status-item">
-                        <div class="status-label">Mode</div>
-                        <div class="status-value" id="statusMode">USB</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">Power Out</div>
-                        <div class="status-value" id="powerOut">0W</div>
-                    </div>
-                    <div class="status-item">
-                        <div class="status-label">Lockout</div>
-                        <div class="status-value" id="lockoutStatus">OFF</div>
+
+                    <!-- Status Grid -->
+                    <div class="lcars-status-grid">
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">SQUELCH</div>
+                            <div class="lcars-status-value" id="squelchStatus">CLOSED</div>
+                        </div>
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">MODE</div>
+                            <div class="lcars-status-value" id="statusMode">USB</div>
+                        </div>
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">POWER OUT</div>
+                            <div class="lcars-status-value" id="powerOut">0W</div>
+                        </div>
+                        <div class="lcars-status-item">
+                            <div class="lcars-status-label">LOCKOUT</div>
+                            <div class="lcars-status-value" id="lockoutStatus">OFF</div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Audio Integration Notes Panel -->
-        <div class="panel">
-            <h2>🎧 Audio Integration (Linux)</h2>
-            <p style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px;">
-                The FT-991A has a built-in USB sound card. For digital modes (FT8, PSK31, etc.) and audio monitoring:
-            </p>
-            <div style="background: var(--bg-tertiary); padding: 15px; border-radius: var(--radius); font-family: 'Courier New', monospace; font-size: 0.9rem; line-height: 1.4;">
-                <div style="color: var(--accent); margin-bottom: 10px;"># List audio devices:</div>
-                <div>pactl list short sources | grep -i yaesu</div>
-                <div>pactl list short sinks | grep -i yaesu</div>
-                <br>
-                <div style="color: var(--accent); margin-bottom: 10px;"># Route audio for WSJT-X (FT8):</div>
-                <div>pavucontrol  # Use GUI to select FT-991A as input/output</div>
-                <br>
-                <div style="color: var(--accent); margin-bottom: 10px;"># Command line routing:</div>
-                <div>pactl set-default-source "alsa_input.usb-YAESU_FT-991A..."</div>
-                <div>pactl set-default-sink "alsa_output.usb-YAESU_FT-991A..."</div>
+            <!-- Audio Integration Panel -->
+            <div class="lcars-audio-panel lcars-full-width">
+                <div class="lcars-panel-title">🎧 AUDIO INTEGRATION (LINUX)</div>
+                <p style="color: var(--lcars-peach); line-height: 1.6; margin-bottom: 15px;">
+                    The FT-991A has a built-in USB sound card. For digital modes (FT8, PSK31, etc.) and audio monitoring:
+                </p>
+                <div class="lcars-code-block">
+                    <div class="lcars-code-comment"># List audio devices:</div>
+                    <div>pactl list short sources | grep -i yaesu</div>
+                    <div>pactl list short sinks | grep -i yaesu</div>
+                    <br>
+                    <div class="lcars-code-comment"># Route audio for WSJT-X (FT8):</div>
+                    <div>pavucontrol  # Use GUI to select FT-991A as input/output</div>
+                    <br>
+                    <div class="lcars-code-comment"># Command line routing:</div>
+                    <div>pactl set-default-source "alsa_input.usb-YAESU_FT-991A..."</div>
+                    <div>pactl set-default-sink "alsa_output.usb-YAESU_FT-991A..."</div>
+                </div>
             </div>
         </div>
     </div>
@@ -726,10 +1015,10 @@
             
             if (connected) {
                 indicator.classList.add('connected');
-                text.textContent = 'Connected';
+                text.textContent = 'CONNECTED';
             } else {
                 indicator.classList.remove('connected');
-                text.textContent = 'Disconnected';
+                text.textContent = 'DISCONNECTED';
             }
         }
 
@@ -750,18 +1039,18 @@
             const pttButton = document.getElementById('pttButton');
             if (status.tx_active) {
                 txStatus.textContent = 'TX';
-                txStatus.className = 'status-value danger';
+                txStatus.className = 'lcars-status-value danger';
                 pttButton.classList.add('active');
             } else {
                 txStatus.textContent = 'RX';
-                txStatus.className = 'status-value';
+                txStatus.className = 'lcars-status-value';
                 pttButton.classList.remove('active');
             }
             
             // Update squelch
             const squelch = document.getElementById('squelchStatus');
             squelch.textContent = status.squelch_open ? 'OPEN' : 'CLOSED';
-            squelch.className = status.squelch_open ? 'status-value active' : 'status-value';
+            squelch.className = status.squelch_open ? 'lcars-status-value active' : 'lcars-status-value';
             
             // Update S-meter
             updateSMeter(status.s_meter);
@@ -907,12 +1196,12 @@
                 button.classList.add('active');
                 button.textContent = '🔒 LOCKED';
                 status.textContent = 'ON';
-                status.className = 'status-value danger';
+                status.className = 'lcars-status-value danger';
             } else {
                 button.classList.remove('active');
                 button.textContent = '🔓 UNLOCKED';
                 status.textContent = 'OFF';
-                status.className = 'status-value';
+                status.className = 'lcars-status-value';
             }
         }
 
@@ -998,7 +1287,7 @@
 
         // ── Initialization ──────────────────────────────────────
         function init() {
-            console.log('Initializing FT-991A Web GUI...');
+            console.log('Initializing FT-991A LCARS Interface...');
             connectWebSocket();
             initKnobControls();
             updateLockoutDisplay();
