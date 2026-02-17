@@ -1011,6 +1011,61 @@
         }
 
         /* ═══════════════════════════════
+           MOBILE NAVIGATION BAR
+           ═══════════════════════════════ */
+
+        .mobile-nav-bar {
+            display: none; /* Hidden on desktop */
+            background: rgba(255, 153, 51, 0.15);
+            border: 2px solid var(--lcars-orange);
+            border-radius: var(--radius-sm);
+            margin-bottom: 1.5rem;
+            padding: 0.75rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-nav-container {
+            display: flex;
+            gap: 0.5rem;
+            min-width: max-content;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            background: var(--lcars-gold);
+            color: #000;
+            border: none;
+            border-radius: var(--radius);
+            padding: 0.4rem 0.8rem;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            min-height: 44px; /* Touch-friendly */
+            min-width: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .mobile-nav-item:hover {
+            background: var(--lcars-peach);
+            transform: translateY(-1px);
+        }
+
+        .mobile-nav-item.active {
+            background: var(--lcars-blue);
+            color: #000;
+            box-shadow: 0 2px 8px rgba(153, 204, 255, 0.4);
+        }
+
+        /* ═══════════════════════════════
            RESPONSIVE
            ═══════════════════════════════ */
 
@@ -1022,6 +1077,10 @@
             
             .lcars-sidebar {
                 display: none;
+            }
+
+            .mobile-nav-bar {
+                display: block; /* Show on mobile */
             }
             
             .main-grid {
@@ -1171,6 +1230,22 @@
 
         <!-- LCARS Content -->
         <div class="lcars-content">
+
+            <!-- Mobile Navigation Bar (appears only on mobile) -->
+            <div class="mobile-nav-bar" id="mobileNavBar">
+                <div class="mobile-nav-container">
+                    <button class="mobile-nav-item active" data-tab="vfo-ctrl" title="VFO Control - Frequency tuning and operations">VFO</button>
+                    <button class="mobile-nav-item" data-tab="modes" title="Mode Selection - USB, LSB, CW, FM, FT8">MODES</button>
+                    <button class="mobile-nav-item" data-tab="bands" title="Band Selection - HF/VHF/UHF amateur bands">BANDS</button>
+                    <button class="mobile-nav-item" data-tab="tx-pwr" title="TX Power Control - Transmitter power settings">TX PWR</button>
+                    <button class="mobile-nav-item" data-tab="meters" title="Meters - S-meter, SWR, power output">METERS</button>
+                    <button class="mobile-nav-item" data-tab="audio" title="Audio Waterfall - Real-time spectrum display">AUDIO</button>
+                    <button class="mobile-nav-item" data-tab="system" title="System - Memory channels and radio settings">SYSTEM</button>
+                    <button class="mobile-nav-item" data-tab="config" title="Configuration - Serial port and interface settings">CONFIG</button>
+                    <button class="mobile-nav-item" data-tab="status" title="Status - Real-time radio and server information">STATUS</button>
+                    <button class="mobile-nav-item" data-tab="diag" title="Diagnostics - System health and troubleshooting">DIAG</button>
+                </div>
+            </div>
             
             <!-- VFO Control Tab -->
             <div class="tab-content active" id="vfo-ctrl">
@@ -2096,16 +2171,18 @@
                 tab.classList.remove('active');
             });
             
-            // Remove active class from all nav items
-            document.querySelectorAll('.lcars-nav-item').forEach(nav => {
+            // Remove active class from all nav items (both sidebar and mobile)
+            document.querySelectorAll('.lcars-nav-item, .mobile-nav-item').forEach(nav => {
                 nav.classList.remove('active');
             });
             
             // Show selected tab
             document.getElementById(tabId).classList.add('active');
             
-            // Add active class to corresponding nav item
-            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            // Add active class to corresponding nav items (both sidebar and mobile)
+            document.querySelectorAll(`[data-tab="${tabId}"]`).forEach(nav => {
+                nav.classList.add('active');
+            });
             
             // Update status displays for certain tabs
             if (tabId === 'status') {
@@ -3154,8 +3231,8 @@
             updateLockoutDisplay();
             updateStepDisplay();
             
-            // Set up navigation
-            document.querySelectorAll('.lcars-nav-item').forEach(nav => {
+            // Set up navigation (both sidebar and mobile)
+            document.querySelectorAll('.lcars-nav-item, .mobile-nav-item').forEach(nav => {
                 nav.addEventListener('click', (e) => {
                     e.preventDefault();
                     const tabId = nav.dataset.tab;
