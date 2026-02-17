@@ -11,6 +11,7 @@ import logging
 import os
 import subprocess
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set
@@ -64,6 +65,21 @@ class SetupSaveRequest(BaseModel):
     baudrate: int
     callsign: Optional[str] = None
 
+class ScanRequest(BaseModel):
+    start_freq: int  # Start frequency in Hz
+    end_freq: int    # End frequency in Hz
+    step: int        # Step size in Hz
+    threshold: int   # S-meter threshold (0-255)
+
+class MemoryRecallRequest(BaseModel):
+    channel: int  # 1-99
+
+class MemoryStoreRequest(BaseModel):
+    channel: int  # 1-99
+
+class MemoryClearRequest(BaseModel):
+    channel: int  # 1-99
+
 # ── Global State ─────────────────────────────────────────────
 
 app = FastAPI(title="FT-991A Web GUI", version="0.2.0")
@@ -71,6 +87,10 @@ radio: Optional[FT991A] = None
 radio_connected = False
 tx_lockout = False  # Safety: prevents accidental PTT
 websocket_clients: Set[WebSocket] = set()
+
+# Scanner state
+scan_active = False
+scan_task: Optional[asyncio.Task] = None
 
 # Configuration
 radio_config = {
@@ -606,6 +626,371 @@ async def get_config():
         "connected": radio_connected
     }
 
+# ── Memory Management Endpoints ──────────────────────────────
+
+@app.get("/api/memory/list")
+async def get_memory_list():
+    """Scan and list all memory channels (MR001; through MR099;)."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    
+    try:
+        logger.info("Starting memory channel scan (MR001-MR099)")
+        channels = {}
+        
+        # Scan all 99 memory channels
+        for ch in range(1, 100):
+            channel_str = f"{ch:03d}"
+            
+            try:
+                # Send MR command to read memory channel
+                mr_command = f"MR{channel_str};"
+                logger.debug(f"Sending CAT: {mr_command}")
+                
+                # Use raw serial for memory commands
+                radio.serial.write(mr_command.encode())
+                response = radio.serial.readline().decode().strip()
+                
+                logger.debug(f"MR{channel_str} response: {response}")
+                
+                # Parse MR response format
+                if response.startswith(f"MR{channel_str}") and len(response) > 10:
+                    # Parse memory data from response
+                    # Format: MR001+14074000000100200000000000000000000000000;
+                    #         MRccc+ffffffffmmm...other...
+                    
+                    try:
+                        # Extract frequency (positions 6-16, 11 digits)
+                        freq_str = response[6:17]  # 11 digit frequency in Hz
+                        frequency = int(freq_str) if freq_str.isdigit() else 0
+                        
+                        # Extract mode (position 17-19, 3 digits)
+                        mode_code = response[17:20] if len(response) > 19 else "000"
+                        mode_map = {
+                            "001": "LSB", "002": "USB", "003": "CW", "004": "FM",
+                            "005": "AM", "006": "RTTY-LSB", "007": "CW-R", "008": "DATA-LSB",
+                            "009": "RTTY-USB", "010": "DATA-FM", "011": "FM-N", "012": "DATA-USB",
+                            "013": "AM-N", "014": "C4FM"
+                        }
+                        mode = mode_map.get(mode_code, "UNK")
+                        
+                        # Store channel data if frequency is valid
+                        if frequency > 0:
+                            channels[channel_str] = {
+                                "channel": channel_str,
+                                "frequency": frequency,
+                                "mode": mode,
+                                "mode_code": mode_code,
+                                "raw_response": response,
+                                "label": "",  # TODO: Implement MT command for labels
+                                "ctcss": "OFF",  # TODO: Parse CTCSS from response
+                                "is_current": False  # Will be updated if needed
+                            }
+                            logger.debug(f"Memory {channel_str}: {frequency} Hz, {mode}")
+                        
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"Failed to parse memory {channel_str} response: {e}")
+                        continue
+                
+            except Exception as e:
+                logger.warning(f"Error reading memory {channel_str}: {e}")
+                continue
+        
+        logger.info(f"Memory scan completed: {len(channels)} programmed channels found")
+        
+        return {
+            "success": True,
+            "channels": channels,
+            "total_programmed": len(channels),
+            "total_capacity": 99
+        }
+        
+    except Exception as e:
+        logger.error(f"Memory scan failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Memory scan failed: {str(e)}")
+
+@app.post("/api/memory/recall")
+async def recall_memory_channel(req: MemoryRecallRequest):
+    """Recall memory channel to VFO-A (MC command)."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    
+    if req.channel < 1 or req.channel > 99:
+        raise HTTPException(status_code=400, detail="Channel must be between 1 and 99")
+    
+    try:
+        channel_str = f"{req.channel:03d}"
+        mc_command = f"MC{channel_str};"
+        
+        logger.info(f"Recalling memory channel {channel_str}")
+        logger.debug(f"Sending CAT: {mc_command}")
+        
+        # Send MC command to recall memory
+        radio.serial.write(mc_command.encode())
+        
+        # Give radio time to process
+        await asyncio.sleep(0.1)
+        
+        # Verify by reading current frequency
+        try:
+            status = radio.get_status()
+            logger.info(f"Memory {channel_str} recalled - VFO-A: {status.frequency_a} Hz")
+        except:
+            pass
+        
+        return {
+            "success": True,
+            "channel": channel_str,
+            "message": f"Memory channel {channel_str} recalled to VFO-A"
+        }
+        
+    except Exception as e:
+        logger.error(f"Memory recall failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Memory recall failed: {str(e)}")
+
+@app.post("/api/memory/store")
+async def store_to_memory_channel(req: MemoryStoreRequest):
+    """Store current VFO-A to memory channel (MW command)."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    
+    if req.channel < 1 or req.channel > 99:
+        raise HTTPException(status_code=400, detail="Channel must be between 1 and 99")
+    
+    try:
+        channel_str = f"{req.channel:03d}"
+        
+        # Get current VFO-A status first
+        status = radio.get_status()
+        current_freq = status.frequency_a
+        current_mode = status.mode
+        
+        logger.info(f"Storing VFO-A to memory {channel_str}: {current_freq} Hz, {current_mode}")
+        
+        # Send MW command to store current VFO-A to memory
+        # MW command format: MW{ccc}; - stores current VFO-A to channel ccc
+        mw_command = f"MW{channel_str};"
+        logger.debug(f"Sending CAT: {mw_command}")
+        
+        radio.serial.write(mw_command.encode())
+        
+        # Give radio time to process
+        await asyncio.sleep(0.2)
+        
+        return {
+            "success": True,
+            "channel": channel_str,
+            "stored_frequency": current_freq,
+            "stored_mode": current_mode,
+            "message": f"VFO-A stored to memory channel {channel_str}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Memory store failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Memory store failed: {str(e)}")
+
+@app.post("/api/memory/clear")
+async def clear_memory_channel(req: MemoryClearRequest):
+    """Clear/delete a memory channel."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    
+    if req.channel < 1 or req.channel > 99:
+        raise HTTPException(status_code=400, detail="Channel must be between 1 and 99")
+    
+    try:
+        channel_str = f"{req.channel:03d}"
+        
+        logger.info(f"Clearing memory channel {channel_str}")
+        
+        # The FT-991A doesn't have a direct "clear memory" command
+        # We need to store an invalid/empty frequency to clear it
+        # Alternative: Use MW with a specific "empty" pattern
+        
+        # Method: Store a very low frequency (30 kHz) which effectively "clears" the channel
+        # First set VFO to minimum frequency, then store, then restore VFO
+        original_status = radio.get_status()
+        original_freq = original_status.frequency_a
+        
+        # Set VFO-A to minimum frequency (30 kHz)
+        radio.set_frequency_a(30000)
+        await asyncio.sleep(0.1)
+        
+        # Store this "empty" frequency to memory
+        mw_command = f"MW{channel_str};"
+        radio.serial.write(mw_command.encode())
+        await asyncio.sleep(0.2)
+        
+        # Restore original VFO-A frequency
+        radio.set_frequency_a(original_freq)
+        
+        logger.info(f"Memory channel {channel_str} cleared (set to 30 kHz)")
+        
+        return {
+            "success": True,
+            "channel": channel_str,
+            "message": f"Memory channel {channel_str} cleared"
+        }
+        
+    except Exception as e:
+        logger.error(f"Memory clear failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Memory clear failed: {str(e)}")
+
+# ── Scanner Endpoints ────────────────────────────────────────
+
+@app.post("/api/scan")
+async def start_scan(req: ScanRequest):
+    """Start frequency scanning."""
+    global scan_active, scan_task
+    
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+    
+    if scan_active:
+        raise HTTPException(status_code=409, detail="Scan already in progress")
+    
+    # Validate parameters
+    if req.start_freq >= req.end_freq:
+        raise HTTPException(status_code=400, detail="Start frequency must be less than end frequency")
+    
+    if req.start_freq < 30000 or req.end_freq > 470000000:
+        raise HTTPException(status_code=400, detail="Frequency range must be between 30 kHz and 470 MHz")
+    
+    if req.step < 100 or req.step > 1000000:
+        raise HTTPException(status_code=400, detail="Step size must be between 100 Hz and 1 MHz")
+    
+    try:
+        scan_active = True
+        scan_task = asyncio.create_task(scan_frequency_range(req))
+        
+        logger.info(f"Started scan: {req.start_freq}-{req.end_freq} Hz, step {req.step} Hz, threshold {req.threshold}")
+        
+        return {
+            "success": True,
+            "message": "Scan started",
+            "parameters": {
+                "start_freq": req.start_freq,
+                "end_freq": req.end_freq,
+                "step": req.step,
+                "threshold": req.threshold,
+                "estimated_points": int((req.end_freq - req.start_freq) / req.step)
+            }
+        }
+        
+    except Exception as e:
+        scan_active = False
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/scan/stop")
+async def stop_scan():
+    """Stop current frequency scan."""
+    global scan_active, scan_task
+    
+    if not scan_active:
+        return {"success": True, "message": "No scan in progress"}
+    
+    scan_active = False
+    
+    if scan_task:
+        scan_task.cancel()
+        try:
+            await scan_task
+        except asyncio.CancelledError:
+            pass
+        scan_task = None
+    
+    # Broadcast scan stopped
+    await manager.broadcast({
+        "type": "scan_complete",
+        "message": "Scan stopped by user"
+    })
+    
+    logger.info("Scan stopped by user request")
+    return {"success": True, "message": "Scan stopped"}
+
+async def scan_frequency_range(req: ScanRequest):
+    """Background task to perform the frequency scan."""
+    global scan_active
+    
+    try:
+        current_freq = req.start_freq
+        scan_count = 0
+        active_count = 0
+        start_time = time.time()
+        
+        while scan_active and current_freq <= req.end_freq:
+            try:
+                # Set radio frequency
+                radio.set_frequency_a(current_freq)
+                
+                # Wait for radio to settle (200ms as specified)
+                await asyncio.sleep(0.2)
+                
+                # Read S-meter
+                status = radio.get_status()
+                s_meter = status.s_meter
+                mode = status.mode
+                
+                scan_count += 1
+                
+                # Check if signal is above threshold
+                is_active = s_meter >= req.threshold
+                if is_active:
+                    active_count += 1
+                
+                # Broadcast progress
+                await manager.broadcast({
+                    "type": "scan_progress",
+                    "frequency": current_freq,
+                    "s_meter": s_meter,
+                    "mode": mode,
+                    "is_active": is_active,
+                    "scan_count": scan_count,
+                    "active_count": active_count,
+                    "progress": ((current_freq - req.start_freq) / (req.end_freq - req.start_freq)) * 100
+                })
+                
+                # Move to next frequency
+                current_freq += req.step
+                
+                # Small delay to prevent overwhelming the radio
+                await asyncio.sleep(0.05)
+                
+            except Exception as e:
+                logger.error(f"Error during scan at {current_freq} Hz: {e}")
+                # Continue scan despite individual frequency errors
+                current_freq += req.step
+                continue
+        
+        # Scan completed successfully
+        if scan_active:  # Only if not cancelled
+            elapsed_time = time.time() - start_time
+            
+            await manager.broadcast({
+                "type": "scan_complete",
+                "message": f"Scan completed: {scan_count} frequencies, {active_count} active signals",
+                "summary": {
+                    "total_frequencies": scan_count,
+                    "active_signals": active_count,
+                    "elapsed_time": round(elapsed_time, 1),
+                    "scan_rate": round(scan_count / elapsed_time, 1) if elapsed_time > 0 else 0
+                }
+            })
+            
+            logger.info(f"Scan completed: {scan_count} frequencies in {elapsed_time:.1f}s, {active_count} active")
+        
+    except asyncio.CancelledError:
+        logger.info("Scan cancelled")
+        raise
+    except Exception as e:
+        logger.error(f"Scan error: {e}")
+        await manager.broadcast({
+            "type": "scan_error",
+            "message": str(e)
+        })
+    finally:
+        scan_active = False
+
 # ── Setup Wizard Endpoints ───────────────────────────────────
 
 @app.get("/api/setup/ports")
@@ -798,6 +1183,16 @@ async def shutdown_event():
     
     # Stop audio streaming
     audio_manager.stop_audio_stream()
+    
+    # Stop any active scan
+    global scan_active, scan_task
+    if scan_active and scan_task:
+        scan_active = False
+        scan_task.cancel()
+        try:
+            await scan_task
+        except asyncio.CancelledError:
+            pass
     
     # Disconnect radio safely
     if radio_connected and radio:

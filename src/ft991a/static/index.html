@@ -936,36 +936,104 @@
 
         .memory-item {
             display: grid;
-            grid-template-columns: 50px 150px 80px 1fr auto;
+            grid-template-columns: 60px 150px 80px 1fr auto;
             gap: 1rem;
             padding: 0.75rem;
             border-bottom: 1px solid var(--lcars-teal);
             align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .memory-item:hover {
+            background: rgba(255, 204, 102, 0.1);
+            border-bottom-color: var(--lcars-gold);
         }
 
         .memory-item:last-child {
             border-bottom: none;
         }
 
+        .memory-item.current {
+            background: rgba(153, 221, 102, 0.15);
+            border-left: 4px solid var(--lcars-green);
+            border-bottom-color: var(--lcars-green);
+        }
+
+        .memory-item.empty {
+            opacity: 0.4;
+            font-style: italic;
+        }
+
         .memory-channel {
             font-weight: 700;
             color: var(--lcars-gold);
             text-align: center;
+            font-family: 'Antonio', monospace;
+            font-size: 0.9rem;
         }
 
         .memory-frequency {
             color: var(--lcars-text);
-            font-family: monospace;
+            font-family: 'Antonio', monospace;
+            font-weight: 600;
         }
 
         .memory-mode {
             color: var(--lcars-peach);
             font-size: 0.8rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .memory-label {
+            color: var(--lcars-lilac);
+            font-size: 0.8rem;
+            font-style: normal;
         }
 
         .memory-actions {
             display: flex;
             gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .memory-action-btn {
+            padding: 0.2rem 0.5rem;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid var(--lcars-blue);
+            border-radius: var(--radius-sm);
+            color: var(--lcars-blue);
+            font-family: inherit;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .memory-action-btn:hover {
+            background: var(--lcars-blue);
+            color: #000;
+        }
+
+        .memory-action-btn.recall {
+            border-color: var(--lcars-green);
+            color: var(--lcars-green);
+        }
+
+        .memory-action-btn.recall:hover {
+            background: var(--lcars-green);
+        }
+
+        .memory-action-btn.delete {
+            border-color: var(--lcars-red);
+            color: var(--lcars-red);
+        }
+
+        .memory-action-btn.delete:hover {
+            background: var(--lcars-red);
+            color: #fff;
         }
 
         /* ═══════════════════════════════
@@ -1241,6 +1309,7 @@
                     <button class="mobile-nav-item" data-tab="tx-pwr" title="TX Power Control - Transmitter power settings">TX PWR</button>
                     <button class="mobile-nav-item" data-tab="meters" title="Meters - S-meter, SWR, power output">METERS</button>
                     <button class="mobile-nav-item" data-tab="audio" title="Audio Waterfall - Real-time spectrum display">AUDIO</button>
+                    <button class="mobile-nav-item" data-tab="scanner" title="Band Scanner - Scan frequency ranges for active signals">SCANNER</button>
                     <button class="mobile-nav-item" data-tab="memory" title="Memory Channels - Store, recall and manage memory channels">MEMORY</button>
                     <button class="mobile-nav-item" data-tab="system" title="System - Memory channels and radio settings">SYSTEM</button>
                     <button class="mobile-nav-item" data-tab="config" title="Configuration - Serial port and interface settings">CONFIG</button>
@@ -1648,9 +1717,20 @@
                                     <div class="lcars-panel-title">Waterfall Controls</div>
                                 </div>
 
-                                <div class="form-group">
+                                <div class="form-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <button class="btn success" id="waterfallPlayButton" onclick="toggleWaterfall()" 
                                             title="Start/stop audio stream and waterfall display">▶ START WATERFALL</button>
+                                    <button class="btn" id="listenButton" onclick="toggleListen()" 
+                                            style="background: var(--lcars-blue);"
+                                            title="Listen to radio audio through your browser speakers">🔇 LISTEN OFF</button>
+                                </div>
+                                <div class="form-group">
+                                    <label>🔊 Volume</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem;">
+                                        <input type="range" class="volume-slider" id="audioVolumeSlider" min="0" max="100" value="50"
+                                               oninput="setAudioVolume(this.value)" title="Adjust radio audio volume">
+                                        <span id="volumeValue" style="min-width: 40px; text-align: right; color: var(--lcars-gold); font-weight: bold;">50%</span>
+                                    </div>
                                 </div>
 
                                 <div class="form-group">
@@ -1967,6 +2047,177 @@
                             <br>
                             <div class="audio-code-comment"># Future: Memory tag (label) support:</div>
                             <div><span style="color: var(--lcars-lilac);">MT001;</span>  # Read memory tag for channel 001 (8 chars max)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCANNER Tab -->
+            <div class="tab-content" id="scanner">
+                <div class="lcars-panel full-width">
+                    <div class="lcars-panel-header">
+                        <div class="lcars-panel-indicator orange"></div>
+                        <div class="lcars-panel-title">📡 Band Scanner</div>
+                    </div>
+
+                    <div class="main-grid">
+                        <!-- Scanner Controls -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator blue"></div>
+                                <div class="lcars-panel-title">Scanner Controls</div>
+                            </div>
+
+                            <!-- Preset Band Ranges -->
+                            <div class="form-group">
+                                <label>Preset Band Ranges</label>
+                                <div class="selector-grid">
+                                    <button class="selector-btn" onclick="selectBandRange(3500000, 4000000)" 
+                                            title="80 meters band - 3.5-4.0 MHz">80M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(7000000, 7300000)" 
+                                            title="40 meters band - 7.0-7.3 MHz">40M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(14000000, 14350000)" 
+                                            title="20 meters band - 14.0-14.35 MHz">20M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(21000000, 21450000)" 
+                                            title="15 meters band - 21.0-21.45 MHz">15M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(28000000, 29700000)" 
+                                            title="10 meters band - 28.0-29.7 MHz">10M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(144000000, 148000000)" 
+                                            title="2 meters band - 144.0-148.0 MHz">2M</button>
+                                    <button class="selector-btn" onclick="selectBandRange(420000000, 450000000)" 
+                                            title="70 centimeters band - 420.0-450.0 MHz">70CM</button>
+                                </div>
+                            </div>
+
+                            <!-- Custom Range Entry -->
+                            <div class="form-group">
+                                <label>Custom Frequency Range</label>
+                                <div class="form-row">
+                                    <input type="number" id="scanStartFreq" placeholder="Start (Hz)" 
+                                           min="30000" max="470000000" title="Scan start frequency in Hz">
+                                    <input type="number" id="scanEndFreq" placeholder="End (Hz)" 
+                                           min="30000" max="470000000" title="Scan end frequency in Hz">
+                                </div>
+                            </div>
+
+                            <!-- Step Size Selector -->
+                            <div class="form-group">
+                                <label>Step Size</label>
+                                <div class="selector-grid">
+                                    <button class="selector-btn" data-step="1000" onclick="setScanStep(1000)" 
+                                            title="1 kHz step size">1kHz</button>
+                                    <button class="selector-btn active" data-step="5000" onclick="setScanStep(5000)" 
+                                            title="5 kHz step size - good balance">5kHz</button>
+                                    <button class="selector-btn" data-step="10000" onclick="setScanStep(10000)" 
+                                            title="10 kHz step size">10kHz</button>
+                                    <button class="selector-btn" data-step="25000" onclick="setScanStep(25000)" 
+                                            title="25 kHz step size - faster scan">25kHz</button>
+                                    <button class="selector-btn" data-step="100000" onclick="setScanStep(100000)" 
+                                            title="100 kHz step size - very fast">100kHz</button>
+                                </div>
+                            </div>
+
+                            <!-- Squelch Threshold -->
+                            <div class="form-group">
+                                <label>Squelch Threshold (S-meter)</label>
+                                <div style="display: flex; align-items: center; gap: 1rem;">
+                                    <input type="range" class="volume-slider" id="squelchThreshold" min="0" max="255" value="50" 
+                                           oninput="updateSquelchThreshold(this.value)" title="S-meter threshold for 'active' signals">
+                                    <span id="squelchValue" style="min-width: 50px; text-align: right; color: var(--lcars-green); font-weight: bold; font-size: 1rem;">S3</span>
+                                </div>
+                            </div>
+
+                            <!-- Scan Control -->
+                            <div class="form-group">
+                                <button class="btn primary" id="scanButton" onclick="toggleScan()" 
+                                        title="Start/stop frequency scanning">▶ START SCAN</button>
+                            </div>
+
+                            <!-- Scan Progress -->
+                            <div class="meter">
+                                <div class="meter-label">
+                                    <span>Scan Progress</span>
+                                    <span class="meter-value" id="scanProgress">0%</span>
+                                </div>
+                                <div class="meter-bar">
+                                    <div class="meter-fill" id="scanProgressBar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Scan Status -->
+                        <div class="lcars-panel">
+                            <div class="lcars-panel-header">
+                                <div class="lcars-panel-indicator green"></div>
+                                <div class="lcars-panel-title">Scan Status</div>
+                            </div>
+
+                            <div class="status-grid">
+                                <div class="status-item">
+                                    <div class="status-label">Status</div>
+                                    <div class="status-value" id="scanStatus">STOPPED</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Current Freq</div>
+                                    <div class="status-value" id="scanCurrentFreq">---</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Active Signals</div>
+                                    <div class="status-value" id="scanActiveCount">0</div>
+                                </div>
+                                <div class="status-item">
+                                    <div class="status-label">Scanned</div>
+                                    <div class="status-value" id="scanCount">0</div>
+                                </div>
+                            </div>
+
+                            <div class="diagnostic-item">
+                                <h4>Scan Parameters</h4>
+                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--lcars-text);">
+                                    <div>Range: <span id="scanRangeDisplay">Not set</span></div>
+                                    <div>Step: <span id="scanStepDisplay">5 kHz</span></div>
+                                    <div>Threshold: <span id="scanThresholdDisplay">S3</span></div>
+                                    <div>ETA: <span id="scanETA">---</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scan Results Table -->
+                    <div class="lcars-panel full-width">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator purple"></div>
+                            <div class="lcars-panel-title">Scan Results</div>
+                        </div>
+
+                        <div style="background: rgba(0, 0, 0, 0.6); border: 2px solid var(--lcars-blue); border-radius: var(--radius-sm); max-height: 400px; overflow-y: auto;">
+                            <table style="width: 100%; border-collapse: collapse; color: var(--lcars-text);">
+                                <thead style="background: rgba(153, 204, 255, 0.1); position: sticky; top: 0;">
+                                    <tr>
+                                        <th style="padding: 0.75rem; text-align: left; border-bottom: 1px solid var(--lcars-teal); color: var(--lcars-gold); font-weight: 600;">Frequency</th>
+                                        <th style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal); color: var(--lcars-gold); font-weight: 600;">S-Meter</th>
+                                        <th style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal); color: var(--lcars-gold); font-weight: 600;">Mode</th>
+                                        <th style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal); color: var(--lcars-gold); font-weight: 600;">Status</th>
+                                        <th style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal); color: var(--lcars-gold); font-weight: 600;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="scanResultsTable">
+                                    <tr>
+                                        <td colspan="5" style="padding: 2rem; text-align: center; color: var(--lcars-peach); font-style: italic;">
+                                            No scan results yet. Start a scan to see active frequencies.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-actions" style="margin-top: 1rem;">
+                            <button class="btn" onclick="clearScanResults()" 
+                                    title="Clear all scan results from the table">CLEAR RESULTS</button>
+                            <button class="btn" onclick="exportScanResults()" 
+                                    title="Export scan results to CSV file">EXPORT CSV</button>
+                            <button class="btn primary" onclick="scanActiveOnly()" 
+                                    title="Rescan only previously active frequencies">RESCAN ACTIVE</button>
                         </div>
                     </div>
                 </div>
@@ -2409,6 +2660,9 @@
         let waterfallCanvas = null;
         let waterfallCtx = null;
         let audioContext = null;
+        let audioGainNode = null;
+        let audioListening = false;
+        let audioScriptProcessor = null;
         let analyserNode = null;
         let waterfallRunning = false;
         let waterfallData = [];
@@ -2447,6 +2701,8 @@
                 updateStatusTab();
             } else if (tabId === 'system') {
                 loadMemoryChannels();
+            } else if (tabId === 'memory') {
+                updateVfoForMemory();
             } else if (tabId === 'diag') {
                 updateDiagnosticsTab();
             }
@@ -2493,6 +2749,11 @@
                     break;
                 case 'error':
                     logError(data.message);
+                    break;
+                case 'scan_progress':
+                case 'scan_complete':
+                case 'scan_error':
+                    handleScanMessage(data);
                     break;
                 default:
                     console.log('Unknown message type:', data.type);
@@ -2562,6 +2823,9 @@
             
             // Update status tab displays
             updateStatusTabData(status);
+            
+            // Update memory tab VFO display
+            updateVfoForMemory();
             
             // Update last update time
             updateLastUpdateTime();
@@ -3260,6 +3524,32 @@
             if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); tuneDown(); }
         });
 
+        // ── Audio Listen Controls ──────────────────────────
+        function toggleListen() {
+            audioListening = !audioListening;
+            const btn = document.getElementById('listenButton');
+            if (audioListening) {
+                btn.innerHTML = '🔊 LISTENING';
+                btn.style.background = 'var(--lcars-green)';
+                if (audioGainNode) audioGainNode.gain.value = (document.getElementById('audioVolumeSlider').value / 100);
+            } else {
+                btn.innerHTML = '🔇 LISTEN OFF';
+                btn.style.background = 'var(--lcars-blue)';
+                if (audioGainNode) audioGainNode.gain.value = 0;
+            }
+            // Auto-start waterfall if not running
+            if (audioListening && !waterfallRunning) {
+                toggleWaterfall();
+            }
+        }
+
+        function setAudioVolume(val) {
+            document.getElementById('volumeValue').textContent = val + '%';
+            if (audioGainNode && audioListening) {
+                audioGainNode.gain.value = val / 100;
+            }
+        }
+
         // ── S-Meter History Chart ──────────────────────────
         const smeterHistory = [];
         const SMETER_MAX_POINTS = 120;
@@ -3375,10 +3665,38 @@
             
             try {
                 // Initialize Web Audio API
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                audioContext = new (window.AudioContext || window.webkitAudioContext)({sampleRate: 48000});
                 analyserNode = audioContext.createAnalyser();
                 analyserNode.fftSize = waterfallConfig.fftSize;
                 analyserNode.smoothingTimeConstant = 0.8;
+                
+                // Audio playback chain: scriptProcessor → gainNode → destination
+                audioGainNode = audioContext.createGain();
+                audioGainNode.gain.value = audioListening ? 1.0 : 0.0;
+                audioGainNode.connect(audioContext.destination);
+                
+                // Script processor to queue PCM for playback
+                audioScriptProcessor = audioContext.createScriptProcessor(4096, 1, 1);
+                audioScriptProcessor._queue = [];
+                audioScriptProcessor.onaudioprocess = function(e) {
+                    const output = e.outputBuffer.getChannelData(0);
+                    const queue = audioScriptProcessor._queue;
+                    let written = 0;
+                    while (written < output.length && queue.length > 0) {
+                        const chunk = queue[0];
+                        const available = chunk.length - (chunk._offset || 0);
+                        const needed = output.length - written;
+                        const take = Math.min(available, needed);
+                        output.set(chunk.subarray(chunk._offset || 0, (chunk._offset || 0) + take), written);
+                        written += take;
+                        chunk._offset = (chunk._offset || 0) + take;
+                        if (chunk._offset >= chunk.length) queue.shift();
+                    }
+                    // Fill remaining with silence
+                    for (let i = written; i < output.length; i++) output[i] = 0;
+                };
+                audioScriptProcessor.connect(analyserNode);
+                audioScriptProcessor.connect(audioGainNode);
                 
                 // Connect to audio WebSocket
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -3464,12 +3782,14 @@
             audioLevel = maxSample;
             updateAudioLevel();
             
-            // Create audio buffer and process through analyser
-            if (audioContext && analyserNode) {
-                const audioBuffer = audioContext.createBuffer(1, float32Array.length, 48000);
-                audioBuffer.copyToChannel(float32Array, 0);
+            // Queue audio for playback + FFT analysis
+            if (audioContext && audioScriptProcessor) {
+                // Queue for playback (keep max ~1 second buffered)
+                const q = audioScriptProcessor._queue;
+                q.push(float32Array);
+                while (q.length > 12) q.shift(); // ~12 chunks = ~1s at 4096/48000
                 
-                // Get frequency data
+                // Get frequency data from analyser
                 const bufferLength = analyserNode.frequencyBinCount;
                 if (!frequencyData) {
                     frequencyData = new Uint8Array(bufferLength);
@@ -3674,6 +3994,782 @@
             waterfallCanvas.height = height;
             document.getElementById('heightValue').textContent = `${height}px`;
         }
+
+        // ── Memory Channel Management ───────────────────────────
+        let memoryChannels = {};  // Store memory channel data
+        
+        async function scanMemoryChannels() {
+            if (!radio_connected) {
+                alert('Radio not connected. Please connect to radio first.');
+                return;
+            }
+            
+            const loadingMsg = document.getElementById('memoryLoadingMsg');
+            const scanBtn = document.getElementById('scanMemoryBtn');
+            
+            // Show loading state
+            loadingMsg.innerHTML = 'Scanning memory channels... <br><small>Reading MR001; through MR099; from radio</small>';
+            scanBtn.disabled = true;
+            scanBtn.textContent = 'SCANNING...';
+            
+            try {
+                const response = await fetch('/api/memory/list', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                memoryChannels = data.channels || {};
+                
+                displayMemoryChannels();
+                updateMemoryStats();
+                updateLastMemoryOp('Memory scan completed');
+                
+                console.log('Memory scan completed:', Object.keys(memoryChannels).length, 'channels');
+                
+            } catch (error) {
+                console.error('Memory scan failed:', error);
+                loadingMsg.innerHTML = `<span style="color: var(--lcars-red);">Scan failed: ${error.message}</span>`;
+                logError('Memory scan failed: ' + error.message);
+            } finally {
+                scanBtn.disabled = false;
+                scanBtn.textContent = 'SCAN ALL MEMORIES';
+            }
+        }
+        
+        function displayMemoryChannels() {
+            const list = document.getElementById('memoryChannelList');
+            const loadingMsg = document.getElementById('memoryLoadingMsg');
+            
+            // Hide loading message
+            loadingMsg.style.display = 'none';
+            
+            let html = '';
+            let programmedCount = 0;
+            
+            // Generate all 99 channels
+            for (let i = 1; i <= 99; i++) {
+                const channel = i.toString().padStart(3, '0');
+                const memory = memoryChannels[channel];
+                
+                if (memory && memory.frequency > 0) {
+                    // Programmed memory
+                    programmedCount++;
+                    const freqMHz = (memory.frequency / 1000000).toFixed(6);
+                    const isCurrent = memory.is_current || false;
+                    
+                    html += `
+                        <div class="memory-item ${isCurrent ? 'current' : ''}" onclick="showMemoryDetails('${channel}')">
+                            <div class="memory-channel">${channel}</div>
+                            <div class="memory-frequency">${freqMHz}</div>
+                            <div class="memory-mode">${memory.mode || 'UNK'}</div>
+                            <div class="memory-label">${memory.label || '-'}</div>
+                            <div class="memory-actions">
+                                <button class="memory-action-btn recall" onclick="event.stopPropagation(); recallMemoryByChannel('${channel}')" 
+                                        title="Recall memory channel ${channel} to VFO-A">RCL</button>
+                                <button class="memory-action-btn delete" onclick="event.stopPropagation(); deleteMemoryByChannel('${channel}')"
+                                        title="Delete memory channel ${channel}">DEL</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Empty memory slot
+                    html += `
+                        <div class="memory-item empty" onclick="showMemoryDetails('${channel}')">
+                            <div class="memory-channel">${channel}</div>
+                            <div class="memory-frequency">---.------</div>
+                            <div class="memory-mode">---</div>
+                            <div class="memory-label">Empty</div>
+                            <div class="memory-actions">
+                                <button class="memory-action-btn" onclick="event.stopPropagation(); storeToMemoryByChannel('${channel}')"
+                                        title="Store current VFO-A to memory channel ${channel}">STORE</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            list.innerHTML = html;
+            
+            // Update programmed count
+            document.getElementById('programmedChannels').textContent = programmedCount;
+        }
+        
+        function updateMemoryStats() {
+            const programmed = Object.keys(memoryChannels).filter(ch => 
+                memoryChannels[ch] && memoryChannels[ch].frequency > 0
+            ).length;
+            
+            document.getElementById('programmedChannels').textContent = programmed;
+            
+            // Update current memory display
+            const currentCh = Object.keys(memoryChannels).find(ch => 
+                memoryChannels[ch] && memoryChannels[ch].is_current
+            );
+            document.getElementById('currentMemoryChannel').textContent = currentCh || '-';
+        }
+        
+        function updateLastMemoryOp(operation) {
+            document.getElementById('lastMemoryOp').textContent = operation;
+        }
+        
+        function refreshMemoryDisplay() {
+            if (Object.keys(memoryChannels).length > 0) {
+                displayMemoryChannels();
+                updateMemoryStats();
+                updateLastMemoryOp('Display refreshed');
+            } else {
+                document.getElementById('memoryLoadingMsg').innerHTML = 
+                    'No memory data loaded. Click "SCAN ALL MEMORIES" first.';
+            }
+        }
+        
+        async function recallMemoryChannel() {
+            const channelNum = document.getElementById('recallChannelNum').value;
+            if (!channelNum) {
+                alert('Please enter a memory channel number (001-099)');
+                return;
+            }
+            
+            await recallMemoryByChannel(channelNum.padStart(3, '0'));
+        }
+        
+        async function recallMemoryByChannel(channel) {
+            if (!radio_connected) {
+                alert('Radio not connected');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/memory/recall', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel: parseInt(channel) })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateLastMemoryOp(`Recalled memory ${channel}`);
+                console.log('Memory recalled:', data);
+                
+                // Update current memory indicator
+                Object.values(memoryChannels).forEach(mem => mem.is_current = false);
+                if (memoryChannels[channel]) {
+                    memoryChannels[channel].is_current = true;
+                }
+                displayMemoryChannels();
+                
+            } catch (error) {
+                console.error('Memory recall failed:', error);
+                alert(`Memory recall failed: ${error.message}`);
+                logError('Memory recall failed: ' + error.message);
+            }
+        }
+        
+        async function storeToMemoryChannel() {
+            const channelNum = document.getElementById('storeChannelNum').value;
+            if (!channelNum) {
+                alert('Please enter a memory channel number (001-099)');
+                return;
+            }
+            
+            await storeToMemoryByChannel(channelNum.padStart(3, '0'));
+        }
+        
+        async function storeToMemoryByChannel(channel) {
+            if (!radio_connected) {
+                alert('Radio not connected');
+                return;
+            }
+            
+            if (!radioStatus.frequency_a) {
+                alert('No VFO-A frequency available');
+                return;
+            }
+            
+            const confirm = window.confirm(
+                `Store current VFO-A to memory ${channel}?\n\n` +
+                `Frequency: ${formatFrequencyPrecise(radioStatus.frequency_a)}\n` +
+                `Mode: ${radioStatus.mode}\n\n` +
+                `This will overwrite any existing data in channel ${channel}.`
+            );
+            
+            if (!confirm) return;
+            
+            try {
+                const response = await fetch('/api/memory/store', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel: parseInt(channel) })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateLastMemoryOp(`Stored to memory ${channel}`);
+                console.log('Memory stored:', data);
+                
+                // Update local memory data
+                memoryChannels[channel] = {
+                    frequency: radioStatus.frequency_a,
+                    mode: radioStatus.mode,
+                    label: '',
+                    is_current: false
+                };
+                
+                displayMemoryChannels();
+                updateMemoryStats();
+                
+            } catch (error) {
+                console.error('Memory store failed:', error);
+                alert(`Memory store failed: ${error.message}`);
+                logError('Memory store failed: ' + error.message);
+            }
+        }
+        
+        async function clearMemoryChannel() {
+            const channelNum = document.getElementById('recallChannelNum').value || 
+                             document.getElementById('storeChannelNum').value;
+            if (!channelNum) {
+                alert('Please enter a memory channel number to clear');
+                return;
+            }
+            
+            await deleteMemoryByChannel(channelNum.padStart(3, '0'));
+        }
+        
+        async function deleteMemoryByChannel(channel) {
+            if (!radio_connected) {
+                alert('Radio not connected');
+                return;
+            }
+            
+            const memory = memoryChannels[channel];
+            if (!memory || memory.frequency <= 0) {
+                alert(`Memory channel ${channel} is already empty`);
+                return;
+            }
+            
+            const confirm = window.confirm(
+                `Delete memory channel ${channel}?\n\n` +
+                `Frequency: ${(memory.frequency / 1000000).toFixed(6)} MHz\n` +
+                `Mode: ${memory.mode}\n\n` +
+                `This cannot be undone.`
+            );
+            
+            if (!confirm) return;
+            
+            try {
+                const response = await fetch('/api/memory/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ channel: parseInt(channel) })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                updateLastMemoryOp(`Cleared memory ${channel}`);
+                console.log('Memory cleared:', data);
+                
+                // Update local memory data
+                delete memoryChannels[channel];
+                displayMemoryChannels();
+                updateMemoryStats();
+                
+            } catch (error) {
+                console.error('Memory clear failed:', error);
+                alert(`Memory clear failed: ${error.message}`);
+                logError('Memory clear failed: ' + error.message);
+            }
+        }
+        
+        function showMemoryDetails(channel) {
+            const memory = memoryChannels[channel];
+            const panel = document.getElementById('memoryDetailsPanel');
+            
+            // Update detail fields
+            document.getElementById('detailChannelNum').textContent = channel;
+            
+            if (memory && memory.frequency > 0) {
+                document.getElementById('detailFrequency').textContent = 
+                    `${(memory.frequency / 1000000).toFixed(6)} MHz`;
+                document.getElementById('detailMode').textContent = memory.mode || 'Unknown';
+                document.getElementById('detailCtcss').textContent = memory.ctcss || 'OFF';
+                document.getElementById('detailLabel').textContent = memory.label || '-';
+            } else {
+                document.getElementById('detailFrequency').textContent = 'Empty';
+                document.getElementById('detailMode').textContent = '-';
+                document.getElementById('detailCtcss').textContent = '-';
+                document.getElementById('detailLabel').textContent = '-';
+            }
+            
+            // Show panel
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+            
+            // Store current channel for detail operations
+            panel.dataset.channel = channel;
+        }
+        
+        function hideMemoryDetails() {
+            document.getElementById('memoryDetailsPanel').style.display = 'none';
+        }
+        
+        function recallDetailedChannel() {
+            const channel = document.getElementById('memoryDetailsPanel').dataset.channel;
+            recallMemoryByChannel(channel);
+        }
+        
+        function updateDetailedChannel() {
+            const channel = document.getElementById('memoryDetailsPanel').dataset.channel;
+            storeToMemoryByChannel(channel);
+        }
+        
+        function deleteDetailedChannel() {
+            const channel = document.getElementById('memoryDetailsPanel').dataset.channel;
+            deleteMemoryByChannel(channel);
+        }
+        
+        function copyMemoryChannel() {
+            const fromCh = prompt('Copy FROM memory channel (001-099):');
+            const toCh = prompt('Copy TO memory channel (001-099):');
+            
+            if (!fromCh || !toCh) return;
+            
+            const fromChannel = fromCh.padStart(3, '0');
+            const toChannel = toCh.padStart(3, '0');
+            
+            const fromMemory = memoryChannels[fromChannel];
+            if (!fromMemory || fromMemory.frequency <= 0) {
+                alert(`Source memory channel ${fromChannel} is empty`);
+                return;
+            }
+            
+            const confirm = window.confirm(
+                `Copy memory ${fromChannel} to ${toChannel}?\n\n` +
+                `From: ${(fromMemory.frequency / 1000000).toFixed(6)} MHz ${fromMemory.mode}\n` +
+                `To: Channel ${toChannel}\n\n` +
+                `This will overwrite channel ${toChannel} if it contains data.`
+            );
+            
+            if (!confirm) return;
+            
+            // Copy memory data locally
+            memoryChannels[toChannel] = { ...fromMemory };
+            memoryChannels[toChannel].is_current = false;
+            
+            displayMemoryChannels();
+            updateMemoryStats();
+            updateLastMemoryOp(`Copied ${fromChannel} → ${toChannel}`);
+            
+            alert(`Memory ${fromChannel} copied to ${toChannel}\n\nNote: This is a local copy. Use STORE to write to radio.`);
+        }
+        
+        // Update current VFO display for memory operations
+        function updateVfoForMemory() {
+            if (radioStatus) {
+                const freqElem = document.getElementById('currentVfoFreq');
+                const modeElem = document.getElementById('currentVfoMode');
+                
+                if (freqElem && radioStatus.frequency_a) {
+                    freqElem.textContent = formatFrequencyPrecise(radioStatus.frequency_a);
+                }
+                
+                if (modeElem && radioStatus.mode) {
+                    modeElem.textContent = radioStatus.mode;
+                }
+            }
+        }
+
+        // ── Scanner Functions ───────────────────────────────────
+        let scanActive = false;
+        let scanStartFreq = 0;
+        let scanEndFreq = 0;
+        let scanStep = 5000; // Default 5 kHz
+        let squelchThreshold = 50; // S3 equivalent
+        let scanResults = [];
+        let currentScanFreq = 0;
+        let scanCount = 0;
+        let scanActiveCount = 0;
+
+        function selectBandRange(startHz, endHz) {
+            document.getElementById('scanStartFreq').value = startHz;
+            document.getElementById('scanEndFreq').value = endHz;
+            updateScanRangeDisplay(startHz, endHz);
+            
+            // Update active button
+            document.querySelectorAll('#scanner .selector-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function setScanStep(stepHz) {
+            scanStep = stepHz;
+            document.getElementById('scanStepDisplay').textContent = formatFrequencyStep(stepHz);
+            
+            // Update active button
+            document.querySelectorAll('[data-step]').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[data-step="${stepHz}"]`).classList.add('active');
+        }
+
+        function updateSquelchThreshold(value) {
+            squelchThreshold = parseInt(value);
+            const sUnit = convertToSUnit(value);
+            document.getElementById('squelchValue').textContent = sUnit;
+            document.getElementById('scanThresholdDisplay').textContent = sUnit;
+        }
+
+        function convertToSUnit(rawValue) {
+            // Convert 0-255 raw value to S-unit display
+            const scaled = parseInt(rawValue);
+            if (scaled < 20) return 'S0';
+            if (scaled < 40) return 'S1';
+            if (scaled < 60) return 'S2';
+            if (scaled < 80) return 'S3';
+            if (scaled < 100) return 'S4';
+            if (scaled < 120) return 'S5';
+            if (scaled < 140) return 'S6';
+            if (scaled < 160) return 'S7';
+            if (scaled < 180) return 'S8';
+            if (scaled < 200) return 'S9';
+            return `S9+${Math.round((scaled - 200) / 10)}`;
+        }
+
+        function formatFrequencyStep(hz) {
+            if (hz >= 1000000) {
+                return `${hz / 1000000} MHz`;
+            } else if (hz >= 1000) {
+                return `${hz / 1000} kHz`;
+            } else {
+                return `${hz} Hz`;
+            }
+        }
+
+        function updateScanRangeDisplay(startHz, endHz) {
+            const startMhz = (startHz / 1000000).toFixed(3);
+            const endMhz = (endHz / 1000000).toFixed(3);
+            document.getElementById('scanRangeDisplay').textContent = `${startMhz} - ${endMhz} MHz`;
+        }
+
+        async function toggleScan() {
+            if (scanActive) {
+                await stopScan();
+            } else {
+                await startScan();
+            }
+        }
+
+        async function startScan() {
+            const startFreq = parseInt(document.getElementById('scanStartFreq').value);
+            const endFreq = parseInt(document.getElementById('scanEndFreq').value);
+            
+            if (!startFreq || !endFreq || startFreq >= endFreq) {
+                alert('Please enter valid start and end frequencies');
+                return;
+            }
+            
+            if (startFreq < 30000 || endFreq > 470000000) {
+                alert('Frequency range must be between 30 kHz and 470 MHz');
+                return;
+            }
+
+            scanActive = true;
+            scanStartFreq = startFreq;
+            scanEndFreq = endFreq;
+            currentScanFreq = startFreq;
+            scanCount = 0;
+            scanActiveCount = 0;
+            
+            // Update UI
+            document.getElementById('scanButton').innerHTML = '⏸ STOP SCAN';
+            document.getElementById('scanButton').className = 'btn danger';
+            document.getElementById('scanStatus').textContent = 'SCANNING';
+            document.getElementById('scanStatus').className = 'status-value active';
+            
+            // Clear previous results if any
+            clearScanResults();
+            
+            try {
+                // Start scan via API
+                const response = await apiCall('/scan', 'POST', {
+                    start_freq: startFreq,
+                    end_freq: endFreq,
+                    step: scanStep,
+                    threshold: squelchThreshold
+                });
+                
+                if (!response.success) {
+                    throw new Error(response.error || 'Scan failed to start');
+                }
+                
+                logError(`Scan started: ${formatFrequencyPrecise(startFreq)} - ${formatFrequencyPrecise(endFreq)}, step ${formatFrequencyStep(scanStep)}`);
+                
+            } catch (error) {
+                console.error('Failed to start scan:', error);
+                logError('Scan start failed: ' + error.message);
+                await stopScan();
+            }
+        }
+
+        async function stopScan() {
+            scanActive = false;
+            
+            try {
+                await apiCall('/scan/stop', 'POST');
+            } catch (error) {
+                console.error('Failed to stop scan:', error);
+            }
+            
+            // Update UI
+            document.getElementById('scanButton').innerHTML = '▶ START SCAN';
+            document.getElementById('scanButton').className = 'btn primary';
+            document.getElementById('scanStatus').textContent = 'STOPPED';
+            document.getElementById('scanStatus').className = 'status-value';
+            document.getElementById('scanProgress').textContent = '100%';
+            document.getElementById('scanProgressBar').style.width = '100%';
+            document.getElementById('scanCurrentFreq').textContent = '---';
+            document.getElementById('scanETA').textContent = '---';
+            
+            logError('Scan stopped');
+        }
+
+        function handleScanProgress(data) {
+            if (!scanActive) return;
+            
+            // Update current frequency
+            currentScanFreq = data.frequency;
+            document.getElementById('scanCurrentFreq').textContent = formatFrequencyPrecise(data.frequency);
+            
+            // Update progress
+            const progress = ((data.frequency - scanStartFreq) / (scanEndFreq - scanStartFreq)) * 100;
+            document.getElementById('scanProgress').textContent = `${Math.round(progress)}%`;
+            document.getElementById('scanProgressBar').style.width = `${progress}%`;
+            
+            // Update scan count
+            scanCount++;
+            document.getElementById('scanCount').textContent = scanCount;
+            
+            // Calculate ETA
+            if (scanCount > 10) { // Only show ETA after a few samples
+                const elapsed = (Date.now() - scanStartTime) / 1000; // seconds
+                const rate = scanCount / elapsed; // scans per second
+                const remaining = (scanEndFreq - data.frequency) / scanStep;
+                const eta = remaining / rate;
+                document.getElementById('scanETA').textContent = formatTime(eta);
+            }
+            
+            // Check if this frequency has activity
+            if (data.s_meter >= squelchThreshold) {
+                scanActiveCount++;
+                document.getElementById('scanActiveCount').textContent = scanActiveCount;
+                
+                // Add to results table
+                addScanResult(data.frequency, data.s_meter, data.mode || 'AUTO', true);
+                
+                logError(`Active signal found: ${formatFrequencyPrecise(data.frequency)} - ${convertToSUnit(data.s_meter)}`);
+            }
+        }
+
+        function addScanResult(frequency, sMeter, mode, isActive) {
+            const tableBody = document.getElementById('scanResultsTable');
+            
+            // Remove "no results" message if present
+            if (tableBody.querySelector('td[colspan="5"]')) {
+                tableBody.innerHTML = '';
+            }
+            
+            // Create new row
+            const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
+            row.style.transition = 'background-color 0.2s';
+            
+            if (isActive) {
+                row.style.backgroundColor = 'rgba(153, 221, 102, 0.1)'; // Green highlight for active
+                row.style.borderLeft = '4px solid var(--lcars-green)';
+            }
+            
+            // Add hover effect
+            row.addEventListener('mouseenter', () => {
+                row.style.backgroundColor = 'rgba(255, 204, 102, 0.2)';
+            });
+            
+            row.addEventListener('mouseleave', () => {
+                row.style.backgroundColor = isActive ? 'rgba(153, 221, 102, 0.1)' : 'transparent';
+            });
+            
+            // Click to tune radio
+            row.addEventListener('click', () => {
+                tuneToFrequency(frequency);
+            });
+            
+            row.innerHTML = `
+                <td style="padding: 0.75rem; border-bottom: 1px solid var(--lcars-teal);">
+                    <span style="font-family: 'Antonio', monospace; font-weight: 600; color: var(--lcars-gold);">
+                        ${formatFrequencyPrecise(frequency)}
+                    </span>
+                    <div style="font-size: 0.7rem; color: var(--lcars-peach);">${(frequency / 1000000).toFixed(3)} MHz</div>
+                </td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal);">
+                    <span style="font-weight: 600; color: ${isActive ? 'var(--lcars-green)' : 'var(--lcars-text)'};">
+                        ${convertToSUnit(sMeter)}
+                    </span>
+                </td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal);">
+                    <span style="font-size: 0.8rem; color: var(--lcars-peach);">${mode}</span>
+                </td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal);">
+                    <span style="color: ${isActive ? 'var(--lcars-green)' : 'var(--lcars-text)'};">
+                        ${isActive ? '● ACTIVE' : '○ QUIET'}
+                    </span>
+                </td>
+                <td style="padding: 0.75rem; text-align: center; border-bottom: 1px solid var(--lcars-teal);">
+                    <button class="btn btn-small" onclick="tuneToFrequency(${frequency})" title="Tune radio to this frequency">
+                        TUNE
+                    </button>
+                </td>
+            `;
+            
+            // Insert at top of table (most recent first)
+            tableBody.insertBefore(row, tableBody.firstChild);
+            
+            // Keep only last 100 results
+            while (tableBody.children.length > 100) {
+                tableBody.removeChild(tableBody.lastChild);
+            }
+            
+            // Store in results array
+            scanResults.unshift({
+                frequency,
+                sMeter,
+                mode,
+                isActive,
+                timestamp: Date.now()
+            });
+            
+            // Keep only last 100 results in memory
+            if (scanResults.length > 100) {
+                scanResults = scanResults.slice(0, 100);
+            }
+        }
+
+        async function tuneToFrequency(frequency) {
+            try {
+                await apiCall('/frequency/a', 'POST', { frequency: frequency });
+                logError(`Tuned to ${formatFrequencyPrecise(frequency)}`);
+                
+                // Briefly highlight the frequency in VFO display
+                const freqDisplay = document.getElementById('frequencyA');
+                if (freqDisplay) {
+                    freqDisplay.style.textShadow = '0 0 20px var(--lcars-green)';
+                    setTimeout(() => {
+                        freqDisplay.style.textShadow = '0 0 10px var(--lcars-gold)';
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Failed to tune to frequency:', error);
+                logError('Tune failed: ' + error.message);
+            }
+        }
+
+        function clearScanResults() {
+            const tableBody = document.getElementById('scanResultsTable');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" style="padding: 2rem; text-align: center; color: var(--lcars-peach); font-style: italic;">
+                        No scan results yet. Start a scan to see active frequencies.
+                    </td>
+                </tr>
+            `;
+            scanResults = [];
+            scanActiveCount = 0;
+            document.getElementById('scanActiveCount').textContent = '0';
+        }
+
+        function exportScanResults() {
+            if (scanResults.length === 0) {
+                alert('No scan results to export');
+                return;
+            }
+            
+            let csv = 'Frequency (Hz),Frequency (MHz),S-Meter,S-Unit,Mode,Status,Timestamp\n';
+            
+            scanResults.forEach(result => {
+                const freqMhz = (result.frequency / 1000000).toFixed(6);
+                const sUnit = convertToSUnit(result.sMeter);
+                const status = result.isActive ? 'ACTIVE' : 'QUIET';
+                const timestamp = new Date(result.timestamp).toISOString();
+                
+                csv += `${result.frequency},${freqMhz},${result.sMeter},${sUnit},${result.mode},${status},${timestamp}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ft991a-scan-results-${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            logError(`Exported ${scanResults.length} scan results to CSV`);
+        }
+
+        function scanActiveOnly() {
+            const activeResults = scanResults.filter(result => result.isActive);
+            
+            if (activeResults.length === 0) {
+                alert('No active frequencies found in previous scan results');
+                return;
+            }
+            
+            // Create a custom scan of only the active frequencies
+            // This would need special backend support, for now just show a message
+            logError(`Found ${activeResults.length} active frequencies for rescanning`);
+            alert(`Found ${activeResults.length} active frequencies. This feature requires backend implementation.`);
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 60) {
+                return `${Math.round(seconds)}s`;
+            } else if (seconds < 3600) {
+                return `${Math.round(seconds / 60)}m`;
+            } else {
+                return `${Math.round(seconds / 3600)}h`;
+            }
+        }
+
+        // Scanner WebSocket message handler (add to existing handleWebSocketMessage function)
+        function handleScanMessage(data) {
+            switch (data.type) {
+                case 'scan_progress':
+                    handleScanProgress(data);
+                    break;
+                case 'scan_complete':
+                    stopScan();
+                    logError('Scan completed successfully');
+                    break;
+                case 'scan_error':
+                    logError('Scan error: ' + data.message);
+                    stopScan();
+                    break;
+            }
+        }
+
+        let scanStartTime = 0; // Track scan start time for ETA calculation
 
         // ── Initialization ──────────────────────────────────────
         function init() {
