@@ -127,21 +127,21 @@ def cli_main():
         if args.command == "status":
             status = radio.get_status()
             if status:
-                print(f"Frequency: {status.frequency:,} Hz")
-                print(f"Mode: {status.mode.name if status.mode else 'Unknown'}")
-                print(f"S-meter: {status.smeter}")
-                print(f"TX Power: {status.tx_power}W")
-                print(f"State: {'TX' if status.tx_on else 'RX'}")
+                print(f"Frequency: {status.frequency_a:,} Hz")
+                print(f"Mode: {status.mode}")
+                print(f"S-meter: {status.s_meter}")
+                print(f"TX Power: {status.power_output}W")
+                print(f"State: {'TX' if status.tx_active else 'RX'}")
             else:
                 print("Failed to get status")
                 return 1
         
         elif args.command == "freq":
             if args.freq_action == "get":
-                freq = radio.get_frequency()
+                freq = radio.get_frequency_a()
                 print(f"{freq:,} Hz")
             elif args.freq_action == "set":
-                if radio.set_frequency(args.frequency):
+                if radio.set_frequency_a(args.frequency):
                     print(f"Set frequency to {args.frequency:,} Hz")
                 else:
                     print("Failed to set frequency")
@@ -185,7 +185,7 @@ def cli_main():
                     return 1
         
         elif args.command == "smeter":
-            smeter = radio.get_smeter()
+            smeter = radio.get_s_meter()
             print(f"S-meter: {smeter}")
         
         elif args.command == "band":
