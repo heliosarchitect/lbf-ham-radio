@@ -308,6 +308,28 @@
             transform: none;
         }
 
+        /* ── LCARS Small Button Variant ─────────────────────── */
+        .lcars-button-small {
+            background: var(--lcars-peach);
+            color: var(--lcars-black);
+            border: none;
+            border-radius: var(--lcars-small-radius);
+            padding: 6px 12px;
+            font-family: var(--lcars-font);
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-height: 32px;
+        }
+
+        .lcars-button-small:hover {
+            background: var(--lcars-amber);
+            transform: translateY(-1px);
+        }
+
         /* ── LCARS Input Controls ───────────────────────────── */
         .lcars-input-group {
             display: flex;
@@ -633,6 +655,14 @@
             box-shadow: 0 0 10px rgba(255, 153, 0, 0.5);
         }
 
+        /* ── LCARS Power Presets Grid ───────────────────────── */
+        .lcars-power-presets {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
         /* ── LCARS Audio Panel ──────────────────────────────── */
         .lcars-audio-panel {
             background: var(--lcars-gray);
@@ -669,6 +699,27 @@
             color: var(--lcars-peach);
             margin-bottom: 8px;
             font-weight: 600;
+        }
+
+        /* ── LCARS Reconnect Button ─────────────────────────── */
+        .lcars-reconnect-button {
+            background: var(--lcars-blue);
+            color: var(--lcars-white);
+            border: none;
+            border-radius: var(--lcars-small-radius);
+            padding: 6px 12px;
+            font-family: var(--lcars-font);
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lcars-reconnect-button:hover {
+            background: var(--lcars-amber);
+            color: var(--lcars-black);
         }
 
         /* ── Mobile Responsive ──────────────────────────────── */
@@ -741,6 +792,8 @@
                 <div class="lcars-connection-status">
                     <div class="lcars-status-indicator" id="connectionIndicator"></div>
                     <span id="connectionText">CONNECTING...</span>
+                    <button class="lcars-reconnect-button" id="reconnectButton" onclick="reconnectRadio()" 
+                            title="Reconnect to FT-991A transceiver">↻ RECONNECT</button>
                 </div>
             </div>
         </div>
@@ -777,13 +830,15 @@
                     <div class="lcars-vfo-controls">
                         <div class="lcars-vfo-knob">
                             <div class="lcars-knob-container">
-                                <div class="lcars-knob knob" id="tuneKnobA" data-vfo="a"></div>
+                                <div class="lcars-knob knob" id="tuneKnobA" data-vfo="a" 
+                                     title="Rotate to tune VFO-A frequency (1° = 1kHz)"></div>
                             </div>
                             <div class="lcars-knob-label">TUNE-A</div>
                         </div>
                         <div class="lcars-vfo-knob">
                             <div class="lcars-knob-container">
-                                <div class="lcars-knob knob" id="tuneKnobB" data-vfo="b"></div>
+                                <div class="lcars-knob knob" id="tuneKnobB" data-vfo="b" 
+                                     title="Rotate to tune VFO-B frequency (1° = 1kHz)"></div>
                             </div>
                             <div class="lcars-knob-label">TUNE-B</div>
                         </div>
@@ -792,14 +847,18 @@
                     <!-- Direct Frequency Entry -->
                     <div class="lcars-input-group">
                         <label>FREQ:</label>
-                        <input type="number" class="lcars-input" id="directFreq" placeholder="14074000" min="30000" max="470000000">
-                        <button class="lcars-button" onclick="setDirectFrequency()">SET</button>
+                        <input type="number" class="lcars-input" id="directFreq" placeholder="14074000" 
+                               min="30000" max="470000000" title="Enter frequency in Hz (30 kHz - 470 MHz)">
+                        <button class="lcars-button" onclick="setDirectFrequency()" 
+                                title="Set VFO-A to entered frequency">SET</button>
                     </div>
 
                     <!-- VFO Operations -->
                     <div class="lcars-input-group">
-                        <button class="lcars-button primary" onclick="swapVfo()">A⇄B</button>
-                        <button class="lcars-button primary" onclick="copyAtoB()">A→B</button>
+                        <button class="lcars-button primary" onclick="swapVfo()" 
+                                title="Swap VFO-A and VFO-B frequencies">A⇄B</button>
+                        <button class="lcars-button primary" onclick="copyAtoB()" 
+                                title="Copy VFO-A frequency to VFO-B">A→B</button>
                     </div>
 
                     <!-- VFO-B Display -->
@@ -821,40 +880,64 @@
 
                     <!-- Mode Selection -->
                     <div class="lcars-selector-grid">
-                        <button class="lcars-selector-button selector-button" onclick="setMode('LSB')">LSB</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('USB')">USB</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('CW')">CW</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('FM')">FM</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('AM')">AM</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_USB')">FT8</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('C4FM')">C4FM</button>
-                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_LSB')">PSK</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('LSB')" 
+                                title="Lower Side Band - Voice mode for HF bands below 10 MHz">LSB</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('USB')" 
+                                title="Upper Side Band - Voice mode for HF bands above 10 MHz">USB</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('CW')" 
+                                title="Continuous Wave - Morse code transmission mode">CW</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('FM')" 
+                                title="Frequency Modulation - Standard VHF/UHF voice mode">FM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('AM')" 
+                                title="Amplitude Modulation - Legacy voice mode, aircraft band">AM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_USB')" 
+                                title="Digital data mode - FT8, FT4, RTTY, PSK31">FT8</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('C4FM')" 
+                                title="Yaesu System Fusion digital voice mode">C4FM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setMode('DATA_LSB')" 
+                                title="Digital data mode LSB - PSK31, OLIVIA">PSK</button>
                     </div>
 
                     <!-- Band Selection -->
                     <div class="lcars-panel-title" style="margin-top: 30px;">BAND SELECT</div>
                     <div class="lcars-selector-grid">
-                        <button class="lcars-selector-button selector-button" onclick="setBand('160M')">160M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('80M')">80M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('40M')">40M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('30M')">30M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('20M')">20M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('17M')">17M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('15M')">15M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('12M')">12M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('10M')">10M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_6M')">6M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_2M')">2M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setBand('UHF_70CM')">70CM</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('160M')" 
+                                title="160 meters - 1.8-2.0 MHz (Top Band)">160M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('80M')" 
+                                title="80 meters - 3.5-4.0 MHz (Eighty)">80M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('40M')" 
+                                title="40 meters - 7.0-7.3 MHz (Forty)">40M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('30M')" 
+                                title="30 meters - 10.1-10.15 MHz (WARC band)">30M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('20M')" 
+                                title="20 meters - 14.0-14.35 MHz (Twenty - best DX band)">20M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('17M')" 
+                                title="17 meters - 18.068-18.168 MHz (WARC band)">17M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('15M')" 
+                                title="15 meters - 21.0-21.45 MHz (Fifteen)">15M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('12M')" 
+                                title="12 meters - 24.89-24.99 MHz (WARC band)">12M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('10M')" 
+                                title="10 meters - 28.0-29.7 MHz (Ten - FM repeaters)">10M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_6M')" 
+                                title="6 meters - 50-54 MHz (Magic Band VHF)">6M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('VHF_2M')" 
+                                title="2 meters - 144-148 MHz (VHF FM/SSB)">2M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setBand('UHF_70CM')" 
+                                title="70 centimeters - 420-450 MHz (UHF)">70CM</button>
                     </div>
 
                     <!-- Quick FT8 Frequencies -->
                     <div class="lcars-panel-title" style="margin-top: 30px;">FT8 QUICK</div>
                     <div class="lcars-selector-grid">
-                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(7074000)">40M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(14074000)">20M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(21074000)">15M</button>
-                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(28074000)">10M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(7074000)" 
+                                title="40m FT8 frequency - 7.074 MHz">40M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(14074000)" 
+                                title="20m FT8 frequency - 14.074 MHz (most popular)">20M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(21074000)" 
+                                title="15m FT8 frequency - 21.074 MHz">15M</button>
+                        <button class="lcars-selector-button selector-button" onclick="setFT8Frequency(28074000)" 
+                                title="10m FT8 frequency - 28.074 MHz">10M</button>
                     </div>
                 </div>
             </div>
@@ -870,11 +953,13 @@
                                 onmousedown="pttPress()" 
                                 onmouseup="pttRelease()" 
                                 ontouchstart="pttPress()" 
-                                ontouchend="pttRelease()">
+                                ontouchend="pttRelease()" 
+                                title="Push-to-Talk - Hold to transmit (Space key also works)">
                             PTT
                         </button>
                         
-                        <button class="lcars-button lcars-lockout-toggle lockout-toggle" id="lockoutButton" onclick="toggleLockout()">
+                        <button class="lcars-button lcars-lockout-toggle lockout-toggle" id="lockoutButton" onclick="toggleLockout()" 
+                                title="Enable/disable transmission lockout for safety">
                             🔒 TX LOCKOUT
                         </button>
                     </div>
@@ -883,8 +968,20 @@
                     <div class="lcars-input-group lcars-mt-20">
                         <label>POWER:</label>
                         <input type="range" class="lcars-power-slider" id="powerSlider" min="5" max="100" value="50" 
-                               oninput="updatePower(this.value)">
+                               oninput="updatePower(this.value)" title="Adjust TX power output (5-100 watts)">
                         <span id="powerValue" style="min-width: 50px; text-align: right; color: var(--lcars-amber); font-weight: bold;">50W</span>
+                    </div>
+
+                    <!-- Power Presets -->
+                    <div class="lcars-power-presets">
+                        <button class="lcars-button-small" onclick="setPowerPreset(5)" 
+                                title="Set TX power to 5 watts (QRP)">5W</button>
+                        <button class="lcars-button-small" onclick="setPowerPreset(25)" 
+                                title="Set TX power to 25 watts">25W</button>
+                        <button class="lcars-button-small" onclick="setPowerPreset(50)" 
+                                title="Set TX power to 50 watts (half power)">50W</button>
+                        <button class="lcars-button-small" onclick="setPowerPreset(100)" 
+                                title="Set TX power to 100 watts (maximum)">100W</button>
                     </div>
 
                     <!-- TX Status -->
@@ -1161,6 +1258,12 @@
             document.getElementById('powerValue').textContent = `${watts}W`;
         }
 
+        function setPowerPreset(watts) {
+            document.getElementById('powerSlider').value = watts;
+            updatePower(watts);
+            apiCall('/power', 'POST', { power: watts });
+        }
+
         document.getElementById('powerSlider').addEventListener('mouseup', function() {
             const power = parseInt(this.value);
             apiCall('/power', 'POST', { power: power });
@@ -1203,6 +1306,24 @@
                 status.textContent = 'OFF';
                 status.className = 'lcars-status-value';
             }
+        }
+
+        // ── Reconnect Function ──────────────────────────────────
+        function reconnectRadio() {
+            console.log('Manual reconnect requested');
+            if (ws) {
+                ws.close();
+            }
+            setTimeout(connectWebSocket, 1000);
+            
+            // Also try to refresh radio status
+            apiCall('/status').then(data => {
+                if (data.connected) {
+                    updateRadioStatus(data.status);
+                }
+            }).catch(error => {
+                console.log('Reconnect status check failed:', error);
+            });
         }
 
         // ── VFO Knob Simulation ─────────────────────────────────
