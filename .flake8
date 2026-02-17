@@ -1,0 +1,8 @@
+[flake8]
+max-line-length = 120
+ignore = E501,W503,E226,E203
+per-file-ignores =
+    src/ft991a/__init__.py:F401,F841
+    src/ft991a/cli.py:F841,E722
+    src/ft991a/web.py:E722,F824
+    tests/*:F841,E712

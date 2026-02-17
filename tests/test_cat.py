@@ -4,14 +4,15 @@ Unit tests for FT-991A CAT control library.
 Uses mocked serial interface — no physical radio needed.
 """
 
-import pytest
-from unittest.mock import Mock, patch, PropertyMock
-import sys
 import os
+import sys
+from unittest.mock import Mock, patch
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+import pytest
 
-from ft991a.cat import FT991A, Mode, Band, RadioStatus
+from ft991a.cat import FT991A, Band, Mode, RadioStatus
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 
 def make_serial_response(*responses):
@@ -19,10 +20,10 @@ def make_serial_response(*responses):
     all_bytes = []
     for resp in responses:
         if isinstance(resp, str):
-            resp = resp.encode('ascii')
+            resp = resp.encode("ascii")
         all_bytes.extend([bytes([b]) for b in resp])
     # After all responses exhausted, return empty bytes (timeout)
-    all_bytes.extend([b''] * 100)
+    all_bytes.extend([b""] * 100)
     return iter(all_bytes)
 
 
@@ -30,7 +31,7 @@ class TestFT991A:
 
     @pytest.fixture
     def mock_serial(self):
-        with patch('ft991a.cat.serial.Serial') as mock_cls:
+        with patch("ft991a.cat.serial.Serial") as mock_cls:
             mock_conn = Mock()
             mock_cls.return_value = mock_conn
             mock_conn.is_open = True
@@ -65,8 +66,9 @@ class TestFT991A:
         mock_cls.assert_called_once()
 
     def test_connect_failure(self):
-        with patch('ft991a.cat.serial.Serial') as mock_cls:
+        with patch("ft991a.cat.serial.Serial") as mock_cls:
             from serial import SerialException
+
             mock_cls.side_effect = SerialException("Port not found")
             radio = FT991A(port="/dev/nonexistent")
             result = radio.connect()
@@ -126,7 +128,7 @@ class TestFT991A:
         self._reset_serial(mock_conn, "TX1;")
         radio.ptt_on()
         calls = mock_conn.write.call_args_list
-        written = b''.join(c[0][0] for c in calls)
+        written = b"".join(c[0][0] for c in calls)
         assert b"TX" in written
 
     def test_ptt_off(self, radio, mock_serial):

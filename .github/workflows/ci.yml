@@ -27,13 +27,13 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Lint (flake8)
-        run: flake8 src/ tests/ --max-line-length=120 --ignore=E501,W503
+        run: flake8 src/ tests/
 
       - name: Format check (black)
-        run: black --check src/ tests/
+        run: black --check --line-length 120 src/ tests/
 
       - name: Import sort check (isort)
-        run: isort --check-only src/ tests/
+        run: isort --check-only --profile black --line-length 120 src/ tests/
 
       - name: Type check (mypy)
         run: mypy src/ft991a/ --ignore-missing-imports

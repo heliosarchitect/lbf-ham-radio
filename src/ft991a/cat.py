@@ -9,18 +9,20 @@ Baud: 38400 (configurable, must match radio menu item 031)
 Reference: FT-991A CAT Operation Reference Manual (Yaesu 1711-D)
 """
 
-import serial
-import time
 import logging
+import time
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
+
+import serial
 
 logger = logging.getLogger(__name__)
 
 
 class Mode(Enum):
     """Operating modes (MD command parameter)"""
+
     LSB = "1"
     USB = "2"
     CW = "3"
@@ -28,17 +30,18 @@ class Mode(Enum):
     AM = "5"
     RTTY_LSB = "6"
     CW_R = "7"
-    DATA_LSB = "8"       # Digital modes (FT8, etc.)
+    DATA_LSB = "8"  # Digital modes (FT8, etc.)
     RTTY_USB = "9"
     DATA_FM = "A"
     FM_N = "B"
-    DATA_USB = "C"       # Digital modes (FT8, etc.)
+    DATA_USB = "C"  # Digital modes (FT8, etc.)
     AM_N = "D"
     C4FM = "E"
 
 
 class Band(Enum):
     """Common amateur bands with typical frequencies (Hz)"""
+
     HF_160M = 1_800_000
     HF_80M = 3_500_000
     HF_60M = 5_330_500
@@ -57,39 +60,40 @@ class Band(Enum):
 @dataclass
 class RadioStatus:
     """Current radio state"""
-    frequency_a: int      # Hz
-    frequency_b: int      # Hz
+
+    frequency_a: int  # Hz
+    frequency_b: int  # Hz
     mode: str
     tx_active: bool
     squelch_open: bool
-    s_meter: int          # 0-255
-    power_output: float   # Watts
+    s_meter: int  # 0-255
+    power_output: float  # Watts
     swr: float
 
 
 class FT991A:
     """
     Yaesu FT-991A CAT control interface.
-    
+
     Usage:
         radio = FT991A('/dev/ttyUSB0')
         radio.connect()
-        
+
         # Read current frequency
         freq = radio.get_frequency_a()
         print(f"VFO-A: {freq / 1e6:.6f} MHz")
-        
+
         # Tune to 14.074 MHz (FT8)
         radio.set_frequency_a(14_074_000)
         radio.set_mode(Mode.DATA_USB)
-        
+
         # Monitor S-meter
         level = radio.get_s_meter()
-        
+
         radio.disconnect()
     """
 
-    def __init__(self, port: str = '/dev/ttyUSB0', baudrate: int = 38400, timeout: float = 1.0):
+    def __init__(self, port: str = "/dev/ttyUSB0", baudrate: int = 38400, timeout: float = 1.0):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -143,25 +147,25 @@ class FT991A:
             time.sleep(self._min_cmd_interval - elapsed)
 
         # Ensure command ends with terminator
-        if not command.endswith(';'):
-            command += ';'
+        if not command.endswith(";"):
+            command += ";"
 
         logger.debug(f"TX: {command}")
-        self.serial.write(command.encode('ascii'))
+        self.serial.write(command.encode("ascii"))
         self.serial.flush()
         self._last_cmd_time = time.time()
 
         # Read response (terminated by ';')
-        response = b''
+        response = b""
         while True:
             byte = self.serial.read(1)
             if not byte:
                 break  # Timeout
             response += byte
-            if byte == b';':
+            if byte == b";":
                 break
 
-        decoded = response.decode('ascii', errors='replace')
+        decoded = response.decode("ascii", errors="replace")
         logger.debug(f"RX: {decoded}")
         return decoded
 
@@ -312,7 +316,7 @@ class FT991A:
         if len(resp) >= 28:
             # Byte 23 is squelch status: 0=closed, 1=open
             try:
-                return resp[23] == '1'
+                return resp[23] == "1"
             except (IndexError, ValueError):
                 return False
         return False
@@ -350,7 +354,7 @@ class FT991A:
         """Get tuner status. Note: FT-991A AC command is write-only, no query support."""
         return "unknown"
 
-# ── Convenience ───────────────────────────────────────────
+    # ── Convenience ───────────────────────────────────────────
 
     def tune_ft8(self, band_mhz: float = 14.074):
         """Quick tune to FT8 frequency on a given band."""
@@ -417,26 +421,31 @@ FT8_FREQUENCIES = {
 
 # ── CLI ────────────────────────────────────────────────────────
 
+
 def main():
     import argparse
+
     parser = argparse.ArgumentParser(description="FT-991A CAT Control")
     parser.add_argument("--port", default="/dev/ttyUSB0", help="Serial port")
     parser.add_argument("--baud", type=int, default=38400, help="Baud rate")
-    parser.add_argument("command", nargs="?", default="status",
-                        choices=["status", "freq", "mode", "ft8", "bands", "raw"],
-                        help="Command to execute")
+    parser.add_argument(
+        "command",
+        nargs="?",
+        default="status",
+        choices=["status", "freq", "mode", "ft8", "bands", "raw"],
+        help="Command to execute",
+    )
     parser.add_argument("--set", help="Value to set (frequency in Hz, mode name, etc.)")
     parser.add_argument("--raw", help="Raw CAT command to send")
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO,
-                        format="%(levelname)s: %(message)s")
+    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s: %(message)s")
 
     with FT991A(args.port, args.baud) as radio:
         if args.command == "status":
             status = radio.get_status()
-            print(f"📻 FT-991A Status")
+            print("📻 FT-991A Status")
             print(f"  VFO-A: {status.frequency_a / 1e6:.6f} MHz")
             print(f"  VFO-B: {status.frequency_b / 1e6:.6f} MHz")
             print(f"  Mode:  {status.mode}")
@@ -447,7 +456,7 @@ def main():
 
         elif args.command == "freq":
             if args.set:
-                freq = int(float(args.set) * 1_000_000) if '.' in args.set else int(args.set)
+                freq = int(float(args.set) * 1_000_000) if "." in args.set else int(args.set)
                 radio.set_frequency_a(freq)
                 print(f"Set VFO-A to {freq / 1e6:.6f} MHz")
             else:

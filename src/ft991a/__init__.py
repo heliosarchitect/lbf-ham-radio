@@ -5,7 +5,7 @@ AI-controllable Yaesu FT-991A transceiver interface with web GUI, CLI, and MCP s
 
 This package provides:
 - CAT (Computer Aided Transceiver) control library
-- Web-based GUI with real-time WebSocket updates  
+- Web-based GUI with real-time WebSocket updates
 - Command-line interface for direct control
 - MCP (Model Context Protocol) server for AI integration
 
@@ -28,23 +28,24 @@ __license__ = "MIT"
 
 # Import main classes for easy access
 try:
-    from .cat import FT991A, Mode, Band, RadioStatus
-    from .scanner import BandScanner, ScanResult, ActivityResult
-    from .broadcast import Broadcaster, BroadcastError, AudioDeviceError, TTSError
+    from .broadcast import AudioDeviceError, Broadcaster, BroadcastError, TTSError
+    from .cat import FT991A, Band, Mode, RadioStatus
+    from .scanner import ActivityResult, BandScanner, ScanResult
+
     __all__ = [
-        'FT991A',
-        'Mode', 
-        'Band',
-        'RadioStatus',
-        'BandScanner',
-        'ScanResult',
-        'ActivityResult',
-        'Broadcaster',
-        'BroadcastError',
-        'AudioDeviceError',
-        'TTSError',
-        '__version__'
+        "FT991A",
+        "Mode",
+        "Band",
+        "RadioStatus",
+        "BandScanner",
+        "ScanResult",
+        "ActivityResult",
+        "Broadcaster",
+        "BroadcastError",
+        "AudioDeviceError",
+        "TTSError",
+        "__version__",
     ]
 except ImportError as e:
     # Handle missing dependencies during development/testing
-    __all__ = ['__version__']
+    __all__ = ["__version__"]
