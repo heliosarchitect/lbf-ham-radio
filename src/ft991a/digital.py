@@ -147,7 +147,7 @@ class DigitalModes:
             self._set_menu_item("051", "025")  # ALC 25%
             
             # Set power to reasonable level for FT8 (typically 25-40W)
-            self.radio.set_tx_power(25)
+            self.radio.set_power_level(25)
             
             logger.info(f"FT8 configured: {target_freq/1e6:.3f} MHz, DATA-USB, 25W")
             return True
@@ -197,7 +197,7 @@ class DigitalModes:
             self._set_menu_item("051", "025")  # ALC 25%
             
             # Set power to reasonable level 
-            self.radio.set_tx_power(25)
+            self.radio.set_power_level(25)
             
             logger.info(f"FT4 configured: {target_freq/1e6:.3f} MHz, DATA-USB, 25W")
             return True
@@ -247,7 +247,7 @@ class DigitalModes:
             self._set_menu_item("051", "020")  # ALC 20%
             
             # Set power (JS8Call can use lower power effectively)
-            self.radio.set_tx_power(20)
+            self.radio.set_power_level(20)
             
             logger.info(f"JS8Call configured: {target_freq/1e6:.3f} MHz, DATA-USB, 20W")
             return True
