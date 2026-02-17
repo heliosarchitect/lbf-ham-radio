@@ -134,7 +134,7 @@ class ConnectionManager:
 class AudioConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
-        self.audio_process: Optional[subprocess.Popen] = None
+        self.audio_process = None  # asyncio.subprocess.Process
         self.streaming_task: Optional[asyncio.Task] = None
         
     async def connect(self, websocket: WebSocket):
@@ -151,7 +151,7 @@ class AudioConnectionManager:
         
         # Stop audio streaming if no more clients
         if len(self.active_connections) == 0:
-            self.stop_audio_stream()
+            asyncio.ensure_future(self.stop_audio_stream())
 
     async def broadcast_audio(self, data: bytes):
         if not self.active_connections:
@@ -165,93 +165,101 @@ class AudioConnectionManager:
                 logger.warning(f"Audio WebSocket send failed: {e}")
                 dead_connections.append(connection)
         
-        # Clean up dead connections
         for conn in dead_connections:
-            self.disconnect(conn)
+            if conn in self.active_connections:
+                self.active_connections.remove(conn)
 
     async def start_audio_stream(self):
-        """Start audio capture from PCM2903B CODEC"""
+        """Start audio capture from PCM2903B CODEC using async subprocess"""
         if self.audio_process or self.streaming_task:
             return
         
         try:
-            # Try different possible device names for PCM2903B
+            # Try audio devices in order
             audio_devices = [
                 "hw:CARD=CODEC",
-                "hw:CARD=Device", 
-                "hw:CARD=USB",
-                "hw:1,0",  # Common fallback
-                "hw:0,0"   # Another fallback
+                "hw:CARD=CODEC,DEV=0",
+                "plughw:CARD=CODEC,DEV=0",
+                "hw:2,0",
+                "hw:1,0",
             ]
             
             device_found = None
             for device in audio_devices:
                 try:
-                    # Test the device quickly
-                    test_proc = subprocess.Popen([
-                        "arecord", "-D", device, "-f", "S16_LE", "-r", "48000", 
-                        "-c", "1", "-t", "raw", "--duration=1"
-                    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                    test_proc.wait(timeout=2)
-                    if test_proc.returncode == 0:
+                    test = await asyncio.create_subprocess_exec(
+                        "arecord", "-D", device, "-f", "S16_LE", "-r", "48000",
+                        "-c", "1", "-t", "raw", "-d", "1",
+                        stdout=asyncio.subprocess.DEVNULL,
+                        stderr=asyncio.subprocess.DEVNULL
+                    )
+                    await asyncio.wait_for(test.wait(), timeout=3)
+                    if test.returncode == 0:
                         device_found = device
-                        logger.info(f"Found audio device: {device}")
+                        logger.info(f"Audio device found: {device}")
                         break
-                except (subprocess.TimeoutExpired, Exception):
-                    test_proc.kill() if test_proc else None
+                except (asyncio.TimeoutError, Exception):
+                    try:
+                        test.kill()
+                    except:
+                        pass
                     continue
             
             if not device_found:
-                logger.error("No compatible audio device found")
+                logger.error("No compatible audio capture device found")
                 return
                 
-            # Start the audio capture process
-            self.audio_process = subprocess.Popen([
-                "arecord", 
+            # Start async audio capture
+            self.audio_process = await asyncio.create_subprocess_exec(
+                "arecord",
                 "-D", device_found,
-                "-f", "S16_LE",      # 16-bit signed little-endian
-                "-r", "48000",       # 48 kHz sample rate
-                "-c", "1",           # Mono
-                "-t", "raw"          # Raw PCM output
-            ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                "-f", "S16_LE",
+                "-r", "48000",
+                "-c", "1",
+                "-t", "raw",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.DEVNULL
+            )
             
-            # Start streaming task
             self.streaming_task = asyncio.create_task(self._stream_audio())
-            logger.info(f"Audio streaming started with device: {device_found}")
+            logger.info(f"Audio streaming started: {device_found}")
             
         except Exception as e:
             logger.error(f"Failed to start audio stream: {e}")
-            self.stop_audio_stream()
+            await self.stop_audio_stream()
 
     async def _stream_audio(self):
-        """Stream audio data to WebSocket clients"""
-        chunk_size = 4096
+        """Non-blocking audio streaming to WebSocket clients"""
+        chunk_size = 4096  # ~42ms at 48kHz mono 16-bit
         
         try:
-            while self.audio_process and self.audio_process.poll() is None:
-                data = self.audio_process.stdout.read(chunk_size)
-                if data:
-                    await self.broadcast_audio(data)
-                else:
-                    await asyncio.sleep(0.01)  # Small delay to prevent busy loop
-                    
+            while self.audio_process and self.audio_process.returncode is None:
+                data = await self.audio_process.stdout.read(chunk_size)
+                if not data:
+                    break
+                await self.broadcast_audio(data)
+        except asyncio.CancelledError:
+            pass
         except Exception as e:
             logger.error(f"Audio streaming error: {e}")
         finally:
-            self.stop_audio_stream()
+            await self.stop_audio_stream()
 
-    def stop_audio_stream(self):
+    async def stop_audio_stream(self):
         """Stop audio capture and streaming"""
-        if self.streaming_task:
+        if self.streaming_task and not self.streaming_task.done():
             self.streaming_task.cancel()
-            self.streaming_task = None
+        self.streaming_task = None
             
         if self.audio_process:
-            self.audio_process.terminate()
             try:
-                self.audio_process.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                self.audio_process.kill()
+                self.audio_process.terminate()
+                await asyncio.wait_for(self.audio_process.wait(), timeout=2)
+            except (asyncio.TimeoutError, Exception):
+                try:
+                    self.audio_process.kill()
+                except:
+                    pass
             self.audio_process = None
             
         logger.info("Audio streaming stopped")
@@ -1182,7 +1190,7 @@ async def shutdown_event():
     logger.info("FT-991A Web GUI shutting down...")
     
     # Stop audio streaming
-    audio_manager.stop_audio_stream()
+    await audio_manager.stop_audio_stream()
     
     # Stop any active scan
     global scan_active, scan_task
