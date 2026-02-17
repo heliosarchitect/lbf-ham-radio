@@ -436,6 +436,12 @@ class APRSClient:
             except (ValueError, IndexError):
                 return {'error': 'Invalid coordinate format'}
             
+            # Validate coordinate ranges
+            if not (-90 <= latitude <= 90):
+                return {'error': f'Invalid latitude: {latitude}'}
+            if not (-180 <= longitude <= 180):
+                return {'error': f'Invalid longitude: {longitude}'}
+            
             # Extract comment (everything after symbol)
             comment = pos_data[19:] if len(pos_data) > 19 else ""
             
