@@ -3,3 +3,4 @@ fastapi>=0.100.0
 uvicorn[standard]>=0.20.0
 websockets>=11.0
 python-multipart>=0.0.6
+pyttsx3>=2.90

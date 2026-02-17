@@ -29,11 +29,15 @@ __license__ = "MIT"
 # Import main classes for easy access
 try:
     from .cat import FT991A, Mode, Band, RadioStatus
+    from .scanner import BandScanner, ScanResult, ActivityResult
     __all__ = [
         'FT991A',
         'Mode', 
         'Band',
         'RadioStatus',
+        'BandScanner',
+        'ScanResult',
+        'ActivityResult',
         '__version__'
     ]
 except ImportError as e:
