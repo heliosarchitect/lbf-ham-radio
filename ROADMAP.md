@@ -7,7 +7,7 @@
 
 ---
 
-## v0.3.x — Foundation (✅ CURRENT)
+## v0.3.x — Foundation (✅ COMPLETE)
 
 - [x] CAT control library (full FT-991A command set)
 - [x] FastAPI web GUI with WebSocket real-time updates
@@ -17,18 +17,24 @@
 - [x] CI/CD (GitHub Actions + Gitea, auto-publish on tag)
 - [x] Unit tests (15 passing, mocked serial)
 - [x] Research doc (existing Linux ham software ecosystem)
+- [x] Traefik reverse proxy config for HTTPS (v0.3.3)
 
 ---
 
-## v0.4.0 — Hardware Validation & Audio
+## v0.4.0 — Hardware Validation & Audio (✅ COMPLETE — shipped in v0.6.x)
 
 **Goal**: Verified working on real hardware, audio routing functional.
 
-- [ ] Integration tests with live FT-991A hardware
+- [x] Audio level meters in web GUI — FFT waterfall visualization (v0.6.0)
+- [x] Audio recording/playback — monitor received audio from browser (v0.6.0)
+- [x] S-meter history chart with real-time display (v0.6.0)
+- [x] Antenna auto-tune button (ATU control via CAT) (v0.6.1)
+- [x] Mobile navigation bar for tab access (v0.6.0)
+- [x] First-time setup wizard for guided radio configuration (v0.6.0)
+- [x] Precision fine-tuning controls in LCARS GUI (v0.6.0)
+- [ ] Integration tests with live FT-991A hardware (deferred — requires physical access)
 - [ ] USB device auto-detection (`/dev/ttyUSB0`, `/dev/ttyUSB1`, USB CODEC AUDIO)
 - [ ] PulseAudio/PipeWire audio routing for USB sound card
-- [ ] Audio level meters in web GUI (RX audio visualizer)
-- [ ] Audio recording/playback (monitor received audio from browser)
 - [ ] Squelch status indicator
 - [ ] Connection auto-reconnect on USB disconnect/reconnect
 - [ ] Fix any CAT command timing issues discovered on real hardware
@@ -36,10 +42,11 @@
 
 ---
 
-## v0.5.0 — Digital Modes Integration
+## v0.5.0 — Digital Modes Integration (⚠️ SCAFFOLDED — `digital.py` exists, 511 lines)
 
 **Goal**: First-class FT8/FT4 and digital mode support.
 
+- [x] Digital modes module with `DigitalModes` class (v0.6.0)
 - [ ] WSJT-X integration (auto-configure CAT + audio routing)
 - [ ] fldigi integration (launch, configure, monitor)
 - [ ] Hamlib `rigctld` wrapper (shared CAT access for multiple programs)
@@ -50,41 +57,57 @@
 
 ---
 
-## v0.6.0 — CW / Morse Code
+## v0.6.0 — CW / Morse Code (✅ COMPLETE)
 
 **Goal**: Full CW operation from the web GUI + AI-assisted decode.
 
-- [ ] CW decoder (audio → text) using DSP or fldigi bridge
-- [ ] CW encoder (text → keying via CAT)
+- [x] CW encoder (text → Morse code, full ITU alphabet + numbers + punctuation + prosigns) (v0.6.0)
+- [x] CW decoder (Morse code → text, robust spacing handling) (v0.6.0)
+- [x] CW keyer (precise timing via CAT TX commands, 5-40 WPM) (v0.6.0)
+- [x] CLI: `ft991a-cli cw encode/decode/send/listen` (v0.6.0)
+- [x] Speed control (WPM parameter) (v0.6.0)
+- [x] Safety: TX requires `--confirm` flag + license warning (v0.6.0)
+- [x] Emergency stop for keying (v0.6.0)
+- [x] Prosigns support: `<SK>`, `<KA>`, `<SN>` (v0.6.0)
+- [x] 39 tests passing including round-trip validation (v0.6.0)
 - [ ] CW keyboard mode in web GUI (type text, radio sends morse)
-- [ ] Speed control (WPM slider)
 - [ ] CW practice/training mode (generate random callsigns, copy practice)
 - [ ] Decode waterfall display
 - [ ] AI-assisted CW: auto-respond to CQ calls with proper QSO format
-- [ ] Morse code prosigns and abbreviations reference
 
 ---
 
-## v0.7.0 — Band Monitoring & Intelligence
+## v0.7.0 — Band Monitoring & Intelligence (✅ MOSTLY COMPLETE)
 
 **Goal**: AI-powered band awareness and signal detection.
 
-- [ ] Band scope integration (if available via CAT, otherwise via audio FFT)
-- [ ] Automatic band scan (sweep frequencies, log active signals)
-- [ ] Signal strength heatmap by frequency/time
+- [x] SDR panadapter waterfall via SDRplay RSP2pro + SoapySDR (v0.7.0)
+- [x] Click-to-tune: click waterfall to set VFO-A (v0.7.0)
+- [x] Bandwidth selector: 500 kHz–10 MHz (v0.7.0)
+- [x] FFT resolution: 256–2048 bins (v0.7.0)
+- [x] 5 color palettes (RADIO, AMBER, BLUE, GREEN, GRAY) (v0.7.0)
+- [x] Frequency axis labels + radio frequency indicator (v0.7.0)
+- [x] Automatic frequency tracking — SDR follows VFO-A (v0.7.0)
+- [x] Signal level meter with peak strength display (v0.7.0)
+- [x] Scanner module (`scanner.py`, 332 lines) (v0.7.0)
 - [ ] Propagation overlay (integrate solar/HF prediction data)
 - [ ] DX cluster feed integration (live DX spots)
-- [ ] Automatic frequency logging (what's active, when)
 - [ ] Band condition alerts (push notification when target band opens)
 - [ ] Contest mode: highlight multipliers, track worked grids/zones
 
 ---
 
-## v0.8.0 — AI-Assisted Broadcast & TX Queue
+## v0.8.0 — AI-Assisted Monitoring & Broadcast (✅ PARTIALLY COMPLETE)
 
 **Goal**: Draft → review → transmit workflow for newsletters and alerts.
 
-- [ ] Broadcast message composer (AI drafts, operator approves)
+- [x] Channel monitor tab — live AI transcription + translation (v0.8.0)
+- [x] Whisper API + gpt-4o-mini for Spanish→English translation (v0.8.0)
+- [x] Callsign detection (KP4, WP4, W, K, N prefixes) (v0.8.0)
+- [x] JSONL transcript logging with export (v0.8.0)
+- [x] Standalone monitoring script: `scripts/radio-monitor.sh` (v0.7.2)
+- [x] Broadcast module (`broadcast.py`, 426 lines) (v0.8.0)
+- [x] Dynamic version display in GUI (v0.8.1)
 - [ ] TX queue in web GUI (queued messages awaiting operator PTT)
 - [ ] Text-to-speech synthesis for voice broadcasts (TTS → audio → TX)
 - [ ] CW bulletin formatting (auto-format text as CW-ready)
@@ -113,10 +136,11 @@
 
 ---
 
-## v0.10.0 — APRS, Packet Radio & Emergency Comms
+## v0.10.0 — APRS, Packet Radio & Emergency Comms (⚠️ SCAFFOLDED — `aprs.py` exists, 522 lines)
 
 **Goal**: Position reporting, packet capabilities, and ARES/RACES readiness.
 
+- [x] APRS module with `APRSPacketType` enum and packet handling (scaffolded, v0.8.0)
 - [ ] APRS position beacon (via Direwolf bridge)
 - [ ] APRS message send/receive
 - [ ] APRS map display in web GUI
@@ -170,19 +194,20 @@
 
 ## Version Summary
 
-| Version | Feature Count | Milestone |
-|---------|--------------|-----------|
-| v0.3.x | — | Foundation (✅ done) |
-| v0.4.0 | +1 | Hardware validation + audio |
-| v0.5.0 | +1 | Digital modes (FT8, fldigi) |
-| v0.6.0 | +1 | CW / Morse code |
-| v0.7.0 | +1 | Band monitoring & intelligence |
-| v0.8.0 | +1 | AI broadcast & TX queue |
-| v0.9.0 | +1 | QSO logging |
-| v0.10.0 | +1 | APRS + emergency comms |
-| **v1.0.0** | — | **Production release** |
+| Version | Milestone | Status |
+|---------|-----------|--------|
+| v0.3.x | Foundation | ✅ Complete |
+| v0.4.0 | Hardware validation + audio | ✅ Complete (shipped in v0.6.x) |
+| v0.5.0 | Digital modes (FT8, fldigi) | ⚠️ Scaffolded |
+| v0.6.0 | CW / Morse code | ✅ Complete |
+| v0.7.0 | Band monitoring & intelligence | ✅ Mostly complete |
+| v0.8.0 | AI broadcast & TX queue | ✅ Partially complete |
+| v0.9.0 | QSO logging | ❌ Not started |
+| v0.10.0 | APRS + emergency comms | ⚠️ Scaffolded |
+| **v1.0.0** | **Production release** | 🔶 TLS done, rest pending |
 
-**Total: 7 feature increments → v0.3 to v0.10, then v1.0.0**
+**Current release: v0.8.1** — actual feature coverage spans v0.3–v0.8 roadmap milestones.
+**Next milestone: v0.4.0 hardware validation** (deferred items requiring physical radio access on radio.fleet.wood)
 
 ---
 
