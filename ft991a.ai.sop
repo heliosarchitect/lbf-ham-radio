@@ -1,0 +1,63 @@
+meta:
+  name: FT-991A Ham Radio Control
+  version: "0.8.3"
+  repo: ~/Projects/lbf-ham-radio
+  hosts: [radio.fleet.wood]
+  updated: "2026-02-17"
+
+preflight:
+  - id: verify-version
+    action: Check git tags before asserting version
+    command: cd ~/Projects/lbf-ham-radio && git tag --sort=-v:refname | head -5
+    reason: "v0.8.2 and v0.8.3 are NOT yet tagged. Don't claim they are."
+
+  - id: check-deployed
+    action: Check what version is running on the radio server
+    command: ssh radio.fleet.wood 'cat ~/ft991a-control/package.json | grep version'
+    reason: Deployed version may differ from repo HEAD
+
+  - id: no-tx
+    action: "NEVER transmit without Matthew physically present"
+    reason: "Legal and safety requirement. RX/monitoring/rig control only."
+
+hosts:
+  - name: radio.fleet.wood
+    ip: 192.168.10.179
+    port: 2222
+    user: bonsaihorn
+    services: [ft991a-control]
+    env: "node (system)"
+    gpu: "none"
+    gotchas:
+      - "SSH port is 2222, not 22"
+      - "Callsign: KO4TUV — Matthew's FCC license"
+      - "NEVER TX without Matthew present — legal requirement"
+
+commands:
+  start: ssh radio.fleet.wood 'cd ~/ft991a-control && npm start'
+  stop: ssh radio.fleet.wood 'pkill -f ft991a'
+  status: ssh radio.fleet.wood 'curl -s http://localhost:3000/api/status'
+  deploy: ssh radio.fleet.wood 'cd ~/ft991a-control && git pull && npm install'
+  test: cd ~/Projects/lbf-ham-radio && npm test
+  logs: ssh radio.fleet.wood 'journalctl -u ft991a-control -n 50'
+
+gotchas:
+  - id: version-tags
+    description: "v0.8.2 (grid fix) and v0.8.3 (version label move) exist in code but are NOT git-tagged yet. v0.8.1 is the latest tag."
+    fix: "Always run 'git tag' to verify before asserting version state."
+    learned: "2026-02-17"
+
+  - id: pypi-vs-npm
+    description: "Published to PyPI as ft991a-control. Web UI is the npm package."
+    fix: "PyPI for the Python library, npm for the web dashboard"
+    learned: "2026-02-17"
+
+  - id: serial-lock
+    description: "Only one process can hold the serial port to the radio at a time"
+    fix: "Kill existing connections before starting a new one"
+    learned: "2026-02-17"
+
+alerts:
+  - condition: "TX attempt without Matthew present"
+    severity: critical
+    action: "BLOCK the command. Never transmit autonomously."
