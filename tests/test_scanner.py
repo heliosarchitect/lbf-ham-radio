@@ -126,7 +126,9 @@ class TestBandScanner:
         # Verify scan_band was called with correct parameters
         expected_start = 14249000 - 10000  # center - width/2
         expected_end = 14249000 + 10000  # center + width/2
-        mock_scan_band.assert_called_once_with(expected_start, expected_end, 1000, dwell_ms=200)
+        mock_scan_band.assert_called_once_with(
+            expected_start, expected_end, 1000, dwell_ms=200
+        )
 
         assert results == [(14239000, 30), (14249000, 50), (14259000, 25)]
 
@@ -185,7 +187,10 @@ class TestBandScanner:
 
     def test_format_activity_results_with_data(self, scanner):
         """Test formatting activity results with data."""
-        activities = [ActivityResult(14074000, 45, 14.074, "S1"), ActivityResult(21074000, 60, 21.074, "S2")]
+        activities = [
+            ActivityResult(14074000, 45, 14.074, "S1"),
+            ActivityResult(21074000, 60, 21.074, "S2"),
+        ]
 
         formatted = scanner.format_activity_results(activities, "HF Activity")
 
@@ -236,7 +241,9 @@ class TestBandScanner:
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
-        result = ActivityResult(frequency_hz=14074000, s_meter=45, frequency_mhz=14.074, s_level_text="S1")
+        result = ActivityResult(
+            frequency_hz=14074000, s_meter=45, frequency_mhz=14.074, s_level_text="S1"
+        )
 
         assert result.frequency_hz == 14074000
         assert result.s_meter == 45

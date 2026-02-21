@@ -96,9 +96,13 @@ class DigitalModes:
         """
         self.radio = radio
         if not radio.serial or not radio.serial.is_open:
-            raise ValueError("Radio must be connected before initializing digital modes")
+            raise ValueError(
+                "Radio must be connected before initializing digital modes"
+            )
 
-    def setup_ft8(self, frequency: Optional[int] = None, band: Optional[str] = None) -> bool:
+    def setup_ft8(
+        self, frequency: Optional[int] = None, band: Optional[str] = None
+    ) -> bool:
         """
         Configure radio for FT8 operation.
 
@@ -153,7 +157,9 @@ class DigitalModes:
             logger.error(f"FT8 setup failed: {e}")
             return False
 
-    def setup_ft4(self, frequency: Optional[int] = None, band: Optional[str] = None) -> bool:
+    def setup_ft4(
+        self, frequency: Optional[int] = None, band: Optional[str] = None
+    ) -> bool:
         """
         Configure radio for FT4 operation.
 
@@ -203,7 +209,9 @@ class DigitalModes:
             logger.error(f"FT4 setup failed: {e}")
             return False
 
-    def setup_js8call(self, frequency: Optional[int] = None, band: Optional[str] = None) -> bool:
+    def setup_js8call(
+        self, frequency: Optional[int] = None, band: Optional[str] = None
+    ) -> bool:
         """
         Configure radio for JS8Call operation.
 
@@ -278,8 +286,13 @@ class DigitalModes:
                             card_num, card_id, card_name = match.groups()
 
                             # Check if this looks like PCM2903B
-                            if any(keyword in card_name.upper() for keyword in ["USB AUDIO", "PCM2903", "C-MEDIA"]):
-                                logger.info(f"Found USB audio device: {card_name} (card {card_num})")
+                            if any(
+                                keyword in card_name.upper()
+                                for keyword in ["USB AUDIO", "PCM2903", "C-MEDIA"]
+                            ):
+                                logger.info(
+                                    f"Found USB audio device: {card_name} (card {card_num})"
+                                )
                                 return {
                                     "card": card_num,
                                     "device": "0",  # Usually device 0
@@ -290,15 +303,24 @@ class DigitalModes:
 
             # Method 2: Use arecord to list capture devices
             try:
-                result = subprocess.run(["arecord", "-l"], capture_output=True, text=True, timeout=5)
+                result = subprocess.run(
+                    ["arecord", "-l"], capture_output=True, text=True, timeout=5
+                )
                 if result.returncode == 0:
                     for line in result.stdout.split("\n"):
                         if "USB" in line and ("Audio" in line or "CODEC" in line):
                             # Parse: card 1: CODEC [USB Audio CODEC], device 0: USB Audio [USB Audio]
-                            match = re.search(r"card\s+(\d+):\s+(\w+)\s+\[([^\]]+)\].*device\s+(\d+)", line)
+                            match = re.search(
+                                r"card\s+(\d+):\s+(\w+)\s+\[([^\]]+)\].*device\s+(\d+)",
+                                line,
+                            )
                             if match:
-                                card_num, card_id, card_name, device_num = match.groups()
-                                logger.info(f"Found audio device via arecord: {card_name} (card {card_num})")
+                                card_num, card_id, card_name, device_num = (
+                                    match.groups()
+                                )
+                                logger.info(
+                                    f"Found audio device via arecord: {card_name} (card {card_num})"
+                                )
                                 return {
                                     "card": card_num,
                                     "device": device_num,
@@ -312,15 +334,22 @@ class DigitalModes:
             # Method 3: Check PulseAudio sources
             try:
                 result = subprocess.run(
-                    ["pactl", "list", "short", "sources"], capture_output=True, text=True, timeout=5
+                    ["pactl", "list", "short", "sources"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 if result.returncode == 0:
                     for line in result.stdout.split("\n"):
-                        if "usb" in line.lower() and ("audio" in line.lower() or "codec" in line.lower()):
+                        if "usb" in line.lower() and (
+                            "audio" in line.lower() or "codec" in line.lower()
+                        ):
                             parts = line.split("\t")
                             if len(parts) >= 2:
                                 source_name = parts[1]
-                                logger.info(f"Found PulseAudio USB source: {source_name}")
+                                logger.info(
+                                    f"Found PulseAudio USB source: {source_name}"
+                                )
                                 return {
                                     "card": "unknown",
                                     "device": "unknown",
@@ -338,7 +367,9 @@ class DigitalModes:
             logger.error(f"Audio device detection failed: {e}")
             return None
 
-    def create_wsjtx_config(self, callsign: str, grid_square: str = "GRID") -> Optional[str]:
+    def create_wsjtx_config(
+        self, callsign: str, grid_square: str = "GRID"
+    ) -> Optional[str]:
         """
         Generate a WSJT-X configuration file with proper CAT and audio settings.
 

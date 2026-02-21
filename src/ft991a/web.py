@@ -18,7 +18,6 @@ from pathlib import Path
 from typing import List, Optional, Set
 
 import httpx
-
 import serial.tools.list_ports
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, HTMLResponse
@@ -363,7 +362,9 @@ class SDRConnectionManager:
         """Start SDR streaming from RSP2pro using SoapySDR"""
         if not SOAPY_SDR_AVAILABLE:
             logger.error("Cannot start SDR stream - SoapySDR not available")
-            await self.broadcast_sdr_data({"type": "sdr_error", "message": "SoapySDR not available"})
+            await self.broadcast_sdr_data(
+                {"type": "sdr_error", "message": "SoapySDR not available"}
+            )
             return
 
         if self.sdr_device or self.streaming_task:
@@ -379,19 +380,25 @@ class SDRConnectionManager:
 
             # Configure device
             self.sdr_device.setSampleRate(SoapySDR.SOAPY_SDR_RX, 0, self.bandwidth)
-            self.sdr_device.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, 14074000)  # Default to 20m FT8
+            self.sdr_device.setFrequency(
+                SoapySDR.SOAPY_SDR_RX, 0, 14074000
+            )  # Default to 20m FT8
             self.sdr_device.setGain(SoapySDR.SOAPY_SDR_RX, 0, "IFGR", 40)  # IF gain
             self.sdr_device.setGain(SoapySDR.SOAPY_SDR_RX, 0, "RFGR", 7)  # RF gain
             self.sdr_device.setAntenna(SoapySDR.SOAPY_SDR_RX, 0, "RX")
 
             # Setup stream
-            rx_stream = self.sdr_device.setupStream(SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32)
+            rx_stream = self.sdr_device.setupStream(
+                SoapySDR.SOAPY_SDR_RX, SoapySDR.SOAPY_SDR_CF32
+            )
             self.sdr_device.activateStream(rx_stream)
 
             # Start streaming task
             self.streaming_task = asyncio.create_task(self._stream_sdr_data(rx_stream))
 
-            logger.info(f"SDR streaming started: {self.bandwidth/1e6:.1f} MHz bandwidth")
+            logger.info(
+                f"SDR streaming started: {self.bandwidth/1e6:.1f} MHz bandwidth"
+            )
 
             # Notify clients
             await self.broadcast_sdr_data(
@@ -407,7 +414,9 @@ class SDRConnectionManager:
         except Exception as e:
             logger.error(f"Failed to start SDR stream: {e}")
             await self.stop_sdr_stream()
-            await self.broadcast_sdr_data({"type": "sdr_error", "message": f"SDR initialization failed: {str(e)}"})
+            await self.broadcast_sdr_data(
+                {"type": "sdr_error", "message": f"SDR initialization failed: {str(e)}"}
+            )
 
     async def _stream_sdr_data(self, rx_stream):
         """Stream IQ data and perform FFT analysis"""
@@ -424,7 +433,9 @@ class SDRConnectionManager:
 
                 # Perform FFT
                 fft_data = np.fft.fftshift(np.fft.fft(buffer))
-                power_spectrum = 20 * np.log10(np.abs(fft_data) + 1e-10)  # Convert to dB
+                power_spectrum = 20 * np.log10(
+                    np.abs(fft_data) + 1e-10
+                )  # Convert to dB
 
                 # Get current radio frequency for centering
                 center_freq = 14074000  # Default
@@ -437,9 +448,15 @@ class SDRConnectionManager:
 
                 # Update SDR center frequency to match radio
                 try:
-                    current_sdr_freq = self.sdr_device.getFrequency(SoapySDR.SOAPY_SDR_RX, 0)
-                    if abs(current_sdr_freq - center_freq) > 1000:  # More than 1 kHz difference
-                        self.sdr_device.setFrequency(SoapySDR.SOAPY_SDR_RX, 0, center_freq)
+                    current_sdr_freq = self.sdr_device.getFrequency(
+                        SoapySDR.SOAPY_SDR_RX, 0
+                    )
+                    if (
+                        abs(current_sdr_freq - center_freq) > 1000
+                    ):  # More than 1 kHz difference
+                        self.sdr_device.setFrequency(
+                            SoapySDR.SOAPY_SDR_RX, 0, center_freq
+                        )
                 except:
                     pass
 
@@ -461,7 +478,9 @@ class SDRConnectionManager:
             pass
         except Exception as e:
             logger.error(f"SDR streaming error: {e}")
-            await self.broadcast_sdr_data({"type": "sdr_error", "message": f"Streaming error: {str(e)}"})
+            await self.broadcast_sdr_data(
+                {"type": "sdr_error", "message": f"Streaming error: {str(e)}"}
+            )
         finally:
             await self.stop_sdr_stream()
 
@@ -539,7 +558,9 @@ async def connect_radio():
     except Exception as e:
         logger.error(f"Radio connection error: {e}")
         radio_connected = False
-        await manager.broadcast({"type": "connection", "status": "error", "message": str(e)})
+        await manager.broadcast(
+            {"type": "connection", "status": "error", "message": str(e)}
+        )
 
 
 async def disconnect_radio():
@@ -593,7 +614,9 @@ async def monitor_radio():
         except Exception as e:
             logger.error(f"Monitor error: {e}")
             radio_connected = False
-            await manager.broadcast({"type": "connection", "status": "lost", "message": str(e)})
+            await manager.broadcast(
+                {"type": "connection", "status": "lost", "message": str(e)}
+            )
             break
 
 
@@ -633,6 +656,7 @@ async def api_version():
     """Get package version."""
     try:
         from ft991a import __version__
+
         return {"version": __version__}
     except Exception:
         return {"version": "unknown"}
@@ -728,7 +752,9 @@ async def set_band(req: BandRequest):
 
     try:
         # Convert band name to enum
-        band_name = f"HF_{req.band}" if not req.band.startswith(("VHF_", "UHF_")) else req.band
+        band_name = (
+            f"HF_{req.band}" if not req.band.startswith(("VHF_", "UHF_")) else req.band
+        )
         band = Band[band_name]
         radio.set_band(band)
         return {"success": True, "band": req.band, "frequency": band.value}
@@ -819,7 +845,11 @@ async def get_audio_devices():
                     else:
                         device_name = device_info
 
-                    current_card = {"card_num": int(card_num), "name": device_name, "devices": []}
+                    current_card = {
+                        "card_num": int(card_num),
+                        "name": device_name,
+                        "devices": [],
+                    }
 
             elif line.startswith("  Subdevices:") and current_card:
                 # Parse subdevice info
@@ -833,7 +863,8 @@ async def get_audio_devices():
                     "name": current_card["name"],
                     "hw_name": f"hw:{current_card['card_num']},0",
                     "card_name": f"hw:CARD={current_card['name'].replace(' ', '').replace('-', '')[:8]}",
-                    "is_usb_codec": "USB Audio CODEC" in current_card["name"] or "PCM2903B" in current_card["name"],
+                    "is_usb_codec": "USB Audio CODEC" in current_card["name"]
+                    or "PCM2903B" in current_card["name"],
                     "subdevices": current_card.get("subdevices", 1),
                 }
                 devices.append(device_entry)
@@ -843,7 +874,12 @@ async def get_audio_devices():
         pcm_result = subprocess.run(["arecord", "-L"], capture_output=True, text=True)
         pcm_info = pcm_result.stdout if pcm_result.returncode == 0 else ""
 
-        return {"success": True, "devices": devices, "raw_output": result.stdout, "pcm_info": pcm_info}
+        return {
+            "success": True,
+            "devices": devices,
+            "raw_output": result.stdout,
+            "pcm_info": pcm_info,
+        }
 
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -1020,10 +1056,14 @@ async def get_memory_list():
                                 "ctcss": "OFF",  # TODO: Parse CTCSS from response
                                 "is_current": False,  # Will be updated if needed
                             }
-                            logger.debug(f"Memory {channel_str}: {frequency} Hz, {mode}")
+                            logger.debug(
+                                f"Memory {channel_str}: {frequency} Hz, {mode}"
+                            )
 
                     except (ValueError, IndexError) as e:
-                        logger.warning(f"Failed to parse memory {channel_str} response: {e}")
+                        logger.warning(
+                            f"Failed to parse memory {channel_str} response: {e}"
+                        )
                         continue
 
             except Exception as e:
@@ -1032,7 +1072,12 @@ async def get_memory_list():
 
         logger.info(f"Memory scan completed: {len(channels)} programmed channels found")
 
-        return {"success": True, "channels": channels, "total_programmed": len(channels), "total_capacity": 99}
+        return {
+            "success": True,
+            "channels": channels,
+            "total_programmed": len(channels),
+            "total_capacity": 99,
+        }
 
     except Exception as e:
         logger.error(f"Memory scan failed: {e}")
@@ -1064,11 +1109,17 @@ async def recall_memory_channel(req: MemoryRecallRequest):
         # Verify by reading current frequency
         try:
             status = radio.get_status()
-            logger.info(f"Memory {channel_str} recalled - VFO-A: {status.frequency_a} Hz")
+            logger.info(
+                f"Memory {channel_str} recalled - VFO-A: {status.frequency_a} Hz"
+            )
         except:
             pass
 
-        return {"success": True, "channel": channel_str, "message": f"Memory channel {channel_str} recalled to VFO-A"}
+        return {
+            "success": True,
+            "channel": channel_str,
+            "message": f"Memory channel {channel_str} recalled to VFO-A",
+        }
 
     except Exception as e:
         logger.error(f"Memory recall failed: {e}")
@@ -1092,7 +1143,9 @@ async def store_to_memory_channel(req: MemoryStoreRequest):
         current_freq = status.frequency_a
         current_mode = status.mode
 
-        logger.info(f"Storing VFO-A to memory {channel_str}: {current_freq} Hz, {current_mode}")
+        logger.info(
+            f"Storing VFO-A to memory {channel_str}: {current_freq} Hz, {current_mode}"
+        )
 
         # Send MW command to store current VFO-A to memory
         # MW command format: MW{ccc}; - stores current VFO-A to channel ccc
@@ -1154,7 +1207,11 @@ async def clear_memory_channel(req: MemoryClearRequest):
 
         logger.info(f"Memory channel {channel_str} cleared (set to 30 kHz)")
 
-        return {"success": True, "channel": channel_str, "message": f"Memory channel {channel_str} cleared"}
+        return {
+            "success": True,
+            "channel": channel_str,
+            "message": f"Memory channel {channel_str} cleared",
+        }
 
     except Exception as e:
         logger.error(f"Memory clear failed: {e}")
@@ -1177,19 +1234,27 @@ async def start_scan(req: ScanRequest):
 
     # Validate parameters
     if req.start_freq >= req.end_freq:
-        raise HTTPException(status_code=400, detail="Start frequency must be less than end frequency")
+        raise HTTPException(
+            status_code=400, detail="Start frequency must be less than end frequency"
+        )
 
     if req.start_freq < 30000 or req.end_freq > 470000000:
-        raise HTTPException(status_code=400, detail="Frequency range must be between 30 kHz and 470 MHz")
+        raise HTTPException(
+            status_code=400, detail="Frequency range must be between 30 kHz and 470 MHz"
+        )
 
     if req.step < 100 or req.step > 1000000:
-        raise HTTPException(status_code=400, detail="Step size must be between 100 Hz and 1 MHz")
+        raise HTTPException(
+            status_code=400, detail="Step size must be between 100 Hz and 1 MHz"
+        )
 
     try:
         scan_active = True
         scan_task = asyncio.create_task(scan_frequency_range(req))
 
-        logger.info(f"Started scan: {req.start_freq}-{req.end_freq} Hz, step {req.step} Hz, threshold {req.threshold}")
+        logger.info(
+            f"Started scan: {req.start_freq}-{req.end_freq} Hz, step {req.step} Hz, threshold {req.threshold}"
+        )
 
         return {
             "success": True,
@@ -1227,7 +1292,9 @@ async def stop_scan():
         scan_task = None
 
     # Broadcast scan stopped
-    await manager.broadcast({"type": "scan_complete", "message": "Scan stopped by user"})
+    await manager.broadcast(
+        {"type": "scan_complete", "message": "Scan stopped by user"}
+    )
 
     logger.info("Scan stopped by user request")
     return {"success": True, "message": "Scan stopped"}
@@ -1273,7 +1340,11 @@ async def scan_frequency_range(req: ScanRequest):
                         "is_active": is_active,
                         "scan_count": scan_count,
                         "active_count": active_count,
-                        "progress": ((current_freq - req.start_freq) / (req.end_freq - req.start_freq)) * 100,
+                        "progress": (
+                            (current_freq - req.start_freq)
+                            / (req.end_freq - req.start_freq)
+                        )
+                        * 100,
                     }
                 )
 
@@ -1301,12 +1372,18 @@ async def scan_frequency_range(req: ScanRequest):
                         "total_frequencies": scan_count,
                         "active_signals": active_count,
                         "elapsed_time": round(elapsed_time, 1),
-                        "scan_rate": round(scan_count / elapsed_time, 1) if elapsed_time > 0 else 0,
+                        "scan_rate": (
+                            round(scan_count / elapsed_time, 1)
+                            if elapsed_time > 0
+                            else 0
+                        ),
                     },
                 }
             )
 
-            logger.info(f"Scan completed: {scan_count} frequencies in {elapsed_time:.1f}s, {active_count} active")
+            logger.info(
+                f"Scan completed: {scan_count} frequencies in {elapsed_time:.1f}s, {active_count} active"
+            )
 
     except asyncio.CancelledError:
         logger.info("Scan cancelled")
@@ -1335,7 +1412,9 @@ async def get_setup_ports():
                 "pid": port.pid,
             }
             # Add helpful info for common devices
-            if "CP210" in port.description or "Silicon Labs" in (port.manufacturer or ""):
+            if "CP210" in port.description or "Silicon Labs" in (
+                port.manufacturer or ""
+            ):
                 port_info["likely_ft991a"] = True
                 port_info["description"] += " (CP2105 - likely FT-991A)"
             else:
@@ -1374,7 +1453,11 @@ async def test_setup_connection(req: SetupTestRequest):
         else:
             if test_radio:
                 test_radio.disconnect()
-            return {"success": False, "connected": False, "error": "No response from radio"}
+            return {
+                "success": False,
+                "connected": False,
+                "error": "No response from radio",
+            }
 
     except Exception as e:
         if test_radio:
@@ -1461,7 +1544,13 @@ async def audio_websocket_endpoint(websocket: WebSocket):
         # Send initial audio info
         await websocket.send_text(
             json.dumps(
-                {"type": "audio_info", "format": "S16_LE", "sample_rate": 48000, "channels": 1, "chunk_size": 4096}
+                {
+                    "type": "audio_info",
+                    "format": "S16_LE",
+                    "sample_rate": 48000,
+                    "channels": 1,
+                    "chunk_size": 4096,
+                }
             )
         )
 
@@ -1516,18 +1605,32 @@ async def sdr_websocket_endpoint(websocket: WebSocket):
                     try:
                         await sdr_manager.set_bandwidth(data.get("bandwidth", 2000000))
                         await websocket.send_text(
-                            json.dumps({"type": "bandwidth_changed", "bandwidth": sdr_manager.bandwidth})
+                            json.dumps(
+                                {
+                                    "type": "bandwidth_changed",
+                                    "bandwidth": sdr_manager.bandwidth,
+                                }
+                            )
                         )
                     except ValueError as e:
-                        await websocket.send_text(json.dumps({"type": "error", "message": str(e)}))
+                        await websocket.send_text(
+                            json.dumps({"type": "error", "message": str(e)})
+                        )
                 elif data.get("type") == "set_fft_size":
                     try:
                         await sdr_manager.set_fft_size(data.get("fft_size", 1024))
                         await websocket.send_text(
-                            json.dumps({"type": "fft_size_changed", "fft_size": sdr_manager.fft_size})
+                            json.dumps(
+                                {
+                                    "type": "fft_size_changed",
+                                    "fft_size": sdr_manager.fft_size,
+                                }
+                            )
                         )
                     except ValueError as e:
-                        await websocket.send_text(json.dumps({"type": "error", "message": str(e)}))
+                        await websocket.send_text(
+                            json.dumps({"type": "error", "message": str(e)})
+                        )
 
             except Exception as e:
                 logger.error(f"SDR WebSocket message error: {e}")
@@ -1597,15 +1700,16 @@ async def set_sdr_fft_size(data: dict):
 
 # ── Monitor Functions ────────────────────────────────────────
 
+
 async def monitor_loop(config: dict):
     """Main monitor loop - captures, transcribes, and translates audio."""
     global monitor_clip_count, monitor_start_time
-    
+
     radio_host = "192.168.10.179"
     radio_port = 2222
     radio_user = "bonsaihorn"
     audio_device = "hw:CARD=CODEC"
-    
+
     # Get OpenAI API key
     env_path = Path.home() / "Projects" / "helios" / ".env"
     openai_api_key = None
@@ -1615,28 +1719,28 @@ async def monitor_loop(config: dict):
                 if line.startswith("OPENAI_API_KEY="):
                     openai_api_key = line.split("=", 1)[1].strip()
                     break
-    
+
     if not openai_api_key:
         logger.error("OPENAI_API_KEY not found in ~/Projects/helios/.env")
         return
-    
+
     # Setup log directory
     log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
     log_dir.mkdir(parents=True, exist_ok=True)
-    
+
     transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
-    
+
     monitor_start_time = datetime.now()
-    
+
     async with httpx.AsyncClient() as client:
         while monitor_active:
             try:
                 monitor_clip_count += 1
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                
+
                 # Get radio status
                 try:
-                    response = await client.get(f"http://localhost:8000/api/status")
+                    response = await client.get("http://localhost:8000/api/status")
                     status = response.json().get("status", {})
                     freq = status.get("frequency_a", 0)
                     freq_mhz = freq / 1000000
@@ -1646,94 +1750,124 @@ async def monitor_loop(config: dict):
                     freq_mhz = 0.0
                     s_meter = 0
                     mode = "?"
-                
-                logger.info(f"Monitor clip {monitor_clip_count}: {freq_mhz:.3f} MHz ({mode}), S-meter: {s_meter}")
-                
+
+                logger.info(
+                    f"Monitor clip {monitor_clip_count}: {freq_mhz:.3f} MHz ({mode}), S-meter: {s_meter}"
+                )
+
                 # Skip if S-meter too low
                 if s_meter < config["smeter_threshold"]:
                     await asyncio.sleep(config["interval"])
                     continue
-                
+
                 # Record audio via SSH
-                with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
+                with tempfile.NamedTemporaryFile(
+                    suffix=".wav", delete=False
+                ) as temp_file:
                     raw_file = temp_file.name
-                
+
                 ssh_cmd = f"ssh -p {radio_port} {radio_user}@{radio_host} 'arecord -D {audio_device} -f S16_LE -r 48000 -c 1 -d {config['clip_duration']} /tmp/_radio_clip.wav 2>/dev/null'"
                 scp_cmd = f"scp -P {radio_port} {radio_user}@{radio_host}:/tmp/_radio_clip.wav {raw_file}"
-                
+
                 try:
                     # Record
                     process = await asyncio.create_subprocess_shell(
-                        ssh_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                        ssh_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
                     )
                     await process.wait()
-                    
+
                     # Copy file
                     process = await asyncio.create_subprocess_shell(
-                        scp_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                        scp_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
                     )
                     await process.wait()
-                    
+
                     # Filter audio with sox
                     filt_file = raw_file.replace(".wav", "_filt.wav")
                     sox_cmd = f"sox {raw_file} {filt_file} sinc 200-3400 compand 0.3,1 6:-70,-60,-20 -5 -90 0.2 norm"
                     process = await asyncio.create_subprocess_shell(
-                        sox_cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+                        sox_cmd,
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
                     )
                     await process.wait()
-                    
+
                     # Transcribe with OpenAI Whisper
                     with open(filt_file, "rb") as audio_file:
                         files = {"file": audio_file}
                         data = {
                             "model": "whisper-1",
-                            "language": config["language"] if config["language"] != "auto" else "",
+                            "language": (
+                                config["language"]
+                                if config["language"] != "auto"
+                                else ""
+                            ),
                             "prompt": "Conversación de radioaficionados en español caribeño. Indicativos KP4, WP4, NP4, W, K, N.",
-                            "response_format": "json"
+                            "response_format": "json",
                         }
                         headers = {"Authorization": f"Bearer {openai_api_key}"}
-                        
+
                         response = await client.post(
                             "https://api.openai.com/v1/audio/transcriptions",
                             files=files,
                             data=data,
-                            headers=headers
+                            headers=headers,
                         )
-                        
+
                         transcription = response.json()
                         spanish_text = transcription.get("text", "").strip()
-                    
+
                     # Validate transcript
-                    if len(spanish_text) < 10 or any(phrase in spanish_text.lower() for phrase in 
-                                                   ["qth.*qth.*qth", "señal report.*señal report", "www.", "visite", "suscríbete"]):
+                    if len(spanish_text) < 10 or any(
+                        phrase in spanish_text.lower()
+                        for phrase in [
+                            "qth.*qth.*qth",
+                            "señal report.*señal report",
+                            "www.",
+                            "visite",
+                            "suscríbete",
+                        ]
+                    ):
                         logger.info("Invalid/noise transcript, skipping")
                         await asyncio.sleep(config["interval"])
                         continue
-                    
+
                     # Translate with GPT-4o-mini
                     translate_prompt = f"Translate this ham radio conversation from Spanish to English. Preserve any callsigns (like KP4ABC, WP4XYZ, W1ABC) exactly as spoken. Keep it natural.\n\n{spanish_text}"
-                    
+
                     translate_response = await client.post(
                         "https://api.openai.com/v1/chat/completions",
                         json={
                             "model": "gpt-4o-mini",
                             "max_tokens": 500,
-                            "messages": [{"role": "user", "content": translate_prompt}]
+                            "messages": [{"role": "user", "content": translate_prompt}],
                         },
-                        headers=headers
+                        headers=headers,
                     )
-                    
+
                     translation = translate_response.json()
                     english_text = translation["choices"][0]["message"]["content"]
-                    
+
                     # Extract callsigns
-                    callsign_pattern = r'\b[AKNW][A-Z]?[0-9][A-Z]{1,3}\b'
-                    callsigns = list(set(re.findall(callsign_pattern, f"{spanish_text} {english_text}", re.IGNORECASE)))
+                    callsign_pattern = r"\b[AKNW][A-Z]?[0-9][A-Z]{1,3}\b"
+                    callsigns = list(
+                        set(
+                            re.findall(
+                                callsign_pattern,
+                                f"{spanish_text} {english_text}",
+                                re.IGNORECASE,
+                            )
+                        )
+                    )
                     callsigns = [c.upper() for c in callsigns]
-                    
+
                     if callsigns:
                         logger.info(f"🎯 CALLSIGNS DETECTED: {' '.join(callsigns)}")
-                    
+
                     # Create transcript entry
                     transcript = {
                         "timestamp": timestamp,
@@ -1742,32 +1876,32 @@ async def monitor_loop(config: dict):
                         "s_meter": s_meter,
                         "spanish": spanish_text,
                         "english": english_text,
-                        "callsigns": " ".join(callsigns)
+                        "callsigns": " ".join(callsigns),
                     }
-                    
+
                     # Save to JSONL
                     with open(transcript_log, "a") as f:
                         f.write(json.dumps(transcript) + "\n")
-                    
+
                     # Send to WebSocket clients
                     for websocket in list(monitor_websocket_clients):
                         try:
                             await websocket.send_text(json.dumps(transcript))
                         except:
                             monitor_websocket_clients.discard(websocket)
-                    
+
                     logger.info(f"ES: {spanish_text}")
                     logger.info(f"EN: {english_text}")
-                    
+
                     # Cleanup temp files
                     os.unlink(raw_file)
                     os.unlink(filt_file)
-                    
+
                 except Exception as e:
                     logger.error(f"Monitor processing error: {e}")
-                
+
                 await asyncio.sleep(config["interval"])
-                
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -1779,21 +1913,21 @@ async def monitor_loop(config: dict):
 async def start_monitor(request: MonitorStartRequest):
     """Start radio monitoring."""
     global monitor_active, monitor_task, monitor_clip_count
-    
+
     if monitor_active:
         raise HTTPException(status_code=400, detail="Monitor already running")
-    
+
     config = {
         "clip_duration": request.clip_duration,
         "interval": request.interval,
         "language": request.language,
-        "smeter_threshold": request.smeter_threshold
+        "smeter_threshold": request.smeter_threshold,
     }
-    
+
     monitor_active = True
     monitor_clip_count = 0
     monitor_task = asyncio.create_task(monitor_loop(config))
-    
+
     return {"success": True, "message": "Monitor started"}
 
 
@@ -1801,10 +1935,10 @@ async def start_monitor(request: MonitorStartRequest):
 async def stop_monitor():
     """Stop radio monitoring."""
     global monitor_active, monitor_task
-    
+
     if not monitor_active:
         raise HTTPException(status_code=400, detail="Monitor not running")
-    
+
     monitor_active = False
     if monitor_task:
         monitor_task.cancel()
@@ -1813,7 +1947,7 @@ async def stop_monitor():
         except asyncio.CancelledError:
             pass
         monitor_task = None
-    
+
     return {"success": True, "message": "Monitor stopped"}
 
 
@@ -1823,12 +1957,12 @@ async def get_monitor_status():
     duration = 0
     if monitor_start_time and monitor_active:
         duration = int((datetime.now() - monitor_start_time).total_seconds())
-    
+
     return {
         "running": monitor_active,
         "clip_count": monitor_clip_count,
         "duration": duration,
-        "last_clip": None
+        "last_clip": None,
     }
 
 
@@ -1837,10 +1971,10 @@ async def get_transcripts(limit: int = 50):
     """Get recent transcripts."""
     log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
     transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
-    
+
     if not transcript_log.exists():
         return {"transcripts": []}
-    
+
     transcripts = []
     with open(transcript_log) as f:
         lines = f.readlines()
@@ -1849,7 +1983,7 @@ async def get_transcripts(limit: int = 50):
                 transcripts.append(json.loads(line.strip()))
             except json.JSONDecodeError:
                 continue
-    
+
     return {"transcripts": list(reversed(transcripts))}
 
 
@@ -1858,14 +1992,14 @@ async def export_transcripts():
     """Download transcript log as JSON."""
     log_dir = Path.home() / "Projects" / "lbf-ham-radio" / "logs" / "radio-monitor"
     transcript_log = log_dir / f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
-    
+
     if not transcript_log.exists():
         raise HTTPException(status_code=404, detail="No transcript log found")
-    
+
     return FileResponse(
         transcript_log,
         media_type="application/octet-stream",
-        filename=f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl"
+        filename=f"transcripts_{datetime.now().strftime('%Y%m%d')}.jsonl",
     )
 
 
@@ -1874,7 +2008,7 @@ async def websocket_monitor(websocket: WebSocket):
     """WebSocket endpoint for live monitor updates."""
     await websocket.accept()
     monitor_websocket_clients.add(websocket)
-    
+
     try:
         while True:
             await websocket.receive_text()
@@ -1946,10 +2080,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FT-991A Web GUI Server")
     parser.add_argument("--host", default="0.0.0.0", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8991, help="Port to bind to")
-    parser.add_argument("--radio-port", default="/dev/ttyUSB0", help="Radio serial port")
+    parser.add_argument(
+        "--radio-port", default="/dev/ttyUSB0", help="Radio serial port"
+    )
     parser.add_argument("--baud", type=int, default=38400, help="Radio baud rate")
-    parser.add_argument("--no-auto-connect", action="store_true", help="Don't auto-connect to radio")
-    parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
+    parser.add_argument(
+        "--no-auto-connect", action="store_true", help="Don't auto-connect to radio"
+    )
+    parser.add_argument(
+        "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"]
+    )
     args = parser.parse_args()
 
     # Update config from args
@@ -1963,4 +2103,10 @@ if __name__ == "__main__":
     logger.info(f"Starting FT-991A Web GUI on {args.host}:{args.port}")
     logger.info(f"Radio config: {args.radio_port} @ {args.baud} baud")
 
-    uvicorn.run("server:app", host=args.host, port=args.port, log_level=args.log_level.lower(), reload=False)
+    uvicorn.run(
+        "server:app",
+        host=args.host,
+        port=args.port,
+        log_level=args.log_level.lower(),
+        reload=False,
+    )

@@ -291,7 +291,9 @@ class CWKeyer:
 
     def _word_gap(self):
         """Inter-word gap (additional, total gap = letter_gap + word_gap)"""
-        time.sleep(self.timing.word_gap_ms / 1000.0 - self.timing.letter_gap_ms / 1000.0)
+        time.sleep(
+            self.timing.word_gap_ms / 1000.0 - self.timing.letter_gap_ms / 1000.0
+        )
 
     def send_morse_code(self, morse: str):
         """
@@ -330,7 +332,9 @@ class CWKeyer:
                         elif element == "-":
                             self._send_dah()
                         else:
-                            logger.warning(f"Unknown Morse element '{element}' - skipping")
+                            logger.warning(
+                                f"Unknown Morse element '{element}' - skipping"
+                            )
 
         except Exception as e:
             logger.error(f"Error during CW keying: {e}")

@@ -21,7 +21,12 @@ import pytest
 
 # Test imports - handle missing audio dependencies gracefully
 try:
-    from src.ft991a.broadcast import AudioDeviceError, Broadcaster, TTSError, cleanup_temp_files
+    from src.ft991a.broadcast import (
+        AudioDeviceError,
+        Broadcaster,
+        TTSError,
+        cleanup_temp_files,
+    )
     from src.ft991a.cat import FT991A
 except ImportError as e:
     pytest.skip(f"Could not import broadcast module: {e}", allow_module_level=True)
@@ -111,7 +116,9 @@ class TestBroadcaster:
                 }
             ]
             mock_sd.query_devices.side_effect = lambda kind=None: (
-                {"name": "Default Output", "index": 0} if kind == "output" else mock_sd.query_devices.return_value
+                {"name": "Default Output", "index": 0}
+                if kind == "output"
+                else mock_sd.query_devices.return_value
             )
 
             broadcaster = Broadcaster(mock_radio)
@@ -125,7 +132,12 @@ class TestBroadcaster:
 
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -139,7 +151,12 @@ class TestBroadcaster:
         """Test TTS fallback to espeak."""
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -153,7 +170,12 @@ class TestBroadcaster:
 
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -169,7 +191,9 @@ class TestBroadcaster:
 
                 result = broadcaster.text_to_audio("Hello world")
 
-                mock_engine.save_to_file.assert_called_once_with("Hello world", "/tmp/test.wav")
+                mock_engine.save_to_file.assert_called_once_with(
+                    "Hello world", "/tmp/test.wav"
+                )
                 mock_engine.runAndWait.assert_called_once()
                 assert result == "/tmp/test.wav"
 
@@ -181,7 +205,12 @@ class TestBroadcaster:
 
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -207,7 +236,12 @@ class TestBroadcaster:
         """Test text-to-audio with empty text raises error."""
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -219,7 +253,12 @@ class TestBroadcaster:
         """Test play_to_radio with non-existent file."""
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -232,7 +271,12 @@ class TestBroadcaster:
     def test_play_to_radio_success(self, mock_np, mock_sd, mock_radio, temp_wav_file):
         """Test successful audio playback to radio."""
         mock_sd.query_devices.return_value = [
-            {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+            {
+                "name": "Test Device",
+                "max_output_channels": 2,
+                "max_input_channels": 2,
+                "default_samplerate": 48000,
+            }
         ]
 
         # Mock numpy operations
@@ -252,7 +296,12 @@ class TestBroadcaster:
         """Test broadcast raises error without confirmation."""
         with patch("src.ft991a.broadcast.sd") as mock_sd:
             mock_sd.query_devices.return_value = [
-                {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+                {
+                    "name": "Test Device",
+                    "max_output_channels": 2,
+                    "max_input_channels": 2,
+                    "default_samplerate": 48000,
+                }
             ]
 
             broadcaster = Broadcaster(mock_radio)
@@ -264,13 +313,20 @@ class TestBroadcaster:
     def test_broadcast_success(self, mock_sd, mock_radio):
         """Test successful broadcast operation."""
         mock_sd.query_devices.return_value = [
-            {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+            {
+                "name": "Test Device",
+                "max_output_channels": 2,
+                "max_input_channels": 2,
+                "default_samplerate": 48000,
+            }
         ]
 
         broadcaster = Broadcaster(mock_radio)
 
         with (
-            patch.object(broadcaster, "text_to_audio", return_value="/tmp/test.wav") as mock_tts,
+            patch.object(
+                broadcaster, "text_to_audio", return_value="/tmp/test.wav"
+            ) as mock_tts,
             patch.object(broadcaster, "play_to_radio", return_value=True) as mock_play,
             patch("os.unlink") as mock_unlink,
         ):
@@ -286,7 +342,12 @@ class TestBroadcaster:
     def test_record_from_radio_invalid_duration(self, mock_sd, mock_radio):
         """Test record with invalid duration."""
         mock_sd.query_devices.return_value = [
-            {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+            {
+                "name": "Test Device",
+                "max_output_channels": 2,
+                "max_input_channels": 2,
+                "default_samplerate": 48000,
+            }
         ]
 
         broadcaster = Broadcaster(mock_radio)
@@ -302,7 +363,12 @@ class TestBroadcaster:
     def test_record_from_radio_success(self, mock_np, mock_sd, mock_radio):
         """Test successful recording from radio."""
         mock_sd.query_devices.return_value = [
-            {"name": "Test Device", "max_output_channels": 2, "max_input_channels": 2, "default_samplerate": 48000}
+            {
+                "name": "Test Device",
+                "max_output_channels": 2,
+                "max_input_channels": 2,
+                "default_samplerate": 48000,
+            }
         ]
 
         # Mock recording data

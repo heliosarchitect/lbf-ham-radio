@@ -1363,13 +1363,12 @@
         <div class="lcars-header">
             <div class="lcars-header-elbow"></div>
             <div class="lcars-header-bar">
-                <div class="lcars-title">FT-991A // LCARS INTERFACE</div>
+                <div class="lcars-title">FT-991A // LCARS INTERFACE <span id="versionLabel" style="font-size: 0.6rem; color: var(--lcars-lavender); opacity: 0.6; letter-spacing: 1px; margin-left: 0.5rem;" title="ft991a-control package version"></span></div>
             </div>
             <div class="lcars-header-end">
                 <div class="lcars-connection-status">
                     <div class="lcars-status-indicator" id="connectionIndicator"></div>
                     <span id="connectionText">CONNECTING...</span>
-                    <span id="versionLabel" style="margin-left: 0.8rem; font-size: 0.75rem; color: var(--lcars-lavender); opacity: 0.7; letter-spacing: 1px;" title="ft991a-control package version"></span>
                     <button class="lcars-reconnect-btn" id="reconnectButton" onclick="reconnectRadio()" 
                             title="Reconnect to FT-991A transceiver">↻ RECONNECT</button>
                 </div>
@@ -2018,6 +2017,11 @@
                                     style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block; cursor: crosshair;"
                                     title="SDR panadapter waterfall - click to tune radio to frequency"
                                     onclick="handleSDRClick(event)">
+                            </canvas>
+                            
+                            <!-- Grid overlay canvas (does NOT scroll) -->
+                            <canvas id="sdrGridCanvas" width="800" height="400"
+                                    style="position: absolute; top: 1rem; left: 1rem; width: calc(100% - 2rem); height: 400px; pointer-events: none; border-radius: var(--radius-sm);">
                             </canvas>
                             
                             <!-- Frequency axis labels -->
@@ -5496,9 +5500,22 @@
         }
         
         function drawSDRFreqGrid(centerFreq, bandwidth) {
-            if (!sdrCtx || !sdrCanvas) return;
-            const w = sdrCanvas.width;
-            const h = sdrCanvas.height;
+            const gridCanvas = document.getElementById('sdrGridCanvas');
+            if (!gridCanvas) return;
+            const gridCtx = gridCanvas.getContext('2d');
+            
+            // Match overlay size to waterfall
+            if (sdrCanvas) {
+                gridCanvas.width = sdrCanvas.width;
+                gridCanvas.height = sdrCanvas.height;
+            }
+            
+            const w = gridCanvas.width;
+            const h = gridCanvas.height;
+            
+            // Clear the overlay completely each frame
+            gridCtx.clearRect(0, 0, w, h);
+            const ctx = gridCtx;
             
             // Pick grid spacing based on bandwidth
             let gridStep;
@@ -5514,27 +5531,27 @@
             // Find first grid line
             const firstGrid = Math.ceil(startFreq / gridStep) * gridStep;
             
-            sdrCtx.save();
+            ctx.save();
             
             // Draw grid lines
             for (let freq = firstGrid; freq <= endFreq; freq += gridStep) {
                 const x = ((freq - startFreq) / bandwidth) * w;
                 
                 // Subtle vertical grid line
-                sdrCtx.strokeStyle = 'rgba(255, 168, 0, 0.15)';
-                sdrCtx.lineWidth = 1;
-                sdrCtx.setLineDash([2, 4]);
-                sdrCtx.beginPath();
-                sdrCtx.moveTo(x, 0);
-                sdrCtx.lineTo(x, h);
-                sdrCtx.stroke();
+                ctx.strokeStyle = 'rgba(255, 168, 0, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 4]);
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, h);
+                ctx.stroke();
                 
                 // Frequency label at top
-                sdrCtx.setLineDash([]);
-                sdrCtx.fillStyle = 'rgba(255, 168, 0, 0.5)';
-                sdrCtx.font = '10px monospace';
-                sdrCtx.textAlign = 'center';
-                sdrCtx.fillText((freq / 1e6).toFixed(3), x, 12);
+                ctx.setLineDash([]);
+                ctx.fillStyle = 'rgba(255, 168, 0, 0.5)';
+                ctx.font = '10px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText((freq / 1e6).toFixed(3), x, 12);
             }
             
             // Draw VFO-A center marker — solid bright line
@@ -5544,23 +5561,23 @@
                     const vfoX = ((vfoFreq - startFreq) / bandwidth) * w;
                     
                     // Bright green center line
-                    sdrCtx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
-                    sdrCtx.lineWidth = 2;
-                    sdrCtx.setLineDash([]);
-                    sdrCtx.beginPath();
-                    sdrCtx.moveTo(vfoX, 0);
-                    sdrCtx.lineTo(vfoX, h);
-                    sdrCtx.stroke();
+                    ctx.strokeStyle = 'rgba(0, 255, 0, 0.7)';
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([]);
+                    ctx.beginPath();
+                    ctx.moveTo(vfoX, 0);
+                    ctx.lineTo(vfoX, h);
+                    ctx.stroke();
                     
                     // VFO-A label
-                    sdrCtx.fillStyle = 'rgba(0, 255, 0, 0.9)';
-                    sdrCtx.font = 'bold 11px monospace';
-                    sdrCtx.textAlign = 'center';
-                    sdrCtx.fillText('▼ VFO-A', vfoX, 24);
+                    ctx.fillStyle = 'rgba(0, 255, 0, 0.9)';
+                    ctx.font = 'bold 11px monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('▼ VFO-A', vfoX, 24);
                 }
             }
             
-            sdrCtx.restore();
+            ctx.restore();
         }
 
         function getSDRColor(magnitude) {

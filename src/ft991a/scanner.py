@@ -93,7 +93,9 @@ class BandScanner:
         """Save current radio state for restoration."""
         self._original_frequency = self.radio.get_frequency_a()
         self._original_mode = self.radio.get_mode()
-        logger.debug(f"Saved radio state: {self._original_frequency} Hz, {self._original_mode}")
+        logger.debug(
+            f"Saved radio state: {self._original_frequency} Hz, {self._original_mode}"
+        )
 
     def _restore_radio_state(self):
         """Restore saved radio state."""
@@ -105,9 +107,13 @@ class BandScanner:
                 if mode.name == self._original_mode:
                     self.radio.set_mode(mode)
                     break
-        logger.debug(f"Restored radio state: {self._original_frequency} Hz, {self._original_mode}")
+        logger.debug(
+            f"Restored radio state: {self._original_frequency} Hz, {self._original_mode}"
+        )
 
-    def scan_band(self, start_hz: int, end_hz: int, step_hz: int, dwell_ms: int = 150) -> List[Tuple[int, int]]:
+    def scan_band(
+        self, start_hz: int, end_hz: int, step_hz: int, dwell_ms: int = 150
+    ) -> List[Tuple[int, int]]:
         """
         Scan a frequency band and return S-meter readings.
 
@@ -120,7 +126,9 @@ class BandScanner:
         Returns:
             List of (frequency_hz, s_meter) tuples
         """
-        logger.info(f"Scanning {start_hz:,} - {end_hz:,} Hz (step: {step_hz:,} Hz, dwell: {dwell_ms}ms)")
+        logger.info(
+            f"Scanning {start_hz:,} - {end_hz:,} Hz (step: {step_hz:,} Hz, dwell: {dwell_ms}ms)"
+        )
 
         self._save_radio_state()
         results = []
@@ -166,7 +174,9 @@ class BandScanner:
         Returns:
             List of ActivityResult objects with active frequencies
         """
-        logger.info(f"Searching for activity above S{self._s_meter_to_units(threshold)} threshold")
+        logger.info(
+            f"Searching for activity above S{self._s_meter_to_units(threshold)} threshold"
+        )
 
         active_frequencies = []
 
@@ -192,7 +202,9 @@ class BandScanner:
         logger.info(f"Found {len(active_frequencies)} active frequencies")
         return active_frequencies
 
-    def fine_scan(self, center_hz: int, width_hz: int = 20000, step_hz: int = 1000) -> List[Tuple[int, int]]:
+    def fine_scan(
+        self, center_hz: int, width_hz: int = 20000, step_hz: int = 1000
+    ) -> List[Tuple[int, int]]:
         """
         Perform detailed scan around a specific frequency.
 
@@ -208,7 +220,9 @@ class BandScanner:
         start_hz = center_hz - half_width
         end_hz = center_hz + half_width
 
-        logger.info(f"Fine scanning around {center_hz/1e6:.3f} MHz (±{width_hz/1000:.0f} kHz)")
+        logger.info(
+            f"Fine scanning around {center_hz/1e6:.3f} MHz (±{width_hz/1000:.0f} kHz)"
+        )
 
         return self.scan_band(start_hz, end_hz, step_hz, dwell_ms=200)
 
@@ -226,8 +240,21 @@ class BandScanner:
         all_activity = []
 
         for i, (start_hz, end_hz) in enumerate(self.HF_VOICE_BANDS):
-            band_name = ["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m"][i]
-            logger.info(f"Scanning {band_name} band: {start_hz/1e6:.3f} - {end_hz/1e6:.3f} MHz")
+            band_name = [
+                "160m",
+                "80m",
+                "60m",
+                "40m",
+                "30m",
+                "20m",
+                "17m",
+                "15m",
+                "12m",
+                "10m",
+            ][i]
+            logger.info(
+                f"Scanning {band_name} band: {start_hz/1e6:.3f} - {end_hz/1e6:.3f} MHz"
+            )
 
             # Medium step size for comprehensive coverage
             step_hz = 10000  # 10 kHz steps
@@ -252,7 +279,9 @@ class BandScanner:
         logger.info(f"HF sweep complete: {len(all_activity)} signals detected")
         return all_activity
 
-    def format_scan_results(self, results: List[Tuple[int, int]], title: str = "Band Scan Results") -> str:
+    def format_scan_results(
+        self, results: List[Tuple[int, int]], title: str = "Band Scan Results"
+    ) -> str:
         """
         Format scan results as ASCII bar chart for terminal display.
 
@@ -286,12 +315,18 @@ class BandScanner:
 
         # Add legend
         lines.extend(
-            ["", f"Scale: 0 - S{self._s_meter_to_units(max_s)} (0-{max_s})", f"Frequencies: {len(results)} scanned"]
+            [
+                "",
+                f"Scale: 0 - S{self._s_meter_to_units(max_s)} (0-{max_s})",
+                f"Frequencies: {len(results)} scanned",
+            ]
         )
 
         return "\n".join(lines)
 
-    def format_activity_results(self, results: List[ActivityResult], title: str = "Active Frequencies") -> str:
+    def format_activity_results(
+        self, results: List[ActivityResult], title: str = "Active Frequencies"
+    ) -> str:
         """
         Format activity detection results for terminal display.
 

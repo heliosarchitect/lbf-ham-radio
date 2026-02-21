@@ -160,7 +160,9 @@ class TestDigitalModes:
         """Test audio device detection via arecord command"""
         # Mock arecord output
         mock_run.return_value.returncode = 0
-        mock_run.return_value.stdout = "card 1: CODEC [USB Audio CODEC], device 0: USB Audio [USB Audio]"
+        mock_run.return_value.stdout = (
+            "card 1: CODEC [USB Audio CODEC], device 0: USB Audio [USB Audio]"
+        )
 
         device = digital_modes.get_audio_device()
 
@@ -176,14 +178,20 @@ class TestDigitalModes:
         # Mock failed arecord, successful pactl
         mock_run.side_effect = [
             Mock(returncode=1),  # arecord fails
-            Mock(returncode=0, stdout="0\talsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo"),
+            Mock(
+                returncode=0,
+                stdout="0\talsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo",
+            ),
         ]
 
         device = digital_modes.get_audio_device()
 
         assert device is not None
         assert "USB Audio Device" in device["name"]
-        assert device["pulse_name"] == "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo"
+        assert (
+            device["pulse_name"]
+            == "alsa_input.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo"
+        )
 
     @patch("subprocess.run")
     @patch("pathlib.Path.exists", return_value=False)
@@ -225,7 +233,9 @@ class TestDigitalModes:
             with patch("builtins.open", mock_open()) as mock_file:
                 with patch("pathlib.Path.home", return_value=Path("/home/test")):
                     with patch("pathlib.Path.mkdir"):
-                        config_path = digital_modes.create_wsjtx_config("KO4TUV", "EM75")
+                        config_path = digital_modes.create_wsjtx_config(
+                            "KO4TUV", "EM75"
+                        )
 
                         assert config_path is not None
                         mock_get_audio.assert_called_once()

@@ -35,7 +35,9 @@ class TestAPRSPacketEncoding(unittest.TestCase):
     def test_position_encoding_basic(self):
         """Test basic position packet encoding"""
         # Test coordinates: Raleigh, NC area
-        packet = self.aprs_client.encode_aprs_position("KO4TUV", 35.7796, -78.6382, "OpenClaw Test Station")
+        packet = self.aprs_client.encode_aprs_position(
+            "KO4TUV", 35.7796, -78.6382, "OpenClaw Test Station"
+        )
 
         # Should contain callsign, path, and position
         self.assertIn("KO4TUV>APRS", packet)
@@ -50,7 +52,9 @@ class TestAPRSPacketEncoding(unittest.TestCase):
 
     def test_position_encoding_symbols(self):
         """Test position encoding with different symbols"""
-        packet = self.aprs_client.encode_aprs_position("KO4TUV", 35.7796, -78.6382, "House", symbol_code="-")
+        packet = self.aprs_client.encode_aprs_position(
+            "KO4TUV", 35.7796, -78.6382, "House", symbol_code="-"
+        )
 
         # Should contain house symbol (format: lat/lon-symbol_code)
         self.assertIn("W-House", packet)  # Symbol code after coordinates
@@ -67,16 +71,26 @@ class TestAPRSPacketEncoding(unittest.TestCase):
         for lat, lon, expected_lat, expected_lon in test_cases:
             packet = self.aprs_client.encode_aprs_position("TEST", lat, lon, "")
             self.assertIn(expected_lat, packet, f"Latitude conversion failed for {lat}")
-            self.assertIn(expected_lon, packet, f"Longitude conversion failed for {lon}")
+            self.assertIn(
+                expected_lon, packet, f"Longitude conversion failed for {lon}"
+            )
 
         # Test coordinate with precision tolerance
-        packet = self.aprs_client.encode_aprs_position("TEST", 35.123456, -78.987654, "")
-        self.assertTrue("3507.4" in packet and "N" in packet, "Latitude precision test failed")
-        self.assertTrue("07859.2" in packet and "W" in packet, "Longitude precision test failed")
+        packet = self.aprs_client.encode_aprs_position(
+            "TEST", 35.123456, -78.987654, ""
+        )
+        self.assertTrue(
+            "3507.4" in packet and "N" in packet, "Latitude precision test failed"
+        )
+        self.assertTrue(
+            "07859.2" in packet and "W" in packet, "Longitude precision test failed"
+        )
 
     def test_message_encoding_basic(self):
         """Test basic message packet encoding"""
-        packet = self.aprs_client.encode_aprs_message("KO4TUV", "N0CALL", "Hello World!", "001")
+        packet = self.aprs_client.encode_aprs_message(
+            "KO4TUV", "N0CALL", "Hello World!", "001"
+        )
 
         # Should contain source, destination (padded), message, and ID
         self.assertIn("KO4TUV>APRS", packet)
@@ -184,7 +198,9 @@ class TestAPRSRoundtrip(unittest.TestCase):
         symbol = ">"
 
         # Encode
-        packet = self.aprs_client.encode_aprs_position(callsign, lat, lon, comment, symbol_code=symbol)
+        packet = self.aprs_client.encode_aprs_position(
+            callsign, lat, lon, comment, symbol_code=symbol
+        )
 
         # Decode
         decoded = self.aprs_client.decode_aprs_packet(packet)
@@ -240,8 +256,12 @@ class TestAPRSRoundtrip(unittest.TestCase):
             self.assertIsNotNone(decoded, f"Failed to decode coordinates {lat}, {lon}")
             precision_minutes = 0.01 / 60  # 0.01 arcminute in degrees
 
-            self.assertAlmostEqual(decoded.data["latitude"], lat, delta=precision_minutes)
-            self.assertAlmostEqual(decoded.data["longitude"], lon, delta=precision_minutes)
+            self.assertAlmostEqual(
+                decoded.data["latitude"], lat, delta=precision_minutes
+            )
+            self.assertAlmostEqual(
+                decoded.data["longitude"], lon, delta=precision_minutes
+            )
 
 
 class TestEmergencyKit(unittest.TestCase):
@@ -321,7 +341,9 @@ class TestAPRSClientSetup(unittest.TestCase):
         invalid_calls = ["", "TOOLONG123", "1INVALID", "IN-VALID-", "AB-0", "AB-100"]
 
         for callsign in invalid_calls:
-            with self.assertRaises(ValueError, msg=f"Invalid callsign accepted: {callsign}"):
+            with self.assertRaises(
+                ValueError, msg=f"Invalid callsign accepted: {callsign}"
+            ):
                 APRSClient(self.mock_radio, callsign)
 
     def test_aprs_setup(self):
@@ -336,7 +358,9 @@ class TestAPRSClientSetup(unittest.TestCase):
         self.assertTrue(result)
 
         # Verify radio was configured correctly
-        self.mock_radio.set_frequency_a.assert_called_once_with(144_390_000)  # 144.390 MHz
+        self.mock_radio.set_frequency_a.assert_called_once_with(
+            144_390_000
+        )  # 144.390 MHz
         self.mock_radio.set_mode.assert_called_once_with(Mode.FM)
 
     def test_aprs_setup_failure(self):
@@ -401,7 +425,9 @@ class TestAPRSErrorHandling(unittest.TestCase):
         """Test handling of long comment fields"""
         long_comment = "A" * 200  # Very long comment
 
-        packet = self.aprs_client.encode_aprs_position("KO4TUV", 35.7796, -78.6382, long_comment)
+        packet = self.aprs_client.encode_aprs_position(
+            "KO4TUV", 35.7796, -78.6382, long_comment
+        )
 
         # Should not crash and should contain at least part of the comment
         self.assertIsInstance(packet, str)

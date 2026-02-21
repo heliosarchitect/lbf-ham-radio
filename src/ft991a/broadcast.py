@@ -86,7 +86,9 @@ class Broadcaster:
         broadcaster.broadcast("CQ CQ de KO4TUV", confirm=True)
     """
 
-    def __init__(self, radio: FT991A, sample_rate: int = 48000, device_name: Optional[str] = None):
+    def __init__(
+        self, radio: FT991A, sample_rate: int = 48000, device_name: Optional[str] = None
+    ):
         """
         Initialize broadcaster.
 
@@ -110,7 +112,9 @@ class Broadcaster:
     def _find_audio_device(self):
         """Find the PCM2903B USB audio device."""
         if not AUDIO_ENABLED:
-            logger.warning("Audio libraries not available. Install with: pip install 'ft991a-control[audio]'")
+            logger.warning(
+                "Audio libraries not available. Install with: pip install 'ft991a-control[audio]'"
+            )
             return
 
         try:
@@ -118,7 +122,10 @@ class Broadcaster:
 
             # Look for PCM2903B device
             for idx, device in enumerate(devices):
-                if (self.device_name and self.device_name.lower() in device["name"].lower()) or (
+                if (
+                    self.device_name
+                    and self.device_name.lower() in device["name"].lower()
+                ) or (
                     "PCM2903" in device["name"] or "USB Audio CODEC" in device["name"]
                 ):
                     if device["max_output_channels"] > 0:  # Can output audio
@@ -129,7 +136,9 @@ class Broadcaster:
             # Fallback to default output device
             default_device = sd.query_devices(kind="output")
             self._audio_device_id = default_device["index"]
-            logger.warning(f"PCM2903B not found, using default: {default_device['name']}")
+            logger.warning(
+                f"PCM2903B not found, using default: {default_device['name']}"
+            )
 
         except Exception as e:
             logger.error(f"Audio device detection failed: {e}")
@@ -199,7 +208,9 @@ class Broadcaster:
             if not os.path.exists(wav_path) or os.path.getsize(wav_path) == 0:
                 raise TTSError("TTS did not generate audio file")
 
-            logger.info(f"Generated TTS audio: {wav_path} ({os.path.getsize(wav_path)} bytes)")
+            logger.info(
+                f"Generated TTS audio: {wav_path} ({os.path.getsize(wav_path)} bytes)"
+            )
             return wav_path
 
         except Exception as e:
@@ -256,8 +267,15 @@ class Broadcaster:
                     raise AudioDeviceError("Unsupported channel count")
 
             # Play audio to the specified device
-            logger.info(f"Playing audio to device {self._audio_device_id}: {wav_path.name}")
-            sd.play(audio_data, samplerate=sample_rate, device=self._audio_device_id, blocking=True)
+            logger.info(
+                f"Playing audio to device {self._audio_device_id}: {wav_path.name}"
+            )
+            sd.play(
+                audio_data,
+                samplerate=sample_rate,
+                device=self._audio_device_id,
+                blocking=True,
+            )
 
             logger.info("Audio playback completed")
             return True
@@ -266,7 +284,9 @@ class Broadcaster:
             logger.error(f"Audio playback failed: {e}")
             raise AudioDeviceError(f"Playback failed: {e}")
 
-    def broadcast(self, text: str, confirm: bool = False, voice: str = "default") -> bool:
+    def broadcast(
+        self, text: str, confirm: bool = False, voice: str = "default"
+    ) -> bool:
         """
         Complete TTS-to-radio broadcast pipeline.
 
@@ -295,7 +315,9 @@ class Broadcaster:
         # Safety warnings
         logger.warning("🚨 RADIO TRANSMISSION COMMENCING")
         logger.warning("🚨 Licensed operator KO4TUV must be physically present")
-        logger.warning("🚨 Operator is responsible for proper identification and compliance")
+        logger.warning(
+            "🚨 Operator is responsible for proper identification and compliance"
+        )
 
         try:
             # Step 1: Convert text to audio
@@ -316,7 +338,9 @@ class Broadcaster:
             logger.error(f"❌ Broadcast failed: {e}")
             raise BroadcastError(f"Broadcast failed: {e}")
 
-    def record_from_radio(self, duration_seconds: float, output_path: Optional[str] = None) -> str:
+    def record_from_radio(
+        self, duration_seconds: float, output_path: Optional[str] = None
+    ) -> str:
         """
         Record audio FROM the radio via PCM2903B.
 
@@ -372,7 +396,9 @@ class Broadcaster:
                 wf.setframerate(self.sample_rate)
                 wf.writeframes(recording_int16.tobytes())
 
-            logger.info(f"Recording saved: {output_path} ({os.path.getsize(output_path)} bytes)")
+            logger.info(
+                f"Recording saved: {output_path} ({os.path.getsize(output_path)} bytes)"
+            )
             return output_path
 
         except Exception as e:

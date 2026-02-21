@@ -27,7 +27,12 @@ except ImportError:
     text_to_morse = morse_to_text = CWKeyer = None  # type: ignore
 
 try:
-    from .broadcast import AudioDeviceError, Broadcaster, BroadcastError, TTSError  # noqa: F401
+    from .broadcast import (  # noqa: F401
+        AudioDeviceError,
+        Broadcaster,
+        BroadcastError,
+        TTSError,
+    )
 except ImportError:
     Broadcaster = AudioDeviceError = BroadcastError = TTSError = None  # type: ignore
 
@@ -53,7 +58,9 @@ except ImportError:
 def setup_logging(verbose: bool = False):
     """Setup logging configuration"""
     level = logging.DEBUG if verbose else logging.INFO
-    logging.basicConfig(level=level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    logging.basicConfig(
+        level=level, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    )
 
 
 def web_server_main():
@@ -61,7 +68,9 @@ def web_server_main():
     parser = argparse.ArgumentParser(description="FT-991A Web GUI Server")
     parser.add_argument("--host", default="127.0.0.1", help="Host to bind to")
     parser.add_argument("--port", type=int, default=8000, help="Port to bind to")
-    parser.add_argument("--radio-port", default="/dev/ttyUSB0", help="Radio serial port")
+    parser.add_argument(
+        "--radio-port", default="/dev/ttyUSB0", help="Radio serial port"
+    )
     parser.add_argument("--radio-baud", type=int, default=38400, help="Radio baud rate")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose logging")
 
@@ -112,7 +121,9 @@ def cli_main():
     mode_subparsers = mode_parser.add_subparsers(dest="mode_action")
     mode_subparsers.add_parser("get", help="Get current mode")
     mode_set_parser = mode_subparsers.add_parser("set", help="Set mode")
-    mode_set_parser.add_argument("mode", choices=[m.name for m in Mode], help="Operating mode")
+    mode_set_parser.add_argument(
+        "mode", choices=[m.name for m in Mode], help="Operating mode"
+    )
 
     # Power commands
     power_parser = subparsers.add_parser("power", help="Power control")
@@ -133,7 +144,9 @@ def cli_main():
     # Band command
     band_parser = subparsers.add_parser("band", help="Band control")
     band_parser.add_argument(
-        "band", choices=["160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M"], help="Amateur band"
+        "band",
+        choices=["160M", "80M", "60M", "40M", "30M", "20M", "17M", "15M", "12M", "10M"],
+        help="Amateur band",
     )
 
     # CW commands
@@ -141,17 +154,25 @@ def cli_main():
     cw_subparsers = cw_parser.add_subparsers(dest="cw_action", help="CW operations")
 
     # CW encode
-    cw_encode_parser = cw_subparsers.add_parser("encode", help="Convert text to Morse code")
+    cw_encode_parser = cw_subparsers.add_parser(
+        "encode", help="Convert text to Morse code"
+    )
     cw_encode_parser.add_argument("message", help="Text message to encode")
 
     # CW decode
-    cw_decode_parser = cw_subparsers.add_parser("decode", help="Convert Morse code to text")
+    cw_decode_parser = cw_subparsers.add_parser(
+        "decode", help="Convert Morse code to text"
+    )
     cw_decode_parser.add_argument("morse", help="Morse code to decode (dots/dashes)")
 
     # CW send (requires confirmation)
-    cw_send_parser = cw_subparsers.add_parser("send", help="Key CW message via radio (REQUIRES LICENSE)")
+    cw_send_parser = cw_subparsers.add_parser(
+        "send", help="Key CW message via radio (REQUIRES LICENSE)"
+    )
     cw_send_parser.add_argument("message", help="Text message to send in CW")
-    cw_send_parser.add_argument("--wpm", type=int, default=20, help="Words per minute (5-40, default: 20)")
+    cw_send_parser.add_argument(
+        "--wpm", type=int, default=20, help="Words per minute (5-40, default: 20)"
+    )
     cw_send_parser.add_argument(
         "--confirm",
         action="store_true",
@@ -160,18 +181,26 @@ def cli_main():
     )
 
     # CW listen (placeholder)
-    cw_listen_parser = cw_subparsers.add_parser("listen", help="Listen for CW signals (placeholder)")
+    cw_listen_parser = cw_subparsers.add_parser(
+        "listen", help="Listen for CW signals (placeholder)"
+    )
 
     # Broadcast commands (TTS-to-radio)
-    broadcast_parser = subparsers.add_parser("broadcast", help="TTS-to-radio broadcast operations (REQUIRES LICENSE)")
-    broadcast_subparsers = broadcast_parser.add_subparsers(dest="broadcast_action", help="Broadcast operations")
+    broadcast_parser = subparsers.add_parser(
+        "broadcast", help="TTS-to-radio broadcast operations (REQUIRES LICENSE)"
+    )
+    broadcast_subparsers = broadcast_parser.add_subparsers(
+        dest="broadcast_action", help="Broadcast operations"
+    )
 
     # Broadcast say
     broadcast_say_parser = broadcast_subparsers.add_parser(
         "say", help="Broadcast text message via TTS (REQUIRES LICENSE)"
     )
     broadcast_say_parser.add_argument("message", help="Text message to broadcast")
-    broadcast_say_parser.add_argument("--voice", default="default", help="TTS voice selection")
+    broadcast_say_parser.add_argument(
+        "--voice", default="default", help="TTS voice selection"
+    )
     broadcast_say_parser.add_argument(
         "--confirm",
         action="store_true",
@@ -180,97 +209,204 @@ def cli_main():
     )
 
     # Broadcast record
-    broadcast_record_parser = broadcast_subparsers.add_parser("record", help="Record audio from radio")
-    broadcast_record_parser.add_argument(
-        "--duration", type=int, required=True, help="Recording duration in seconds (1-300)"
+    broadcast_record_parser = broadcast_subparsers.add_parser(
+        "record", help="Record audio from radio"
     )
-    broadcast_record_parser.add_argument("--output", help="Output WAV file path (default: temp file)")
+    broadcast_record_parser.add_argument(
+        "--duration",
+        type=int,
+        required=True,
+        help="Recording duration in seconds (1-300)",
+    )
+    broadcast_record_parser.add_argument(
+        "--output", help="Output WAV file path (default: temp file)"
+    )
 
     # Broadcast devices
-    broadcast_devices_parser = broadcast_subparsers.add_parser("devices", help="List available audio devices")
+    broadcast_devices_parser = broadcast_subparsers.add_parser(
+        "devices", help="List available audio devices"
+    )
 
     # Broadcast test
-    broadcast_test_parser = broadcast_subparsers.add_parser("test", help="Test TTS without transmitting")
+    broadcast_test_parser = broadcast_subparsers.add_parser(
+        "test", help="Test TTS without transmitting"
+    )
     broadcast_test_parser.add_argument("message", help="Text message to test")
-    broadcast_test_parser.add_argument("--voice", default="default", help="TTS voice selection")
+    broadcast_test_parser.add_argument(
+        "--voice", default="default", help="TTS voice selection"
+    )
 
     # Digital modes commands
-    digital_parser = subparsers.add_parser("digital", help="Digital mode operations (FT8, FT4, JS8Call)")
-    digital_subparsers = digital_parser.add_subparsers(dest="digital_action", help="Digital mode operations")
+    digital_parser = subparsers.add_parser(
+        "digital", help="Digital mode operations (FT8, FT4, JS8Call)"
+    )
+    digital_subparsers = digital_parser.add_subparsers(
+        dest="digital_action", help="Digital mode operations"
+    )
 
     # Digital setup commands
-    digital_ft8_parser = digital_subparsers.add_parser("setup-ft8", help="Configure radio for FT8")
+    digital_ft8_parser = digital_subparsers.add_parser(
+        "setup-ft8", help="Configure radio for FT8"
+    )
     digital_ft8_parser.add_argument("--freq", type=int, help="Specific frequency in Hz")
     digital_ft8_parser.add_argument(
         "--band",
-        choices=["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"],
+        choices=[
+            "160m",
+            "80m",
+            "60m",
+            "40m",
+            "30m",
+            "20m",
+            "17m",
+            "15m",
+            "12m",
+            "10m",
+            "6m",
+        ],
         help="Amateur band (default: 20m)",
     )
 
-    digital_ft4_parser = digital_subparsers.add_parser("setup-ft4", help="Configure radio for FT4")
+    digital_ft4_parser = digital_subparsers.add_parser(
+        "setup-ft4", help="Configure radio for FT4"
+    )
     digital_ft4_parser.add_argument("--freq", type=int, help="Specific frequency in Hz")
     digital_ft4_parser.add_argument(
         "--band",
-        choices=["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"],
+        choices=[
+            "160m",
+            "80m",
+            "60m",
+            "40m",
+            "30m",
+            "20m",
+            "17m",
+            "15m",
+            "12m",
+            "10m",
+            "6m",
+        ],
         help="Amateur band (default: 20m)",
     )
 
-    digital_js8_parser = digital_subparsers.add_parser("setup-js8", help="Configure radio for JS8Call")
+    digital_js8_parser = digital_subparsers.add_parser(
+        "setup-js8", help="Configure radio for JS8Call"
+    )
     digital_js8_parser.add_argument("--freq", type=int, help="Specific frequency in Hz")
     digital_js8_parser.add_argument(
         "--band",
-        choices=["160m", "80m", "60m", "40m", "30m", "20m", "17m", "15m", "12m", "10m", "6m"],
+        choices=[
+            "160m",
+            "80m",
+            "60m",
+            "40m",
+            "30m",
+            "20m",
+            "17m",
+            "15m",
+            "12m",
+            "10m",
+            "6m",
+        ],
         help="Amateur band (default: 20m)",
     )
 
     # Digital audio check
-    digital_audio_parser = digital_subparsers.add_parser("audio-check", help="Detect and verify PCM2903B audio device")
+    digital_audio_parser = digital_subparsers.add_parser(
+        "audio-check", help="Detect and verify PCM2903B audio device"
+    )
 
     # Digital status
-    digital_status_parser = digital_subparsers.add_parser("status", help="Show digital mode status")
+    digital_status_parser = digital_subparsers.add_parser(
+        "status", help="Show digital mode status"
+    )
 
     # Digital WSJT-X config
-    digital_config_parser = digital_subparsers.add_parser("wsjtx-config", help="Generate WSJT-X configuration")
-    digital_config_parser.add_argument("--callsign", default="KO4TUV", help="Amateur radio callsign")
-    digital_config_parser.add_argument("--grid", default="GRID", help="Maidenhead grid square")
+    digital_config_parser = digital_subparsers.add_parser(
+        "wsjtx-config", help="Generate WSJT-X configuration"
+    )
+    digital_config_parser.add_argument(
+        "--callsign", default="KO4TUV", help="Amateur radio callsign"
+    )
+    digital_config_parser.add_argument(
+        "--grid", default="GRID", help="Maidenhead grid square"
+    )
 
     # Scanner commands
     scan_parser = subparsers.add_parser("scan", help="Band scanning operations")
-    scan_subparsers = scan_parser.add_subparsers(dest="scan_action", help="Scanner operations")
+    scan_subparsers = scan_parser.add_subparsers(
+        dest="scan_action", help="Scanner operations"
+    )
 
     # Scan band
     scan_band_parser = scan_subparsers.add_parser("band", help="Scan frequency band")
-    scan_band_parser.add_argument("--start", type=int, required=True, help="Start frequency in Hz")
-    scan_band_parser.add_argument("--end", type=int, required=True, help="End frequency in Hz")
-    scan_band_parser.add_argument("--step", type=int, required=True, help="Step size in Hz")
-    scan_band_parser.add_argument("--dwell", type=int, default=150, help="Dwell time per frequency in ms")
+    scan_band_parser.add_argument(
+        "--start", type=int, required=True, help="Start frequency in Hz"
+    )
+    scan_band_parser.add_argument(
+        "--end", type=int, required=True, help="End frequency in Hz"
+    )
+    scan_band_parser.add_argument(
+        "--step", type=int, required=True, help="Step size in Hz"
+    )
+    scan_band_parser.add_argument(
+        "--dwell", type=int, default=150, help="Dwell time per frequency in ms"
+    )
 
     # Scan activity
-    scan_activity_parser = scan_subparsers.add_parser("activity", help="Find active frequencies")
-    scan_activity_parser.add_argument("--threshold", type=int, default=50, help="S-meter threshold (0-255)")
+    scan_activity_parser = scan_subparsers.add_parser(
+        "activity", help="Find active frequencies"
+    )
+    scan_activity_parser.add_argument(
+        "--threshold", type=int, default=50, help="S-meter threshold (0-255)"
+    )
 
     # Scan fine
-    scan_fine_parser = scan_subparsers.add_parser("fine", help="Fine scan around frequency")
-    scan_fine_parser.add_argument("--freq", type=int, required=True, help="Center frequency in Hz")
-    scan_fine_parser.add_argument("--width", type=int, default=20000, help="Scan width in Hz")
-    scan_fine_parser.add_argument("--step", type=int, default=1000, help="Step size in Hz")
+    scan_fine_parser = scan_subparsers.add_parser(
+        "fine", help="Fine scan around frequency"
+    )
+    scan_fine_parser.add_argument(
+        "--freq", type=int, required=True, help="Center frequency in Hz"
+    )
+    scan_fine_parser.add_argument(
+        "--width", type=int, default=20000, help="Scan width in Hz"
+    )
+    scan_fine_parser.add_argument(
+        "--step", type=int, default=1000, help="Step size in Hz"
+    )
 
     # Scan HF
     scan_hf_parser = scan_subparsers.add_parser("hf", help="Scan all HF amateur bands")
 
     # APRS commands
-    aprs_parser = subparsers.add_parser("aprs", help="APRS (Automatic Packet Reporting System) operations")
-    aprs_subparsers = aprs_parser.add_subparsers(dest="aprs_action", help="APRS operations")
+    aprs_parser = subparsers.add_parser(
+        "aprs", help="APRS (Automatic Packet Reporting System) operations"
+    )
+    aprs_subparsers = aprs_parser.add_subparsers(
+        dest="aprs_action", help="APRS operations"
+    )
 
     # APRS setup
-    aprs_setup_parser = aprs_subparsers.add_parser("setup", help="Configure radio for APRS (144.390 MHz FM)")
+    aprs_setup_parser = aprs_subparsers.add_parser(
+        "setup", help="Configure radio for APRS (144.390 MHz FM)"
+    )
 
     # APRS beacon
-    aprs_beacon_parser = aprs_subparsers.add_parser("beacon", help="Send APRS position beacon (REQUIRES LICENSE)")
-    aprs_beacon_parser.add_argument("--lat", type=float, required=True, help="Latitude in decimal degrees")
-    aprs_beacon_parser.add_argument("--lon", type=float, required=True, help="Longitude in decimal degrees")
-    aprs_beacon_parser.add_argument("--comment", default="", help="Optional comment text")
-    aprs_beacon_parser.add_argument("--symbol", default=">", help="APRS symbol code (default: > for car)")
+    aprs_beacon_parser = aprs_subparsers.add_parser(
+        "beacon", help="Send APRS position beacon (REQUIRES LICENSE)"
+    )
+    aprs_beacon_parser.add_argument(
+        "--lat", type=float, required=True, help="Latitude in decimal degrees"
+    )
+    aprs_beacon_parser.add_argument(
+        "--lon", type=float, required=True, help="Longitude in decimal degrees"
+    )
+    aprs_beacon_parser.add_argument(
+        "--comment", default="", help="Optional comment text"
+    )
+    aprs_beacon_parser.add_argument(
+        "--symbol", default=">", help="APRS symbol code (default: > for car)"
+    )
     aprs_beacon_parser.add_argument(
         "--confirm",
         action="store_true",
@@ -405,8 +541,12 @@ def cli_main():
             elif args.cw_action == "send":
                 # Safety checks and warnings
                 print("⚠️  WARNING: CW TRANSMISSION REQUIRES AMATEUR RADIO LICENSE")
-                print("⚠️  WARNING: Ensure licensed operator is present and controlling station")
-                print("⚠️  WARNING: This will transmit RF energy - check antenna and power settings")
+                print(
+                    "⚠️  WARNING: Ensure licensed operator is present and controlling station"
+                )
+                print(
+                    "⚠️  WARNING: This will transmit RF energy - check antenna and power settings"
+                )
                 print()
 
                 if not args.confirm:
@@ -455,7 +595,9 @@ def cli_main():
 
             elif args.cw_action == "listen":
                 print("CW decoder not yet implemented")
-                print("This feature will provide audio-based CW decoding in a future release.")
+                print(
+                    "This feature will provide audio-based CW decoding in a future release."
+                )
                 print("Planned features:")
                 print("  - Real-time audio analysis using Goertzel algorithm")
                 print("  - Automatic dit/dah timing detection")
@@ -467,13 +609,17 @@ def cli_main():
                 broadcaster = Broadcaster(radio)
             except (AudioDeviceError, Exception) as e:
                 print(f"ERROR: Failed to initialize broadcaster: {e}")
-                print("Make sure audio dependencies are installed: pip install 'ft991a-control[audio]'")
+                print(
+                    "Make sure audio dependencies are installed: pip install 'ft991a-control[audio]'"
+                )
                 return 1
 
             if args.broadcast_action == "say":
                 # Safety checks and warnings
                 print("⚠️  WARNING: TTS BROADCAST REQUIRES AMATEUR RADIO LICENSE")
-                print("⚠️  WARNING: Licensed operator KO4TUV must be physically present")
+                print(
+                    "⚠️  WARNING: Licensed operator KO4TUV must be physically present"
+                )
                 print("⚠️  WARNING: This will generate audio that may be transmitted")
                 print("⚠️  WARNING: Ensure proper mode, frequency, and power settings")
                 print()
@@ -525,7 +671,11 @@ def cli_main():
                 print("Available Audio Devices:")
                 print("=" * 50)
                 for device in devices["devices"]:
-                    current = " (CURRENT)" if device["id"] == devices["current_device"] else ""
+                    current = (
+                        " (CURRENT)"
+                        if device["id"] == devices["current_device"]
+                        else ""
+                    )
                     print(f"ID {device['id']}: {device['name']}{current}")
                     print(f"  Input channels: {device['max_input_channels']}")
                     print(f"  Output channels: {device['max_output_channels']}")
@@ -575,7 +725,9 @@ def cli_main():
                     print("1. Launch WSJT-X software")
                     print("2. Select FT8 mode in WSJT-X")
                     print("3. Configure WSJT-X CAT and audio settings")
-                    print("4. Use 'ft991a-cli digital wsjtx-config' to generate config file")
+                    print(
+                        "4. Use 'ft991a-cli digital wsjtx-config' to generate config file"
+                    )
                 else:
                     print("❌ FT8 configuration failed")
                     return 1
@@ -596,7 +748,9 @@ def cli_main():
                     print("1. Launch WSJT-X software")
                     print("2. Select FT4 mode in WSJT-X")
                     print("3. Configure WSJT-X CAT and audio settings")
-                    print("4. Use 'ft991a-cli digital wsjtx-config' to generate config file")
+                    print(
+                        "4. Use 'ft991a-cli digital wsjtx-config' to generate config file"
+                    )
                 else:
                     print("❌ FT4 configuration failed")
                     return 1
@@ -649,7 +803,9 @@ def cli_main():
                 if status:
                     print(f"Frequency: {status.get('frequency', 0)/1e6:.3f} MHz")
                     print(f"Mode: {status.get('mode', 'Unknown')}")
-                    print(f"Digital Mode: {'Yes' if status.get('is_digital') else 'No'}")
+                    print(
+                        f"Digital Mode: {'Yes' if status.get('is_digital') else 'No'}"
+                    )
                     if status.get("likely_digital_mode"):
                         print(f"Likely Mode: {status['likely_digital_mode']}")
                     print(f"Power: {status.get('power', 0)}W")
@@ -694,7 +850,9 @@ def cli_main():
             scanner = BandScanner(radio)
 
             if args.scan_action == "band":
-                print(f"Scanning {args.start:,} - {args.end:,} Hz (step: {args.step:,} Hz)")
+                print(
+                    f"Scanning {args.start:,} - {args.end:,} Hz (step: {args.step:,} Hz)"
+                )
                 results = scanner.scan_band(args.start, args.end, args.step, args.dwell)
 
                 if results:
@@ -704,21 +862,29 @@ def cli_main():
                     print("No scan results")
 
             elif args.scan_action == "activity":
-                print(f"Searching for activity above S-meter threshold {args.threshold}")
+                print(
+                    f"Searching for activity above S-meter threshold {args.threshold}"
+                )
                 active = scanner.find_activity(args.threshold)
 
                 if active:
-                    report = scanner.format_activity_results(active, "Active Frequencies Found")
+                    report = scanner.format_activity_results(
+                        active, "Active Frequencies Found"
+                    )
                     print(report)
                 else:
                     print(f"No activity found above S-meter threshold {args.threshold}")
 
             elif args.scan_action == "fine":
-                print(f"Fine scanning around {args.freq/1e6:.3f} MHz (±{args.width/2000:.0f} kHz)")
+                print(
+                    f"Fine scanning around {args.freq/1e6:.3f} MHz (±{args.width/2000:.0f} kHz)"
+                )
                 results = scanner.fine_scan(args.freq, args.width, args.step)
 
                 if results:
-                    chart = scanner.format_scan_results(results, f"Fine Scan: {args.freq/1e6:.3f} MHz")
+                    chart = scanner.format_scan_results(
+                        results, f"Fine Scan: {args.freq/1e6:.3f} MHz"
+                    )
                     print(chart)
                 else:
                     print("No scan results")
@@ -728,7 +894,9 @@ def cli_main():
                 activity = scanner.scan_all_hf()
 
                 if activity:
-                    report = scanner.format_activity_results(activity, "HF Band Activity")
+                    report = scanner.format_activity_results(
+                        activity, "HF Band Activity"
+                    )
                     print(report)
                 else:
                     print("No HF activity detected")
@@ -751,7 +919,9 @@ def cli_main():
             elif args.aprs_action == "beacon":
                 print("APRS Position Beacon")
                 print("⚠️  WARNING: APRS TRANSMISSION REQUIRES AMATEUR RADIO LICENSE")
-                print("⚠️  WARNING: Ensure licensed operator KO4TUV is present and controlling station")
+                print(
+                    "⚠️  WARNING: Ensure licensed operator KO4TUV is present and controlling station"
+                )
                 print("⚠️  WARNING: This will transmit on 144.390 MHz APRS frequency")
                 print()
 
@@ -771,7 +941,11 @@ def cli_main():
                 try:
                     # Encode APRS position packet
                     packet = aprs_client.encode_aprs_position(
-                        "KO4TUV", args.lat, args.lon, args.comment, symbol_code=args.symbol
+                        "KO4TUV",
+                        args.lat,
+                        args.lon,
+                        args.comment,
+                        symbol_code=args.symbol,
                     )
 
                     print(f"Position: {args.lat:.6f}°, {args.lon:.6f}°")
@@ -787,8 +961,12 @@ def cli_main():
                     if success:
                         print("✅ APRS beacon transmitted successfully")
                     else:
-                        print("❌ APRS transmission failed - hardware interface not implemented")
-                        print("📋 Packet encoded and ready for external TNC/sound card interface")
+                        print(
+                            "❌ APRS transmission failed - hardware interface not implemented"
+                        )
+                        print(
+                            "📋 Packet encoded and ready for external TNC/sound card interface"
+                        )
 
                 except Exception as e:
                     print(f"❌ ERROR encoding APRS packet: {e}")
@@ -813,10 +991,17 @@ def cli_main():
                             if decoded.data["type"] == "position":
                                 print("📍 POSITION REPORT:")
                                 if "latitude" in decoded.data:
-                                    print(f"  Latitude: {decoded.data['latitude']:.6f}°")
+                                    print(
+                                        f"  Latitude: {decoded.data['latitude']:.6f}°"
+                                    )
                                 if "longitude" in decoded.data:
-                                    print(f"  Longitude: {decoded.data['longitude']:.6f}°")
-                                if "comment" in decoded.data and decoded.data["comment"]:
+                                    print(
+                                        f"  Longitude: {decoded.data['longitude']:.6f}°"
+                                    )
+                                if (
+                                    "comment" in decoded.data
+                                    and decoded.data["comment"]
+                                ):
                                     print(f"  Comment: {decoded.data['comment']}")
                                 if "symbol_code" in decoded.data:
                                     print(f"  Symbol: {decoded.data['symbol_code']}")
@@ -832,11 +1017,15 @@ def cli_main():
 
                             elif decoded.data["type"] == "weather":
                                 print("🌦️ WEATHER:")
-                                print(f"  Data: {decoded.data.get('weather_data', 'N/A')}")
+                                print(
+                                    f"  Data: {decoded.data.get('weather_data', 'N/A')}"
+                                )
 
                             elif decoded.data["type"] == "status":
                                 print("📢 STATUS:")
-                                print(f"  Text: {decoded.data.get('status_text', 'N/A')}")
+                                print(
+                                    f"  Text: {decoded.data.get('status_text', 'N/A')}"
+                                )
 
                         # Show raw data for debugging
                         print()
@@ -847,7 +1036,9 @@ def cli_main():
 
                     else:
                         print("❌ Failed to decode APRS packet")
-                        print("The packet may be malformed or use an unsupported format")
+                        print(
+                            "The packet may be malformed or use an unsupported format"
+                        )
                         return 1
 
                 except Exception as e:
@@ -884,11 +1075,17 @@ def cli_main():
                 print("⚠️  IMPORTANT NOTES:")
                 print("   - Licensed amateur radio operator required for transmission")
                 print("   - Monitor frequencies before transmitting")
-                print("   - Follow net control instructions during emergency operations")
-                print("   - Maritime/Aviation frequencies are RECEIVE ONLY unless appropriately licensed")
+                print(
+                    "   - Follow net control instructions during emergency operations"
+                )
+                print(
+                    "   - Maritime/Aviation frequencies are RECEIVE ONLY unless appropriately licensed"
+                )
                 print("   - ARES: Amateur Radio Emergency Service")
                 print("   - RACES: Radio Amateur Civil Emergency Service")
-                print("   - SKYWARN: National Weather Service severe weather spotting program")
+                print(
+                    "   - SKYWARN: National Weather Service severe weather spotting program"
+                )
 
         return 0
 

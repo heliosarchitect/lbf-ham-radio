@@ -93,7 +93,9 @@ class FT991A:
         radio.disconnect()
     """
 
-    def __init__(self, port: str = "/dev/ttyUSB0", baudrate: int = 38400, timeout: float = 1.0):
+    def __init__(
+        self, port: str = "/dev/ttyUSB0", baudrate: int = 38400, timeout: float = 1.0
+    ):
         self.port = port
         self.baudrate = baudrate
         self.timeout = timeout
@@ -119,7 +121,9 @@ class FT991A:
             # Verify connection by reading frequency
             freq = self.get_frequency_a()
             if freq > 0:
-                logger.info(f"Connected to FT-991A on {self.port} — VFO-A: {freq/1e6:.6f} MHz")
+                logger.info(
+                    f"Connected to FT-991A on {self.port} — VFO-A: {freq/1e6:.6f} MHz"
+                )
                 return True
             else:
                 logger.error("Connected but no response from radio")
@@ -440,7 +444,10 @@ def main():
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 
-    logging.basicConfig(level=logging.DEBUG if args.verbose else logging.INFO, format="%(levelname)s: %(message)s")
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        format="%(levelname)s: %(message)s",
+    )
 
     with FT991A(args.port, args.baud) as radio:
         if args.command == "status":
@@ -456,7 +463,11 @@ def main():
 
         elif args.command == "freq":
             if args.set:
-                freq = int(float(args.set) * 1_000_000) if "." in args.set else int(args.set)
+                freq = (
+                    int(float(args.set) * 1_000_000)
+                    if "." in args.set
+                    else int(args.set)
+                )
                 radio.set_frequency_a(freq)
                 print(f"Set VFO-A to {freq / 1e6:.6f} MHz")
             else:

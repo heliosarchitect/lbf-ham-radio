@@ -157,7 +157,12 @@ async def main():
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "watts": {"type": "integer", "description": "TX power in watts", "minimum": 5, "maximum": 100}
+                    "watts": {
+                        "type": "integer",
+                        "description": "TX power in watts",
+                        "minimum": 5,
+                        "maximum": 100,
+                    }
                 },
                 "required": ["watts"],
             },
@@ -240,7 +245,9 @@ async def main():
         return ListToolsResult(tools=TOOLS)
 
     @stdio_server.call_tool()
-    async def call_tool(name: str, arguments: dict[str, Any] | None = None) -> CallToolResult:
+    async def call_tool(
+        name: str, arguments: dict[str, Any] | None = None
+    ) -> CallToolResult:
         """Handle tool calls"""
         try:
             # Ensure radio connection
@@ -248,20 +255,34 @@ async def main():
 
             if name == "get_frequency":
                 freq = radio.get_frequency()
-                return CallToolResult(content=[TextContent(type="text", text=f"Current frequency: {freq:,} Hz")])
+                return CallToolResult(
+                    content=[
+                        TextContent(type="text", text=f"Current frequency: {freq:,} Hz")
+                    ]
+                )
 
             elif name == "set_frequency":
                 freq_hz = arguments.get("freq_hz")
                 success = radio.set_frequency(freq_hz)
                 status = "success" if success else "failed"
                 return CallToolResult(
-                    content=[TextContent(type="text", text=f"Set frequency to {freq_hz:,} Hz: {status}")]
+                    content=[
+                        TextContent(
+                            type="text",
+                            text=f"Set frequency to {freq_hz:,} Hz: {status}",
+                        )
+                    ]
                 )
 
             elif name == "get_mode":
                 mode = radio.get_mode()
                 return CallToolResult(
-                    content=[TextContent(type="text", text=f"Current mode: {mode.name if mode else 'Unknown'}")]
+                    content=[
+                        TextContent(
+                            type="text",
+                            text=f"Current mode: {mode.name if mode else 'Unknown'}",
+                        )
+                    ]
                 )
 
             elif name == "set_mode":
@@ -270,31 +291,59 @@ async def main():
                 mode = Mode[mode_name]
                 success = radio.set_mode(mode)
                 status = "success" if success else "failed"
-                return CallToolResult(content=[TextContent(type="text", text=f"Set mode to {mode_name}: {status}")])
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            type="text", text=f"Set mode to {mode_name}: {status}"
+                        )
+                    ]
+                )
 
             elif name == "get_smeter":
                 smeter = radio.get_smeter()
-                return CallToolResult(content=[TextContent(type="text", text=f"S-meter reading: {smeter}")])
+                return CallToolResult(
+                    content=[
+                        TextContent(type="text", text=f"S-meter reading: {smeter}")
+                    ]
+                )
 
             elif name == "get_power":
                 power = radio.get_tx_power()
-                return CallToolResult(content=[TextContent(type="text", text=f"TX power: {power}W")])
+                return CallToolResult(
+                    content=[TextContent(type="text", text=f"TX power: {power}W")]
+                )
 
             elif name == "set_power":
                 watts = arguments.get("watts")
                 success = radio.set_tx_power(watts)
                 status = "success" if success else "failed"
-                return CallToolResult(content=[TextContent(type="text", text=f"Set TX power to {watts}W: {status}")])
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            type="text", text=f"Set TX power to {watts}W: {status}"
+                        )
+                    ]
+                )
 
             elif name == "ptt_on":
                 success = radio.ptt_on()
                 status = "success" if success else "failed"
-                return CallToolResult(content=[TextContent(type="text", text=f"PTT on (transmitting): {status}")])
+                return CallToolResult(
+                    content=[
+                        TextContent(
+                            type="text", text=f"PTT on (transmitting): {status}"
+                        )
+                    ]
+                )
 
             elif name == "ptt_off":
                 success = radio.ptt_off()
                 status = "success" if success else "failed"
-                return CallToolResult(content=[TextContent(type="text", text=f"PTT off (receiving): {status}")])
+                return CallToolResult(
+                    content=[
+                        TextContent(type="text", text=f"PTT off (receiving): {status}")
+                    ]
+                )
 
             elif name == "get_status":
                 status = radio.get_status()
@@ -309,7 +358,9 @@ TX State: {'Transmitting' if status.tx_on else 'Receiving'}
                 else:
                     status_text = "Failed to get radio status"
 
-                return CallToolResult(content=[TextContent(type="text", text=status_text)])
+                return CallToolResult(
+                    content=[TextContent(type="text", text=status_text)]
+                )
 
             elif name == "set_band":
                 band_name = arguments.get("band")
@@ -335,15 +386,29 @@ TX State: {'Transmitting' if status.tx_on else 'Receiving'}
                     success = radio.set_frequency(freq)
                     status = "success" if success else "failed"
                     return CallToolResult(
-                        content=[TextContent(type="text", text=f"Set band to {band_name} ({freq:,} Hz): {status}")]
+                        content=[
+                            TextContent(
+                                type="text",
+                                text=f"Set band to {band_name} ({freq:,} Hz): {status}",
+                            )
+                        ]
                     )
                 else:
-                    return CallToolResult(content=[TextContent(type="text", text=f"Unknown band: {band_name}")])
+                    return CallToolResult(
+                        content=[
+                            TextContent(type="text", text=f"Unknown band: {band_name}")
+                        ]
+                    )
 
             elif name == "get_memories":
                 # This would need to be implemented in the CAT library
                 return CallToolResult(
-                    content=[TextContent(type="text", text="Memory channel listing not yet implemented in CAT library")]
+                    content=[
+                        TextContent(
+                            type="text",
+                            text="Memory channel listing not yet implemented in CAT library",
+                        )
+                    ]
                 )
 
             elif name == "recall_memory":
@@ -352,7 +417,8 @@ TX State: {'Transmitting' if status.tx_on else 'Receiving'}
                 return CallToolResult(
                     content=[
                         TextContent(
-                            type="text", text=f"Memory recall for channel {channel} not yet implemented in CAT library"
+                            type="text",
+                            text=f"Memory recall for channel {channel} not yet implemented in CAT library",
                         )
                     ]
                 )
@@ -360,22 +426,33 @@ TX State: {'Transmitting' if status.tx_on else 'Receiving'}
             elif name == "toggle_tx_lock":
                 # This would need to be implemented in the CAT library
                 return CallToolResult(
-                    content=[TextContent(type="text", text="TX lock toggle not yet implemented in CAT library")]
+                    content=[
+                        TextContent(
+                            type="text",
+                            text="TX lock toggle not yet implemented in CAT library",
+                        )
+                    ]
                 )
 
             else:
-                return CallToolResult(content=[TextContent(type="text", text=f"Unknown tool: {name}")])
+                return CallToolResult(
+                    content=[TextContent(type="text", text=f"Unknown tool: {name}")]
+                )
 
         except Exception as e:
             logger.error(f"Tool call error: {e}")
-            return CallToolResult(content=[TextContent(type="text", text=f"Error: {str(e)}")])
+            return CallToolResult(
+                content=[TextContent(type="text", text=f"Error: {str(e)}")]
+            )
 
 
 async def run_server():
     """Run the MCP server"""
     # Try to connect to radio on startup
     if not await server_instance.connect_radio():
-        logger.warning("Failed to connect to radio on startup - tools will fail until connection is established")
+        logger.warning(
+            "Failed to connect to radio on startup - tools will fail until connection is established"
+        )
 
     # Run the stdio server
     await main()
@@ -386,7 +463,9 @@ if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[logging.StreamHandler(sys.stderr)],  # MCP uses stderr for logs, stdout for protocol
+        handlers=[
+            logging.StreamHandler(sys.stderr)
+        ],  # MCP uses stderr for logs, stdout for protocol
     )
 
     # Run server

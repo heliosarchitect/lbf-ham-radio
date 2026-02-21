@@ -81,26 +81,58 @@ class EmergencyKit:
     # ARES/RACES Emergency Frequencies (MHz)
     EMERGENCY_FREQS = {
         # VHF Repeaters (2m band)
-        "ARES_PRIMARY_VHF": {"freq": 146.52, "mode": "FM", "notes": "National Simplex Emergency"},
+        "ARES_PRIMARY_VHF": {
+            "freq": 146.52,
+            "mode": "FM",
+            "notes": "National Simplex Emergency",
+        },
         "ARES_BACKUP_VHF": {"freq": 146.94, "mode": "FM", "notes": "Regional ARES Net"},
         "RACES_VHF": {"freq": 147.42, "mode": "FM", "notes": "Local RACES Net"},
         # UHF Repeaters (70cm band)
         "ARES_UHF": {"freq": 446.00, "mode": "FM", "notes": "ARES UHF Net"},
         "SKYWARN_UHF": {"freq": 442.15, "mode": "FM", "notes": "SKYWARN Weather Net"},
         # HF Emergency Frequencies
-        "ARES_HF_40M": {"freq": 7.265, "mode": "LSB", "notes": "40m ARES Emergency Net"},
-        "ARES_HF_80M": {"freq": 3.965, "mode": "LSB", "notes": "80m ARES Emergency Net"},
-        "NTTN_HF": {"freq": 14.265, "mode": "USB", "notes": "National Traffic & Training Net"},
+        "ARES_HF_40M": {
+            "freq": 7.265,
+            "mode": "LSB",
+            "notes": "40m ARES Emergency Net",
+        },
+        "ARES_HF_80M": {
+            "freq": 3.965,
+            "mode": "LSB",
+            "notes": "80m ARES Emergency Net",
+        },
+        "NTTN_HF": {
+            "freq": 14.265,
+            "mode": "USB",
+            "notes": "National Traffic & Training Net",
+        },
         # Digital Emergency
-        "WINLINK_VHF": {"freq": 144.910, "mode": "DATA_FM", "notes": "VHF Winlink Gateway"},
-        "FT8_EMERGENCY": {"freq": 7.074, "mode": "DATA_USB", "notes": "40m FT8 Emergency"},
+        "WINLINK_VHF": {
+            "freq": 144.910,
+            "mode": "DATA_FM",
+            "notes": "VHF Winlink Gateway",
+        },
+        "FT8_EMERGENCY": {
+            "freq": 7.074,
+            "mode": "DATA_USB",
+            "notes": "40m FT8 Emergency",
+        },
         # APRS
         "APRS_PRIMARY": {"freq": 144.390, "mode": "FM", "notes": "North America APRS"},
         "APRS_ALTERNATE": {"freq": 144.350, "mode": "FM", "notes": "Alternate APRS"},
         # Maritime Emergency
-        "MARINE_VHF_16": {"freq": 156.8, "mode": "FM", "notes": "Maritime Emergency (monitor only)"},
+        "MARINE_VHF_16": {
+            "freq": 156.8,
+            "mode": "FM",
+            "notes": "Maritime Emergency (monitor only)",
+        },
         # Aviation Emergency (receive only - no transmit without license)
-        "AVIATION_121_5": {"freq": 121.5, "mode": "AM", "notes": "Aviation Emergency (RX only)"},
+        "AVIATION_121_5": {
+            "freq": 121.5,
+            "mode": "AM",
+            "notes": "Aviation Emergency (RX only)",
+        },
     }
 
     # Emergency Procedures and Net Times
@@ -215,7 +247,13 @@ class APRSClient:
             return False
 
     def encode_aprs_position(
-        self, callsign: str, lat: float, lon: float, comment: str = "", symbol_table: str = "/", symbol_code: str = ">"
+        self,
+        callsign: str,
+        lat: float,
+        lon: float,
+        comment: str = "",
+        symbol_table: str = "/",
+        symbol_code: str = ">",
     ) -> str:
         """
         Encode APRS position packet.
@@ -260,7 +298,9 @@ class APRSClient:
             logger.error(f"Failed to encode position: {e}")
             raise ValueError(f"Position encoding failed: {e}")
 
-    def encode_aprs_message(self, source: str, dest: str, message: str, message_id: Optional[str] = None) -> str:
+    def encode_aprs_message(
+        self, source: str, dest: str, message: str, message_id: Optional[str] = None
+    ) -> str:
         """
         Encode APRS message packet.
 
@@ -316,7 +356,9 @@ class APRSClient:
         try:
             # Basic packet format: CALL>DEST,PATH:DATA
             if ":" not in raw_packet:
-                logger.warning(f"Invalid packet format (no data separator): {raw_packet}")
+                logger.warning(
+                    f"Invalid packet format (no data separator): {raw_packet}"
+                )
                 return None
 
             header, data = raw_packet.split(":", 1)
@@ -465,7 +507,12 @@ class APRSClient:
             if "{" in message_text:
                 message_text, message_id = message_text.rsplit("{", 1)
 
-            return {"addressee": addressee, "message": message_text, "message_id": message_id, "type": "message"}
+            return {
+                "addressee": addressee,
+                "message": message_text,
+                "message_id": message_id,
+                "type": "message",
+            }
 
         except Exception as e:
             return {"error": f"Message parsing failed: {e}"}
@@ -495,7 +542,9 @@ class APRSClient:
         """
         if not confirmed:
             logger.error("❌ TRANSMISSION DENIED - Missing --confirm flag")
-            logger.error("⚠️  Amateur radio transmission requires licensed operator present")
+            logger.error(
+                "⚠️  Amateur radio transmission requires licensed operator present"
+            )
             logger.error("⚠️  Use --confirm flag to acknowledge legal compliance")
             return False
 

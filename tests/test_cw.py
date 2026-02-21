@@ -120,7 +120,15 @@ class TestRoundTrip:
     """Test encoding/decoding round-trip functionality"""
 
     @pytest.mark.parametrize(
-        "text", ["HELLO WORLD", "CQ CQ CQ DE W1ABC", "THE QUICK BROWN FOX 123", "SOS", "TEST MESSAGE", "ABC 123 XYZ"]
+        "text",
+        [
+            "HELLO WORLD",
+            "CQ CQ CQ DE W1ABC",
+            "THE QUICK BROWN FOX 123",
+            "SOS",
+            "TEST MESSAGE",
+            "ABC 123 XYZ",
+        ],
     )
     def test_roundtrip_conversion(self, text):
         """Test that text->Morse->text round-trip preserves content"""
