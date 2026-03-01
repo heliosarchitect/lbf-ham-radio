@@ -352,6 +352,17 @@ def cli_main():
     scan_band_parser.add_argument(
         "--dwell", type=int, default=150, help="Dwell time per frequency in ms"
     )
+    scan_band_parser.add_argument(
+        "--heatmap",
+        action="store_true",
+        help="Render adaptive band activity heatmap instead of raw bar chart",
+    )
+    scan_band_parser.add_argument(
+        "--max-bins",
+        type=int,
+        default=48,
+        help="Maximum bins used for adaptive heatmap (default: 48)",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -856,8 +867,15 @@ def cli_main():
                 results = scanner.scan_band(args.start, args.end, args.step, args.dwell)
 
                 if results:
-                    chart = scanner.format_scan_results(results, "Band Scan Results")
-                    print(chart)
+                    if args.heatmap:
+                        heatmap = scanner.build_adaptive_heatmap(
+                            results, max_bins=max(1, args.max_bins)
+                        )
+                        report = scanner.format_adaptive_heatmap(heatmap)
+                        print(report)
+                    else:
+                        chart = scanner.format_scan_results(results, "Band Scan Results")
+                        print(chart)
                 else:
                     print("No scan results")
 

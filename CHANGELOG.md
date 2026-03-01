@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.9.0] - 2026-03-01
+
+### ✨ Features
+
+- **Adaptive Band Activity Heatmap (Feature 1/20)**
+  - Added adaptive heatmap generation for RX band scans (`BandScanner.build_adaptive_heatmap`)
+  - Added terminal heatmap renderer (`BandScanner.format_adaptive_heatmap`)
+  - Added `HeatmapBin` data model for clear scanner module boundaries
+  - Added CLI support via existing interface (`ft991a-cli scan band --heatmap [--max-bins N]`)
+  - Maintained interface discipline: no new top-level command groups; feature extends existing `scan band`
+  - RX/analysis only — no TX behavior added
+
+### ✅ Tests
+
+- Added scanner tests for adaptive heatmap binning and formatter output.
+
 ## [v0.8.0] - 2026-02-17 (planned)
 
 ### ✨ Features

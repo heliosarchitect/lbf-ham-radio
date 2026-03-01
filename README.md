@@ -122,7 +122,7 @@ Then use `--radio-port /dev/ft991a-cat` for stable access regardless of USB enum
 | **VFO Control** | Frequency display, mode buttons, band presets, power slider, VFO swap/copy, ATU |
 | **Audio** | Audio waterfall, spectrum analyzer, inline tuner, S-meter history, listen button |
 | **SDR** | Wideband panadapter waterfall via SDRplay (click-to-tune, bandwidth selector) |
-| **Scanner** | Band scanner with preset bands, custom range, step sizes, squelch threshold |
+| **Scanner** | Band scanner with preset bands, custom range, step sizes, squelch threshold, and adaptive RX heatmap (`ft991a-cli scan band --heatmap`) |
 | **Memory** | Memory channel manager — list, recall, store, clear channels 001-099 |
 | **System** | Audio device config, WebSocket status, connection info |
 | **Config** | Serial port settings, baud rate, connection test |

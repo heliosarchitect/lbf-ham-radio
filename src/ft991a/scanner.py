@@ -20,7 +20,9 @@ Usage:
 import logging
 import time
 from dataclasses import dataclass
-from typing import List, Tuple
+from math import ceil
+from statistics import mean
+from typing import List, Optional, Tuple
 
 from .cat import FT991A, Mode
 
@@ -44,6 +46,19 @@ class ActivityResult:
     s_meter: int
     frequency_mhz: float
     s_level_text: str
+
+
+@dataclass
+class HeatmapBin:
+    """Adaptive activity heatmap bin for a frequency range."""
+
+    start_hz: int
+    end_hz: int
+    center_hz: int
+    avg_s_meter: float
+    peak_s_meter: int
+    sample_count: int
+    activity_score: float
 
 
 class BandScanner:
@@ -278,6 +293,119 @@ class BandScanner:
 
         logger.info(f"HF sweep complete: {len(all_activity)} signals detected")
         return all_activity
+
+    def build_adaptive_heatmap(
+        self,
+        results: List[Tuple[int, int]],
+        bucket_hz: Optional[int] = None,
+        max_bins: int = 48,
+        min_bucket_hz: int = 2000,
+    ) -> List[HeatmapBin]:
+        """
+        Build an adaptive activity heatmap from scan data.
+
+        The bucket size is derived from scan span and constrained by max_bins,
+        then normalized against the observed noise floor so the output adapts to
+        changing band conditions.
+
+        Args:
+            results: List of (frequency_hz, s_meter) tuples from scan_band()
+            bucket_hz: Optional fixed bucket size in Hz; adaptive if omitted
+            max_bins: Maximum number of bins in adaptive mode
+            min_bucket_hz: Lower bound for adaptive bucket sizing
+
+        Returns:
+            List of HeatmapBin entries sorted by frequency
+        """
+        if not results:
+            return []
+
+        ordered = sorted(results, key=lambda x: x[0])
+        freqs = [freq for freq, _ in ordered]
+        levels = [level for _, level in ordered]
+
+        start_hz = freqs[0]
+        end_hz = freqs[-1]
+        span_hz = max(1, end_hz - start_hz)
+
+        if bucket_hz is None:
+            adaptive_size = ceil(span_hz / max(1, max_bins))
+            bucket_hz = max(min_bucket_hz, adaptive_size)
+        bucket_hz = max(1, bucket_hz)
+
+        bucket_count = max(1, ceil((span_hz + 1) / bucket_hz))
+        grouped: List[List[Tuple[int, int]]] = [[] for _ in range(bucket_count)]
+
+        for freq_hz, s_meter in ordered:
+            idx = min(bucket_count - 1, max(0, (freq_hz - start_hz) // bucket_hz))
+            grouped[idx].append((freq_hz, s_meter))
+
+        sorted_levels = sorted(levels)
+        floor_idx = int(0.35 * (len(sorted_levels) - 1))
+        noise_floor = sorted_levels[floor_idx]
+        max_level = max(levels)
+        dynamic_range = max(1.0, float(max_level - noise_floor))
+
+        bins: List[HeatmapBin] = []
+        for idx, bucket in enumerate(grouped):
+            bucket_start = start_hz + idx * bucket_hz
+            bucket_end = min(end_hz, bucket_start + bucket_hz - 1)
+
+            if not bucket:
+                bins.append(
+                    HeatmapBin(
+                        start_hz=bucket_start,
+                        end_hz=bucket_end,
+                        center_hz=(bucket_start + bucket_end) // 2,
+                        avg_s_meter=0.0,
+                        peak_s_meter=0,
+                        sample_count=0,
+                        activity_score=0.0,
+                    )
+                )
+                continue
+
+            bucket_levels = [s for _, s in bucket]
+            avg_level = mean(bucket_levels)
+            peak_level = max(bucket_levels)
+            score = max(0.0, min(1.0, (avg_level - noise_floor) / dynamic_range))
+
+            bins.append(
+                HeatmapBin(
+                    start_hz=bucket_start,
+                    end_hz=bucket_end,
+                    center_hz=(bucket_start + bucket_end) // 2,
+                    avg_s_meter=avg_level,
+                    peak_s_meter=peak_level,
+                    sample_count=len(bucket),
+                    activity_score=score,
+                )
+            )
+
+        return bins
+
+    def format_adaptive_heatmap(
+        self,
+        bins: List[HeatmapBin],
+        title: str = "Adaptive Band Activity Heatmap",
+    ) -> str:
+        """Render adaptive heatmap bins as terminal-friendly text output."""
+        if not bins:
+            return f"{title}\n(No heatmap data)"
+
+        gradient = "▁▂▃▄▅▆▇█"
+        lines = [f"{title}", "=" * len(title), ""]
+
+        for entry in bins:
+            mhz = entry.center_hz / 1e6
+            level_idx = min(len(gradient) - 1, int(round(entry.activity_score * 7)))
+            block = gradient[level_idx] * 8
+            lines.append(
+                f"{mhz:8.3f} MHz │{block}│ score={entry.activity_score:0.2f} avg={entry.avg_s_meter:5.1f} peak={entry.peak_s_meter:3} n={entry.sample_count:2}"
+            )
+
+        lines.extend(["", f"Bins: {len(bins)} (adaptive)"])
+        return "\n".join(lines)
 
     def format_scan_results(
         self, results: List[Tuple[int, int]], title: str = "Band Scan Results"

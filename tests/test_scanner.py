@@ -12,7 +12,7 @@ from unittest.mock import Mock, call, patch
 import pytest
 
 from ft991a.cat import FT991A
-from ft991a.scanner import ActivityResult, BandScanner, ScanResult
+from ft991a.scanner import ActivityResult, BandScanner, HeatmapBin, ScanResult
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -238,6 +238,55 @@ class TestBandScanner:
         # after first frequency is processed and second sleep() fails
         assert len(results) == 1  # Got one reading before interrupt
         assert results[0] == (14000000, 25)
+
+    def test_build_adaptive_heatmap(self, scanner):
+        """Adaptive heatmap should bucket data and normalize activity score."""
+        results = [
+            (14000000, 10),
+            (14001000, 12),
+            (14002000, 14),
+            (14003000, 55),
+            (14004000, 58),
+            (14005000, 60),
+        ]
+
+        bins = scanner.build_adaptive_heatmap(results, bucket_hz=2000)
+
+        assert len(bins) == 3
+        assert all(isinstance(b, HeatmapBin) for b in bins)
+        assert bins[0].sample_count == 2
+        assert bins[2].peak_s_meter == 60
+        assert 0.0 <= bins[0].activity_score <= 1.0
+        assert bins[2].activity_score > bins[0].activity_score
+
+    def test_format_adaptive_heatmap(self, scanner):
+        """Heatmap formatter should render title, bins, and activity metadata."""
+        bins = [
+            HeatmapBin(
+                start_hz=14000000,
+                end_hz=14001999,
+                center_hz=14001000,
+                avg_s_meter=12.0,
+                peak_s_meter=15,
+                sample_count=2,
+                activity_score=0.1,
+            ),
+            HeatmapBin(
+                start_hz=14002000,
+                end_hz=14003999,
+                center_hz=14003000,
+                avg_s_meter=48.0,
+                peak_s_meter=60,
+                sample_count=2,
+                activity_score=0.9,
+            ),
+        ]
+
+        rendered = scanner.format_adaptive_heatmap(bins)
+        assert "Adaptive Band Activity Heatmap" in rendered
+        assert "14.001 MHz" in rendered
+        assert "score=0.90" in rendered
+        assert "Bins: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
