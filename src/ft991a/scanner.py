@@ -124,6 +124,23 @@ class HotspotWindowClockStep:
     revisit_epoch_ms: int
 
 
+@dataclass
+class HotspotWindowNowState:
+    """Current/next step advisory from a hotspot wall-clock schedule."""
+
+    now_epoch_ms: int
+    cycle_ms: int
+    cycle_offset_ms: int
+    active_rank: int
+    active_center_hz: int
+    active_start_epoch_ms: int
+    active_end_epoch_ms: int
+    ms_until_switch: int
+    next_rank: int
+    next_center_hz: int
+    next_start_epoch_ms: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -754,6 +771,100 @@ class BandScanner:
             )
 
         lines.extend(["", f"Clock steps: {len(steps)}"])
+        return "\n".join(lines)
+
+    def get_hotspot_window_now(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+    ) -> Optional[HotspotWindowNowState]:
+        """Resolve the active and upcoming review steps at the current wall-clock time."""
+        if not steps:
+            return None
+
+        ordered = sorted(steps, key=lambda s: (s.start_epoch_ms, s.rank))
+        anchor_ms = ordered[0].start_epoch_ms
+        cycle_ms = max(
+            1,
+            max(step.revisit_epoch_ms - step.start_epoch_ms for step in ordered),
+        )
+
+        now_ms = int(time.time() * 1000) if now_epoch_ms is None else int(now_epoch_ms)
+        if now_ms < anchor_ms:
+            cycle_index = 0
+            cycle_offset_ms = 0
+        else:
+            delta = now_ms - anchor_ms
+            cycle_index = delta // cycle_ms
+            cycle_offset_ms = delta % cycle_ms
+
+        offsets = [
+            (
+                step,
+                max(0, step.start_epoch_ms - anchor_ms),
+                max(0, step.end_epoch_ms - anchor_ms),
+            )
+            for step in ordered
+        ]
+
+        active_idx = 0
+        for idx, (_, start_off, end_off) in enumerate(offsets):
+            if start_off <= cycle_offset_ms < end_off:
+                active_idx = idx
+                break
+        else:
+            if cycle_offset_ms >= offsets[-1][2]:
+                active_idx = len(offsets) - 1
+
+        active_step, active_start_off, active_end_off = offsets[active_idx]
+        active_start_epoch_ms = anchor_ms + (cycle_index * cycle_ms) + active_start_off
+        active_end_epoch_ms = anchor_ms + (cycle_index * cycle_ms) + active_end_off
+
+        next_idx = (active_idx + 1) % len(offsets)
+        next_step, next_start_off, _ = offsets[next_idx]
+        next_cycle_index = cycle_index + (1 if next_idx == 0 else 0)
+        next_start_epoch_ms = anchor_ms + (next_cycle_index * cycle_ms) + next_start_off
+
+        return HotspotWindowNowState(
+            now_epoch_ms=now_ms,
+            cycle_ms=cycle_ms,
+            cycle_offset_ms=cycle_offset_ms,
+            active_rank=active_step.rank,
+            active_center_hz=active_step.center_hz,
+            active_start_epoch_ms=active_start_epoch_ms,
+            active_end_epoch_ms=active_end_epoch_ms,
+            ms_until_switch=max(0, active_end_epoch_ms - now_ms),
+            next_rank=next_step.rank,
+            next_center_hz=next_step.center_hz,
+            next_start_epoch_ms=next_start_epoch_ms,
+        )
+
+    def format_hotspot_window_now(
+        self,
+        state: Optional[HotspotWindowNowState],
+        title: str = "Hotspot Window Now",
+    ) -> str:
+        """Render active/next review guidance for the current schedule position."""
+        if state is None:
+            return f"{title}\n(No active schedule)"
+
+        def _fmt(epoch_ms: int) -> str:
+            dt = datetime.fromtimestamp(epoch_ms / 1000.0)
+            return dt.strftime("%H:%M:%S.%f")[:-3]
+
+        lines = [f"{title}", "=" * len(title), ""]
+        lines.append(
+            f"Now: {_fmt(state.now_epoch_ms)}  cycle={state.cycle_ms} ms  offset=+{state.cycle_offset_ms} ms"
+        )
+        lines.append(
+            f"Active: P{state.active_rank} @ {state.active_center_hz/1e6:8.3f} MHz  "
+            f"window={_fmt(state.active_start_epoch_ms)}→{_fmt(state.active_end_epoch_ms)}  "
+            f"switch-in={state.ms_until_switch} ms"
+        )
+        lines.append(
+            f"Next:   P{state.next_rank} @ {state.next_center_hz/1e6:8.3f} MHz  "
+            f"starts={_fmt(state.next_start_epoch_ms)}"
+        )
         return "\n".join(lines)
 
     def format_scan_results(

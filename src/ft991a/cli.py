@@ -412,6 +412,11 @@ def cli_main():
         action="store_true",
         help="Show wall-clock schedule projection anchored to now from the window timeline",
     )
+    scan_band_parser.add_argument(
+        "--window-now",
+        action="store_true",
+        help="Show current active/next hotspot window step from the wall-clock schedule",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -924,6 +929,7 @@ def cli_main():
                         or args.window_plan
                         or args.window_timeline
                         or args.window_clock
+                        or args.window_now
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -945,6 +951,7 @@ def cli_main():
                         or args.window_plan
                         or args.window_timeline
                         or args.window_clock
+                        or args.window_now
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -958,7 +965,7 @@ def cli_main():
                         print(scanner.format_heatmap_hotspots(hotspots))
 
                     windows = []
-                    if args.hotspot_windows or args.window_plan or args.window_timeline or args.window_clock:
+                    if args.hotspot_windows or args.window_plan or args.window_timeline or args.window_clock or args.window_now:
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
                             max_gap_hz=max(0, args.window_gap_hz),
@@ -968,7 +975,7 @@ def cli_main():
                         print()
                         print(scanner.format_hotspot_windows(windows))
 
-                    if args.window_plan or args.window_timeline or args.window_clock:
+                    if args.window_plan or args.window_timeline or args.window_clock or args.window_now:
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
                             cycle_ms=max(1, args.plan_cycle_ms),
@@ -980,7 +987,7 @@ def cli_main():
                             print(scanner.format_hotspot_window_plan(plan_steps))
 
                         timeline_steps = []
-                        if args.window_timeline or args.window_clock:
+                        if args.window_timeline or args.window_clock or args.window_now:
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
                             )
@@ -993,11 +1000,19 @@ def cli_main():
                                 )
                             )
 
+                        clock_steps = []
+                        if args.window_clock or args.window_now:
+                            clock_steps = scanner.build_hotspot_window_clock(timeline_steps)
+
                         if args.window_clock:
                             print()
+                            print(scanner.format_hotspot_window_clock(clock_steps))
+
+                        if args.window_now:
+                            print()
                             print(
-                                scanner.format_hotspot_window_clock(
-                                    scanner.build_hotspot_window_clock(timeline_steps)
+                                scanner.format_hotspot_window_now(
+                                    scanner.get_hotspot_window_now(clock_steps)
                                 )
                             )
                 else:

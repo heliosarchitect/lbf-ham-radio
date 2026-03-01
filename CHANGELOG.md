@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.15.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Live Now-State Advisory (Feature 7/20)**
+  - Added schedule-position resolver for wall-clock hotspot plans (`BandScanner.get_hotspot_window_now`)
+  - Added active/next terminal formatter for live operator guidance (`BandScanner.format_hotspot_window_now`)
+  - Added `HotspotWindowNowState` model for explicit active-step and upcoming-step metadata
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-now`
+  - Composes with existing Feature 1/2/3/4/5/6 heatmap → hotspot → window → plan → timeline → clock flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for now-state resolution, cycle wrap handling, and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.15.0`.
+
 ## [v0.14.0] - 2026-03-01
 
 ### ✨ Features
