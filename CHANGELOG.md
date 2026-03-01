@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.13.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Timeline Projection (Feature 5/20)**
+  - Added timeline projection from ranked hotspot review plans (`BandScanner.build_hotspot_window_timeline`)
+  - Added timeline terminal formatter with start/end/revisit offsets (`BandScanner.format_hotspot_window_timeline`)
+  - Added `HotspotWindowTimelineStep` model for explicit cycle schedule boundaries
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-timeline`
+  - Composes with existing Feature 1/2/3/4 heatmap → hotspot → window → plan flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for timeline offset projection and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.13.0`.
+
 ## [v0.12.0] - 2026-03-01
 
 ### ✨ Features

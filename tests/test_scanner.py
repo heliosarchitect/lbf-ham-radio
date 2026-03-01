@@ -19,6 +19,7 @@ from ft991a.scanner import (
     HeatmapHotspot,
     HotspotWindow,
     HotspotWindowPlanStep,
+    HotspotWindowTimelineStep,
     ScanResult,
 )
 
@@ -395,6 +396,40 @@ class TestBandScanner:
         assert "dwell=18200 ms" in rendered
         assert "priority=1.12" in rendered
         assert "Plan steps: 2" in rendered
+
+    def test_build_hotspot_window_timeline(self, scanner):
+        """Timeline builder should project per-step offsets within one cycle."""
+        steps = [
+            HotspotWindowPlanStep(1, 14003999, 14002000, 14005999, 18000, 1.12, 2),
+            HotspotWindowPlanStep(2, 14012999, 14012000, 14013999, 12000, 0.77, 1),
+        ]
+
+        timeline = scanner.build_hotspot_window_timeline(steps)
+
+        assert len(timeline) == 2
+        assert all(isinstance(step, HotspotWindowTimelineStep) for step in timeline)
+        assert timeline[0].rank == 1
+        assert timeline[0].start_offset_ms == 0
+        assert timeline[0].end_offset_ms == 18000
+        assert timeline[1].start_offset_ms == 18000
+        assert timeline[1].end_offset_ms == 30000
+        assert timeline[0].revisit_after_ms == 30000
+        assert timeline[1].revisit_after_ms == 30000
+
+    def test_format_hotspot_window_timeline(self, scanner):
+        """Timeline formatter should render offsets and revisit cadence."""
+        steps = [
+            HotspotWindowTimelineStep(1, 14003999, 18000, 0, 18000, 30000),
+            HotspotWindowTimelineStep(2, 14012999, 12000, 18000, 30000, 30000),
+        ]
+
+        rendered = scanner.format_hotspot_window_timeline(steps)
+
+        assert "Hotspot Window Timeline" in rendered
+        assert "T1" in rendered
+        assert "start=+    0 ms" in rendered
+        assert "revisit=30000 ms" in rendered
+        assert "Timeline steps: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

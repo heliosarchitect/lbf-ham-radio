@@ -99,6 +99,18 @@ class HotspotWindowPlanStep:
     hotspot_count: int
 
 
+@dataclass
+class HotspotWindowTimelineStep:
+    """Timeline projection for one window-plan step within a review cycle."""
+
+    rank: int
+    center_hz: int
+    dwell_ms: int
+    start_offset_ms: int
+    end_offset_ms: int
+    revisit_after_ms: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -627,6 +639,56 @@ class BandScanner:
             )
 
         lines.extend(["", f"Plan steps: {len(steps)}  cycle={total_dwell_ms} ms"])
+        return "\n".join(lines)
+
+    def build_hotspot_window_timeline(
+        self,
+        steps: List[HotspotWindowPlanStep],
+    ) -> List[HotspotWindowTimelineStep]:
+        """Project ranked plan steps into a single-cycle time timeline.
+
+        RX/analysis only: does not tune or transmit, only computes schedule offsets.
+        """
+        if not steps:
+            return []
+
+        ordered = sorted(steps, key=lambda s: s.rank)
+        cycle_ms = sum(step.dwell_ms for step in ordered)
+
+        timeline: List[HotspotWindowTimelineStep] = []
+        offset_ms = 0
+        for step in ordered:
+            end_offset = offset_ms + step.dwell_ms
+            timeline.append(
+                HotspotWindowTimelineStep(
+                    rank=step.rank,
+                    center_hz=step.center_hz,
+                    dwell_ms=step.dwell_ms,
+                    start_offset_ms=offset_ms,
+                    end_offset_ms=end_offset,
+                    revisit_after_ms=cycle_ms,
+                )
+            )
+            offset_ms = end_offset
+
+        return timeline
+
+    def format_hotspot_window_timeline(
+        self,
+        steps: List[HotspotWindowTimelineStep],
+        title: str = "Hotspot Window Timeline",
+    ) -> str:
+        """Render timeline offsets for one review cycle."""
+        if not steps:
+            return f"{title}\n(No timeline)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+        for step in steps:
+            lines.append(
+                f"T{step.rank:<2} {step.center_hz/1e6:8.3f} MHz  start=+{step.start_offset_ms:5} ms  end=+{step.end_offset_ms:5} ms  dwell={step.dwell_ms:5} ms  revisit={step.revisit_after_ms:5} ms"
+            )
+
+        lines.extend(["", f"Timeline steps: {len(steps)}"])
         return "\n".join(lines)
 
     def format_scan_results(

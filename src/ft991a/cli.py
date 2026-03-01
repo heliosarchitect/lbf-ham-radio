@@ -402,6 +402,11 @@ def cli_main():
         default=30000,
         help="Target review cycle duration used for window-plan dwell allocation (default: 30000)",
     )
+    scan_band_parser.add_argument(
+        "--window-timeline",
+        action="store_true",
+        help="Show single-cycle timeline offsets/revisit cadence from ranked window plan",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -912,6 +917,7 @@ def cli_main():
                         or args.hotspots
                         or args.hotspot_windows
                         or args.window_plan
+                        or args.window_timeline
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -927,7 +933,12 @@ def cli_main():
                         print(chart)
 
                     hotspots = []
-                    if args.hotspots or args.hotspot_windows or args.window_plan:
+                    if (
+                        args.hotspots
+                        or args.hotspot_windows
+                        or args.window_plan
+                        or args.window_timeline
+                    ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
                             min_score=max(0.0, min(1.0, args.hotspot_threshold)),
@@ -940,7 +951,7 @@ def cli_main():
                         print(scanner.format_heatmap_hotspots(hotspots))
 
                     windows = []
-                    if args.hotspot_windows or args.window_plan:
+                    if args.hotspot_windows or args.window_plan or args.window_timeline:
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
                             max_gap_hz=max(0, args.window_gap_hz),
@@ -950,14 +961,27 @@ def cli_main():
                         print()
                         print(scanner.format_hotspot_windows(windows))
 
-                    if args.window_plan:
+                    if args.window_plan or args.window_timeline:
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
                             cycle_ms=max(1, args.plan_cycle_ms),
                             min_dwell_ms=max(200, args.dwell),
                         )
-                        print()
-                        print(scanner.format_hotspot_window_plan(plan_steps))
+
+                        if args.window_plan:
+                            print()
+                            print(scanner.format_hotspot_window_plan(plan_steps))
+
+                        if args.window_timeline:
+                            timeline_steps = scanner.build_hotspot_window_timeline(
+                                plan_steps
+                            )
+                            print()
+                            print(
+                                scanner.format_hotspot_window_timeline(
+                                    timeline_steps
+                                )
+                            )
                 else:
                     print("No scan results")
 
