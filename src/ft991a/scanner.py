@@ -155,6 +155,20 @@ class HotspotWindowUpcomingStep:
     cycle_index: int
 
 
+@dataclass
+class HotspotWindowBrief:
+    """Compact operator handoff brief from now-state + upcoming schedule."""
+
+    generated_epoch_ms: int
+    cycle_ms: int
+    active_rank: int
+    active_center_hz: int
+    ms_until_switch: int
+    next_rank: int
+    next_center_hz: int
+    upcoming: List[HotspotWindowUpcomingStep]
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -978,6 +992,64 @@ class BandScanner:
             )
 
         lines.extend(["", f"Upcoming steps: {len(steps)}"])
+        return "\n".join(lines)
+
+    def build_hotspot_window_brief(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        upcoming_count: int = 3,
+    ) -> Optional[HotspotWindowBrief]:
+        """Build compact live handoff brief for operator situational awareness."""
+        state = self.get_hotspot_window_now(steps, now_epoch_ms=now_epoch_ms)
+        if state is None:
+            return None
+
+        upcoming = self.build_hotspot_window_upcoming(
+            steps,
+            now_epoch_ms=state.now_epoch_ms,
+            count=max(0, upcoming_count),
+        )
+        return HotspotWindowBrief(
+            generated_epoch_ms=state.now_epoch_ms,
+            cycle_ms=state.cycle_ms,
+            active_rank=state.active_rank,
+            active_center_hz=state.active_center_hz,
+            ms_until_switch=state.ms_until_switch,
+            next_rank=state.next_rank,
+            next_center_hz=state.next_center_hz,
+            upcoming=upcoming,
+        )
+
+    def format_hotspot_window_brief(
+        self,
+        brief: Optional[HotspotWindowBrief],
+        title: str = "Hotspot Window Brief",
+    ) -> str:
+        """Render compact now + upcoming handoff brief for manual RX operations."""
+        if brief is None:
+            return f"{title}\n(No active schedule)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+        lines.append(
+            f"Active now: P{brief.active_rank} @ {brief.active_center_hz/1e6:8.3f} MHz"
+        )
+        lines.append(
+            f"Switch in: {brief.ms_until_switch} ms  → Next: P{brief.next_rank} @ {brief.next_center_hz/1e6:8.3f} MHz"
+        )
+        lines.append(f"Cycle: {brief.cycle_ms} ms")
+
+        if brief.upcoming:
+            lines.append("")
+            lines.append("Upcoming handoffs:")
+            for step in brief.upcoming:
+                lines.append(
+                    f"  U{step.sequence}: P{step.rank} @ {step.center_hz/1e6:8.3f} MHz in {step.starts_in_ms} ms"
+                )
+        else:
+            lines.append("")
+            lines.append("Upcoming handoffs: none")
+
         return "\n".join(lines)
 
     def format_scan_results(

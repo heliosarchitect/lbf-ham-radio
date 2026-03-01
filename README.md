@@ -30,7 +30,7 @@ AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI*
 - `ft991a-cli freq set <hz>` — Set frequency
 - `ft991a-cli mode set <mode>` — Change mode
 - `ft991a-cli cw encode/decode/send` — Morse code operations
-- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N] [--hotspot-windows --window-gap-hz HZ] [--window-plan --plan-cycle-ms MS] [--window-timeline] [--window-clock] [--window-now] [--window-upcoming --upcoming-count N]` — Adaptive RX band activity heatmap + ranked hotspots + merged hotspot windows + ranked RX review plan + cycle timeline projection + wall-clock sync schedule + upcoming handoff projection (Features 1/20–8/20)
+- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N] [--hotspot-windows --window-gap-hz HZ] [--window-plan --plan-cycle-ms MS] [--window-timeline] [--window-clock] [--window-now] [--window-upcoming --upcoming-count N] [--window-brief --upcoming-count N]` — Adaptive RX band activity heatmap + ranked hotspots + merged hotspot windows + ranked RX review plan + cycle timeline projection + wall-clock sync schedule + upcoming handoff projection + compact live handoff brief (Features 1/20–9/20)
 
 #### Adaptive Heatmap — Operator Note (Interface-Controlled)
 - Scope is restricted to the existing `scan band` command path.
@@ -42,6 +42,7 @@ AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI*
 - `--window-clock` anchors timeline offsets to current local wall-clock time so teams can synchronize manual RX monitoring in real time.
 - `--window-now` resolves the current active window plus next scheduled step from that wall-clock plan for live RX handoff guidance.
 - `--window-upcoming` projects the next queued handoff steps from the current wall-clock position (`--upcoming-count`) so operators can pre-brief upcoming manual tune sequence.
+- `--window-brief` provides one compact RX handoff brief (active frequency, switch countdown, and upcoming queue) to reduce operator context switching during manual monitoring.
 - These features are receive-side analysis only; they do not add or modify TX behavior.
 - No new top-level CLI groups or web/MCP API surfaces are introduced by these features.
 

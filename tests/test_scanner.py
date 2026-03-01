@@ -18,6 +18,7 @@ from ft991a.scanner import (
     HeatmapBin,
     HeatmapHotspot,
     HotspotWindow,
+    HotspotWindowBrief,
     HotspotWindowClockStep,
     HotspotWindowNowState,
     HotspotWindowPlanStep,
@@ -554,6 +555,50 @@ class TestBandScanner:
         assert "P2" in rendered
         assert "starts-in=13000 ms" in rendered
         assert "Upcoming steps: 2" in rendered
+
+    def test_build_hotspot_window_brief(self, scanner):
+        """Brief builder should compose now-state with upcoming handoff list."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        brief = scanner.build_hotspot_window_brief(
+            clock,
+            now_epoch_ms=1_700_000_005_000,
+            upcoming_count=2,
+        )
+
+        assert isinstance(brief, HotspotWindowBrief)
+        assert brief.active_rank == 1
+        assert brief.next_rank == 2
+        assert brief.ms_until_switch == 13000
+        assert len(brief.upcoming) == 2
+        assert brief.upcoming[0].rank == 2
+
+    def test_format_hotspot_window_brief(self, scanner):
+        """Brief formatter should provide compact active/switch/upcoming guidance."""
+        brief = HotspotWindowBrief(
+            generated_epoch_ms=1_700_000_005_000,
+            cycle_ms=30000,
+            active_rank=1,
+            active_center_hz=14003999,
+            ms_until_switch=13000,
+            next_rank=2,
+            next_center_hz=14012999,
+            upcoming=[
+                HotspotWindowUpcomingStep(1, 2, 14012999, 13000, 1_700_000_018_000, 1_700_000_030_000, 12000, 0),
+                HotspotWindowUpcomingStep(2, 1, 14003999, 25000, 1_700_000_030_000, 1_700_000_048_000, 18000, 1),
+            ],
+        )
+
+        rendered = scanner.format_hotspot_window_brief(brief)
+
+        assert "Hotspot Window Brief" in rendered
+        assert "Active now: P1" in rendered
+        assert "Switch in: 13000 ms" in rendered
+        assert "Upcoming handoffs:" in rendered
+        assert "U1: P2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
