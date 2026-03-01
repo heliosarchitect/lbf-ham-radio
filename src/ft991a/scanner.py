@@ -141,6 +141,20 @@ class HotspotWindowNowState:
     next_start_epoch_ms: int
 
 
+@dataclass
+class HotspotWindowUpcomingStep:
+    """Upcoming schedule handoff derived from wall-clock hotspot windows."""
+
+    sequence: int
+    rank: int
+    center_hz: int
+    starts_in_ms: int
+    start_epoch_ms: int
+    end_epoch_ms: int
+    dwell_ms: int
+    cycle_index: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -865,6 +879,105 @@ class BandScanner:
             f"Next:   P{state.next_rank} @ {state.next_center_hz/1e6:8.3f} MHz  "
             f"starts={_fmt(state.next_start_epoch_ms)}"
         )
+        return "\n".join(lines)
+
+    def build_hotspot_window_upcoming(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        count: int = 3,
+    ) -> List[HotspotWindowUpcomingStep]:
+        """Project next schedule handoffs from the current wall-clock position."""
+        if not steps or count <= 0:
+            return []
+
+        ordered = sorted(steps, key=lambda s: (s.start_epoch_ms, s.rank))
+        anchor_ms = ordered[0].start_epoch_ms
+        cycle_ms = max(
+            1,
+            max(step.revisit_epoch_ms - step.start_epoch_ms for step in ordered),
+        )
+
+        now_ms = int(time.time() * 1000) if now_epoch_ms is None else int(now_epoch_ms)
+
+        if now_ms < anchor_ms:
+            cycle_index = 0
+            cycle_offset_ms = 0
+        else:
+            delta = now_ms - anchor_ms
+            cycle_index = delta // cycle_ms
+            cycle_offset_ms = delta % cycle_ms
+
+        offsets = [
+            (
+                step,
+                max(0, step.start_epoch_ms - anchor_ms),
+                max(0, step.end_epoch_ms - anchor_ms),
+            )
+            for step in ordered
+        ]
+
+        start_idx = None
+        for idx, (_, start_off, _) in enumerate(offsets):
+            if start_off > cycle_offset_ms:
+                start_idx = idx
+                break
+
+        start_cycle = cycle_index
+        if start_idx is None:
+            start_idx = 0
+            start_cycle += 1
+
+        upcoming: List[HotspotWindowUpcomingStep] = []
+        current_idx = start_idx
+        current_cycle = start_cycle
+
+        for seq in range(1, count + 1):
+            step, start_off, end_off = offsets[current_idx]
+            start_epoch_ms = anchor_ms + (current_cycle * cycle_ms) + start_off
+            end_epoch_ms = anchor_ms + (current_cycle * cycle_ms) + end_off
+            upcoming.append(
+                HotspotWindowUpcomingStep(
+                    sequence=seq,
+                    rank=step.rank,
+                    center_hz=step.center_hz,
+                    starts_in_ms=max(0, start_epoch_ms - now_ms),
+                    start_epoch_ms=start_epoch_ms,
+                    end_epoch_ms=end_epoch_ms,
+                    dwell_ms=max(0, end_epoch_ms - start_epoch_ms),
+                    cycle_index=current_cycle,
+                )
+            )
+
+            current_idx += 1
+            if current_idx >= len(offsets):
+                current_idx = 0
+                current_cycle += 1
+
+        return upcoming
+
+    def format_hotspot_window_upcoming(
+        self,
+        steps: List[HotspotWindowUpcomingStep],
+        title: str = "Hotspot Window Upcoming",
+    ) -> str:
+        """Render upcoming handoff schedule for near-term operator planning."""
+        if not steps:
+            return f"{title}\n(No upcoming schedule)"
+
+        def _fmt(epoch_ms: int) -> str:
+            dt = datetime.fromtimestamp(epoch_ms / 1000.0)
+            return dt.strftime("%H:%M:%S.%f")[:-3]
+
+        lines = [f"{title}", "=" * len(title), ""]
+        for step in steps:
+            lines.append(
+                f"U{step.sequence:<2} P{step.rank:<2} @ {step.center_hz/1e6:8.3f} MHz  "
+                f"starts-in={step.starts_in_ms:5} ms  start={_fmt(step.start_epoch_ms)}  "
+                f"end={_fmt(step.end_epoch_ms)}  dwell={step.dwell_ms:5} ms  cycle={step.cycle_index}"
+            )
+
+        lines.extend(["", f"Upcoming steps: {len(steps)}"])
         return "\n".join(lines)
 
     def format_scan_results(

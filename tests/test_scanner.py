@@ -22,6 +22,7 @@ from ft991a.scanner import (
     HotspotWindowNowState,
     HotspotWindowPlanStep,
     HotspotWindowTimelineStep,
+    HotspotWindowUpcomingStep,
     ScanResult,
 )
 
@@ -518,6 +519,41 @@ class TestBandScanner:
         assert "Active: P1" in rendered
         assert "Next:   P2" in rendered
         assert "cycle=30000 ms" in rendered
+
+    def test_build_hotspot_window_upcoming(self, scanner):
+        """Upcoming resolver should list next handoffs in schedule order."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        upcoming = scanner.build_hotspot_window_upcoming(
+            clock,
+            now_epoch_ms=1_700_000_005_000,
+            count=3,
+        )
+
+        assert len(upcoming) == 3
+        assert all(isinstance(step, HotspotWindowUpcomingStep) for step in upcoming)
+        assert upcoming[0].rank == 2
+        assert upcoming[0].starts_in_ms == 13000
+        assert upcoming[1].rank == 1
+        assert upcoming[1].cycle_index == 1
+
+    def test_format_hotspot_window_upcoming(self, scanner):
+        """Upcoming formatter should render sequence, countdown, and timing info."""
+        steps = [
+            HotspotWindowUpcomingStep(1, 2, 14012999, 13000, 1_700_000_018_000, 1_700_000_030_000, 12000, 0),
+            HotspotWindowUpcomingStep(2, 1, 14003999, 25000, 1_700_000_030_000, 1_700_000_048_000, 18000, 1),
+        ]
+
+        rendered = scanner.format_hotspot_window_upcoming(steps)
+
+        assert "Hotspot Window Upcoming" in rendered
+        assert "U1" in rendered
+        assert "P2" in rendered
+        assert "starts-in=13000 ms" in rendered
+        assert "Upcoming steps: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

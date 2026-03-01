@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.16.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Upcoming Handoff Projection (Feature 8/20)**
+  - Added upcoming handoff resolver for wall-clock hotspot schedules (`BandScanner.build_hotspot_window_upcoming`)
+  - Added upcoming handoff terminal formatter for near-term operator sequencing (`BandScanner.format_hotspot_window_upcoming`)
+  - Added `HotspotWindowUpcomingStep` model for explicit sequence/ETA/cycle metadata
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-upcoming [--upcoming-count N]`
+  - Composes with existing Feature 1/2/3/4/5/6/7 heatmap → hotspot → window → plan → timeline → clock → now flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for upcoming handoff projection ordering/cycle wrap and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.16.0`.
+
 ## [v0.15.0] - 2026-03-01
 
 ### ✨ Features
