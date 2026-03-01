@@ -86,6 +86,19 @@ class HotspotWindow:
     hotspot_count: int
 
 
+@dataclass
+class HotspotWindowPlanStep:
+    """Operator review plan step derived from merged hotspot windows."""
+
+    rank: int
+    center_hz: int
+    start_hz: int
+    end_hz: int
+    dwell_ms: int
+    priority_score: float
+    hotspot_count: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -551,6 +564,69 @@ class BandScanner:
             )
 
         lines.extend(["", f"Windows: {len(windows)}"])
+        return "\n".join(lines)
+
+    def build_hotspot_window_plan(
+        self,
+        windows: List[HotspotWindow],
+        cycle_ms: int = 30000,
+        min_dwell_ms: int = 1200,
+    ) -> List[HotspotWindowPlanStep]:
+        """Build a ranked operator review plan from hotspot windows.
+
+        Produces receive-only review guidance (order + dwell time) without
+        changing radio state.
+        """
+        if not windows:
+            return []
+
+        safe_cycle_ms = max(min_dwell_ms * len(windows), cycle_ms)
+        scored = sorted(
+            windows,
+            key=lambda w: (w.avg_score, w.peak_s_meter, w.hotspot_count),
+            reverse=True,
+        )
+
+        weights = [max(0.01, w.avg_score * max(1, w.hotspot_count)) for w in scored]
+        weight_sum = sum(weights) or 1.0
+
+        plan: List[HotspotWindowPlanStep] = []
+        for idx, (window, weight) in enumerate(zip(scored, weights), start=1):
+            share = weight / weight_sum
+            dwell_ms = max(min_dwell_ms, int(round(safe_cycle_ms * share)))
+            priority_score = window.avg_score * (1.0 + (0.15 * (window.hotspot_count - 1)))
+            plan.append(
+                HotspotWindowPlanStep(
+                    rank=idx,
+                    center_hz=window.center_hz,
+                    start_hz=window.start_hz,
+                    end_hz=window.end_hz,
+                    dwell_ms=dwell_ms,
+                    priority_score=priority_score,
+                    hotspot_count=window.hotspot_count,
+                )
+            )
+
+        return plan
+
+    def format_hotspot_window_plan(
+        self,
+        steps: List[HotspotWindowPlanStep],
+        title: str = "Hotspot Window Review Plan",
+    ) -> str:
+        """Render ranked hotspot window review plan for operator workflow."""
+        if not steps:
+            return f"{title}\n(No review plan)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+        total_dwell_ms = 0
+        for step in steps:
+            total_dwell_ms += step.dwell_ms
+            lines.append(
+                f"P{step.rank:<2} {step.center_hz/1e6:8.3f} MHz  range={step.start_hz/1e6:8.3f}-{step.end_hz/1e6:8.3f}  dwell={step.dwell_ms:5} ms  priority={step.priority_score:0.2f}  bins={step.hotspot_count:2}"
+            )
+
+        lines.extend(["", f"Plan steps: {len(steps)}  cycle={total_dwell_ms} ms"])
         return "\n".join(lines)
 
     def format_scan_results(

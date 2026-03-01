@@ -391,6 +391,17 @@ def cli_main():
         default=1000,
         help="Maximum gap between hotspot bins when merging windows (default: 1000)",
     )
+    scan_band_parser.add_argument(
+        "--window-plan",
+        action="store_true",
+        help="Show ranked RX review plan from merged hotspot windows",
+    )
+    scan_band_parser.add_argument(
+        "--plan-cycle-ms",
+        type=int,
+        default=30000,
+        help="Target review cycle duration used for window-plan dwell allocation (default: 30000)",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -896,7 +907,12 @@ def cli_main():
 
                 if results:
                     heatmap = None
-                    if args.heatmap or args.hotspots or args.hotspot_windows:
+                    if (
+                        args.heatmap
+                        or args.hotspots
+                        or args.hotspot_windows
+                        or args.window_plan
+                    ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
                         )
@@ -911,7 +927,7 @@ def cli_main():
                         print(chart)
 
                     hotspots = []
-                    if args.hotspots or args.hotspot_windows:
+                    if args.hotspots or args.hotspot_windows or args.window_plan:
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
                             min_score=max(0.0, min(1.0, args.hotspot_threshold)),
@@ -923,13 +939,25 @@ def cli_main():
                         print()
                         print(scanner.format_heatmap_hotspots(hotspots))
 
-                    if args.hotspot_windows:
+                    windows = []
+                    if args.hotspot_windows or args.window_plan:
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
                             max_gap_hz=max(0, args.window_gap_hz),
                         )
+
+                    if args.hotspot_windows:
                         print()
                         print(scanner.format_hotspot_windows(windows))
+
+                    if args.window_plan:
+                        plan_steps = scanner.build_hotspot_window_plan(
+                            windows,
+                            cycle_ms=max(1, args.plan_cycle_ms),
+                            min_dwell_ms=max(200, args.dwell),
+                        )
+                        print()
+                        print(scanner.format_hotspot_window_plan(plan_steps))
                 else:
                     print("No scan results")
 

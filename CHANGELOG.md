@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.12.0] - 2026-03-01
+
+### ✨ Features
+
+- **Ranked Hotspot Window Review Plan (Feature 4/20)**
+  - Added ranked RX review plan builder from merged hotspot windows (`BandScanner.build_hotspot_window_plan`)
+  - Added review plan terminal formatter (`BandScanner.format_hotspot_window_plan`)
+  - Added `HotspotWindowPlanStep` data model for explicit scanner-layer review sequencing
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-plan [--plan-cycle-ms MS]`
+  - Composes with existing Feature 1/2/3 heatmap → hotspot → window flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for hotspot window plan ranking/dwell allocation and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.12.0`.
+
 ## [v0.11.0] - 2026-03-01
 
 ### ✨ Features

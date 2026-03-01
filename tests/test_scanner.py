@@ -18,6 +18,7 @@ from ft991a.scanner import (
     HeatmapBin,
     HeatmapHotspot,
     HotspotWindow,
+    HotspotWindowPlanStep,
     ScanResult,
 )
 
@@ -359,6 +360,41 @@ class TestBandScanner:
         assert "14.004 MHz" in rendered
         assert "avg-score=0.86" in rendered
         assert "Windows: 2" in rendered
+
+    def test_build_hotspot_window_plan(self, scanner):
+        """Window plan should rank stronger windows and allocate dwell."""
+        windows = [
+            HotspotWindow(14002000, 14005999, 14003999, 62, 0.865, 2),
+            HotspotWindow(14012000, 14013999, 14012999, 49, 0.77, 1),
+        ]
+
+        plan = scanner.build_hotspot_window_plan(
+            windows,
+            cycle_ms=30000,
+            min_dwell_ms=1200,
+        )
+
+        assert len(plan) == 2
+        assert all(isinstance(step, HotspotWindowPlanStep) for step in plan)
+        assert plan[0].rank == 1
+        assert plan[0].priority_score >= plan[1].priority_score
+        assert plan[0].dwell_ms >= 1200
+        assert plan[1].dwell_ms >= 1200
+
+    def test_format_hotspot_window_plan(self, scanner):
+        """Window plan formatter should render ranked review steps."""
+        steps = [
+            HotspotWindowPlanStep(1, 14003999, 14002000, 14005999, 18200, 1.12, 2),
+            HotspotWindowPlanStep(2, 14012999, 14012000, 14013999, 11800, 0.77, 1),
+        ]
+
+        rendered = scanner.format_hotspot_window_plan(steps)
+
+        assert "Hotspot Window Review Plan" in rendered
+        assert "P1" in rendered
+        assert "dwell=18200 ms" in rendered
+        assert "priority=1.12" in rendered
+        assert "Plan steps: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
