@@ -30,12 +30,13 @@ AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI*
 - `ft991a-cli freq set <hz>` — Set frequency
 - `ft991a-cli mode set <mode>` — Change mode
 - `ft991a-cli cw encode/decode/send` — Morse code operations
-- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N]` — Adaptive RX band activity heatmap + ranked hotspot summary (Features 1/20 and 2/20)
+- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N] [--hotspot-windows --window-gap-hz HZ]` — Adaptive RX band activity heatmap + ranked hotspots + merged hotspot windows (Features 1/20, 2/20, 3/20)
 
 #### Adaptive Heatmap — Operator Note (Interface-Controlled)
 - Scope is restricted to the existing `scan band` command path.
 - `--heatmap` enables adaptive RX activity summarization; `--max-bins` limits output density.
 - `--hotspots` adds ranked candidate frequencies from the same adaptive heatmap model (`--hotspot-threshold`, `--hotspot-top`).
+- `--hotspot-windows` merges nearby hotspot bins into tune-ready windows (`--window-gap-hz`) to reduce frequency hopping during manual review.
 - These features are receive-side analysis only; they do not add or modify TX behavior.
 - No new top-level CLI groups or web/MCP API surfaces are introduced by these features.
 

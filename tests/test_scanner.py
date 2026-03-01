@@ -17,6 +17,7 @@ from ft991a.scanner import (
     BandScanner,
     HeatmapBin,
     HeatmapHotspot,
+    HotspotWindow,
     ScanResult,
 )
 
@@ -326,6 +327,38 @@ class TestBandScanner:
         assert "14.003 MHz" in rendered
         assert "score=0.92" in rendered
         assert "Candidates: 2" in rendered
+
+    def test_merge_hotspot_windows(self, scanner):
+        """Nearby hotspot bins should merge into stable tune windows."""
+        hotspots = [
+            HeatmapHotspot(14002000, 14003999, 14003000, 42.0, 62, 3, 0.92),
+            HeatmapHotspot(14004000, 14005999, 14005000, 36.0, 54, 2, 0.81),
+            HeatmapHotspot(14012000, 14013999, 14013000, 35.0, 49, 2, 0.77),
+        ]
+
+        windows = scanner.merge_hotspot_windows(hotspots, max_gap_hz=1000)
+
+        assert len(windows) == 2
+        assert all(isinstance(w, HotspotWindow) for w in windows)
+        assert windows[0].start_hz == 14002000
+        assert windows[0].end_hz == 14005999
+        assert windows[0].hotspot_count == 2
+        assert windows[1].hotspot_count == 1
+
+    def test_format_hotspot_windows(self, scanner):
+        """Window formatter should render merged hotspot windows."""
+        windows = [
+            HotspotWindow(14002000, 14005999, 14003999, 62, 0.865, 2),
+            HotspotWindow(14012000, 14013999, 14012999, 49, 0.77, 1),
+        ]
+
+        rendered = scanner.format_hotspot_windows(windows)
+
+        assert "Hotspot Windows" in rendered
+        assert "W1" in rendered
+        assert "14.004 MHz" in rendered
+        assert "avg-score=0.86" in rendered
+        assert "Windows: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

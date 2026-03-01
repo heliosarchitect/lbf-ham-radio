@@ -74,6 +74,18 @@ class HeatmapHotspot:
     activity_score: float
 
 
+@dataclass
+class HotspotWindow:
+    """Merged hotspot window formed from adjacent hotspot bins."""
+
+    start_hz: int
+    end_hz: int
+    center_hz: int
+    peak_s_meter: int
+    avg_score: float
+    hotspot_count: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -484,6 +496,61 @@ class BandScanner:
             )
 
         lines.extend(["", f"Candidates: {len(hotspots)}"])
+        return "\n".join(lines)
+
+    def merge_hotspot_windows(
+        self, hotspots: List[HeatmapHotspot], max_gap_hz: int = 1000
+    ) -> List[HotspotWindow]:
+        """Merge nearby hotspot bins into tune-ready frequency windows."""
+        if not hotspots:
+            return []
+
+        ordered = sorted(hotspots, key=lambda h: h.start_hz)
+        windows: List[HotspotWindow] = []
+
+        group: List[HeatmapHotspot] = [ordered[0]]
+
+        def _finalize(grouped: List[HeatmapHotspot]) -> HotspotWindow:
+            start_hz = grouped[0].start_hz
+            end_hz = grouped[-1].end_hz
+            avg_score = mean(h.activity_score for h in grouped)
+            peak_s = max(h.peak_s_meter for h in grouped)
+            return HotspotWindow(
+                start_hz=start_hz,
+                end_hz=end_hz,
+                center_hz=(start_hz + end_hz) // 2,
+                peak_s_meter=peak_s,
+                avg_score=avg_score,
+                hotspot_count=len(grouped),
+            )
+
+        for current in ordered[1:]:
+            prev = group[-1]
+            if current.start_hz <= (prev.end_hz + max(0, max_gap_hz)):
+                group.append(current)
+            else:
+                windows.append(_finalize(group))
+                group = [current]
+
+        windows.append(_finalize(group))
+        return windows
+
+    def format_hotspot_windows(
+        self,
+        windows: List[HotspotWindow],
+        title: str = "Hotspot Windows",
+    ) -> str:
+        """Render merged hotspot windows for quick operator tuning."""
+        if not windows:
+            return f"{title}\n(No hotspot windows)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+        for idx, window in enumerate(windows, start=1):
+            lines.append(
+                f"W{idx:<2} {window.center_hz/1e6:8.3f} MHz  range={window.start_hz/1e6:8.3f}-{window.end_hz/1e6:8.3f}  avg-score={window.avg_score:0.2f}  peak={window.peak_s_meter:3}  bins={window.hotspot_count:2}"
+            )
+
+        lines.extend(["", f"Windows: {len(windows)}"])
         return "\n".join(lines)
 
     def format_scan_results(

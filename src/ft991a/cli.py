@@ -380,6 +380,17 @@ def cli_main():
         default=5,
         help="Maximum hotspot candidates to show (default: 5)",
     )
+    scan_band_parser.add_argument(
+        "--hotspot-windows",
+        action="store_true",
+        help="Merge nearby hotspot bins into tune-ready windows",
+    )
+    scan_band_parser.add_argument(
+        "--window-gap-hz",
+        type=int,
+        default=1000,
+        help="Maximum gap between hotspot bins when merging windows (default: 1000)",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -885,7 +896,7 @@ def cli_main():
 
                 if results:
                     heatmap = None
-                    if args.heatmap or args.hotspots:
+                    if args.heatmap or args.hotspots or args.hotspot_windows:
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
                         )
@@ -899,15 +910,26 @@ def cli_main():
                         )
                         print(chart)
 
-                    if args.hotspots:
+                    hotspots = []
+                    if args.hotspots or args.hotspot_windows:
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
                             min_score=max(0.0, min(1.0, args.hotspot_threshold)),
                             top_n=max(1, args.hotspot_top),
                             min_samples=1,
                         )
+
+                    if args.hotspots:
                         print()
                         print(scanner.format_heatmap_hotspots(hotspots))
+
+                    if args.hotspot_windows:
+                        windows = scanner.merge_hotspot_windows(
+                            hotspots,
+                            max_gap_hz=max(0, args.window_gap_hz),
+                        )
+                        print()
+                        print(scanner.format_hotspot_windows(windows))
                 else:
                     print("No scan results")
 

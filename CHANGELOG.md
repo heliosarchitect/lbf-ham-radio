@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.11.0] - 2026-03-01
+
+### ✨ Features
+
+- **Adaptive Hotspot Window Merging (Feature 3/20)**
+  - Added hotspot window merger from ranked adaptive bins (`BandScanner.merge_hotspot_windows`)
+  - Added hotspot window terminal formatter (`BandScanner.format_hotspot_windows`)
+  - Added `HotspotWindow` data model for explicit scanner-layer output boundaries
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --hotspot-windows [--window-gap-hz HZ]`
+  - Composes with existing Feature 1/2 heatmap + hotspot flow and remains RX/analysis only
+  - No new top-level command groups, endpoints, or TX controls introduced
+
+### ✅ Tests
+
+- Added scanner tests for hotspot window merging and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.11.0`.
+
 ## [v0.10.0] - 2026-03-01
 
 ### ✨ Features

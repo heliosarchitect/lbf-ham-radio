@@ -21,7 +21,7 @@ Entry points:
 - ft991a-mcp: Launch MCP server (stdio transport)
 """
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 __author__ = "LBF / Matthew"
 __email__ = "heliosarchitectlbf@gmail.com"
 __license__ = "MIT"
@@ -30,7 +30,14 @@ __license__ = "MIT"
 try:
     from .broadcast import AudioDeviceError, Broadcaster, BroadcastError, TTSError
     from .cat import FT991A, Band, Mode, RadioStatus
-    from .scanner import ActivityResult, BandScanner, HeatmapBin, ScanResult
+    from .scanner import (
+        ActivityResult,
+        BandScanner,
+        HeatmapBin,
+        HeatmapHotspot,
+        HotspotWindow,
+        ScanResult,
+    )
 
     __all__ = [
         "FT991A",
@@ -41,6 +48,8 @@ try:
         "ScanResult",
         "ActivityResult",
         "HeatmapBin",
+        "HeatmapHotspot",
+        "HotspotWindow",
         "Broadcaster",
         "BroadcastError",
         "AudioDeviceError",
