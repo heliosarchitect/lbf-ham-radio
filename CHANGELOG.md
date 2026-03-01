@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.10.0] - 2026-03-01
+
+### ✨ Features
+
+- **Adaptive Heatmap Hotspot Ranking (Feature 2/20)**
+  - Added hotspot extraction from adaptive RX heatmap bins (`BandScanner.extract_heatmap_hotspots`)
+  - Added hotspot terminal formatter (`BandScanner.format_heatmap_hotspots`)
+  - Added `HeatmapHotspot` data model to keep scanner-layer boundaries explicit
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --hotspots [--hotspot-threshold S] [--hotspot-top N]`
+  - Option composes with existing Feature 1 heatmap controls and reuses same scan data path
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for hotspot extraction ranking/filtering and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.10.0`.
+
 ## [v0.9.0] - 2026-03-01
 
 ### ✨ Features
@@ -14,14 +35,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Adaptive Band Activity Heatmap (Feature 1/20)**
   - Added adaptive heatmap generation for RX band scans (`BandScanner.build_adaptive_heatmap`)
   - Added terminal heatmap renderer (`BandScanner.format_adaptive_heatmap`)
-  - Added `HeatmapBin` data model for clear scanner module boundaries
-  - Added CLI support via existing interface (`ft991a-cli scan band --heatmap [--max-bins N]`)
-  - Maintained interface discipline: no new top-level command groups; feature extends existing `scan band`
-  - RX/analysis only — no TX behavior added
+  - Added `HeatmapBin` data model to preserve scanner module boundaries
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --heatmap [--max-bins N]`
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
 
 ### ✅ Tests
 
 - Added scanner tests for adaptive heatmap binning and formatter output.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.9.0`.
 
 ## [v0.8.0] - 2026-02-17 (planned)
 

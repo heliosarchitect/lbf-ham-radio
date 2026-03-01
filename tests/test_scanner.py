@@ -12,7 +12,13 @@ from unittest.mock import Mock, call, patch
 import pytest
 
 from ft991a.cat import FT991A
-from ft991a.scanner import ActivityResult, BandScanner, HeatmapBin, ScanResult
+from ft991a.scanner import (
+    ActivityResult,
+    BandScanner,
+    HeatmapBin,
+    HeatmapHotspot,
+    ScanResult,
+)
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
@@ -287,6 +293,39 @@ class TestBandScanner:
         assert "14.001 MHz" in rendered
         assert "score=0.90" in rendered
         assert "Bins: 2" in rendered
+
+    def test_extract_heatmap_hotspots(self, scanner):
+        """Hotspot extraction should rank/filter adaptive heatmap bins."""
+        bins = [
+            HeatmapBin(14000000, 14001999, 14001000, 12.0, 18, 2, 0.20),
+            HeatmapBin(14002000, 14003999, 14003000, 42.0, 62, 3, 0.92),
+            HeatmapBin(14004000, 14005999, 14005000, 36.0, 54, 2, 0.81),
+            HeatmapBin(14006000, 14007999, 14007000, 30.0, 45, 0, 0.95),
+        ]
+
+        hotspots = scanner.extract_heatmap_hotspots(
+            bins, min_score=0.75, top_n=2, min_samples=1
+        )
+
+        assert len(hotspots) == 2
+        assert all(isinstance(h, HeatmapHotspot) for h in hotspots)
+        assert hotspots[0].center_hz == 14003000
+        assert hotspots[1].center_hz == 14005000
+        assert hotspots[0].activity_score >= hotspots[1].activity_score
+
+    def test_format_heatmap_hotspots(self, scanner):
+        """Hotspot formatter should render ranked entries with metadata."""
+        hotspots = [
+            HeatmapHotspot(14002000, 14003999, 14003000, 42.0, 62, 3, 0.92),
+            HeatmapHotspot(14004000, 14005999, 14005000, 36.0, 54, 2, 0.81),
+        ]
+
+        rendered = scanner.format_heatmap_hotspots(hotspots)
+        assert "Adaptive Heatmap Hotspots" in rendered
+        assert "#1" in rendered
+        assert "14.003 MHz" in rendered
+        assert "score=0.92" in rendered
+        assert "Candidates: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

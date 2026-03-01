@@ -61,6 +61,19 @@ class HeatmapBin:
     activity_score: float
 
 
+@dataclass
+class HeatmapHotspot:
+    """Top candidate hotspot derived from adaptive heatmap bins."""
+
+    start_hz: int
+    end_hz: int
+    center_hz: int
+    avg_s_meter: float
+    peak_s_meter: int
+    sample_count: int
+    activity_score: float
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -405,6 +418,72 @@ class BandScanner:
             )
 
         lines.extend(["", f"Bins: {len(bins)} (adaptive)"])
+        return "\n".join(lines)
+
+    def extract_heatmap_hotspots(
+        self,
+        bins: List[HeatmapBin],
+        min_score: float = 0.65,
+        top_n: int = 5,
+        min_samples: int = 1,
+    ) -> List[HeatmapHotspot]:
+        """
+        Rank likely activity hotspots from adaptive heatmap bins.
+
+        Args:
+            bins: Heatmap bins produced by build_adaptive_heatmap()
+            min_score: Minimum activity score (0.0-1.0) required
+            top_n: Maximum hotspots to return
+            min_samples: Minimum number of raw samples represented in a bin
+
+        Returns:
+            List of HeatmapHotspot entries sorted by activity confidence
+        """
+        if not bins or top_n <= 0:
+            return []
+
+        filtered = [
+            b
+            for b in bins
+            if b.sample_count >= max(0, min_samples)
+            and b.activity_score >= max(0.0, min(1.0, min_score))
+        ]
+
+        ranked = sorted(
+            filtered,
+            key=lambda b: (b.activity_score, b.peak_s_meter, b.sample_count),
+            reverse=True,
+        )
+
+        return [
+            HeatmapHotspot(
+                start_hz=entry.start_hz,
+                end_hz=entry.end_hz,
+                center_hz=entry.center_hz,
+                avg_s_meter=entry.avg_s_meter,
+                peak_s_meter=entry.peak_s_meter,
+                sample_count=entry.sample_count,
+                activity_score=entry.activity_score,
+            )
+            for entry in ranked[:top_n]
+        ]
+
+    def format_heatmap_hotspots(
+        self,
+        hotspots: List[HeatmapHotspot],
+        title: str = "Adaptive Heatmap Hotspots",
+    ) -> str:
+        """Render ranked hotspot candidates for fast operator review."""
+        if not hotspots:
+            return f"{title}\n(No hotspots above threshold)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+        for idx, hs in enumerate(hotspots, start=1):
+            lines.append(
+                f"#{idx:<2} {hs.center_hz/1e6:8.3f} MHz  range={hs.start_hz/1e6:8.3f}-{hs.end_hz/1e6:8.3f}  score={hs.activity_score:0.2f}  peak={hs.peak_s_meter:3}  avg={hs.avg_s_meter:5.1f}  n={hs.sample_count:2}"
+            )
+
+        lines.extend(["", f"Candidates: {len(hotspots)}"])
         return "\n".join(lines)
 
     def format_scan_results(

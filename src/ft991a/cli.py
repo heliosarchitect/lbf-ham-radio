@@ -363,6 +363,23 @@ def cli_main():
         default=48,
         help="Maximum bins used for adaptive heatmap (default: 48)",
     )
+    scan_band_parser.add_argument(
+        "--hotspots",
+        action="store_true",
+        help="Show ranked hotspot summary derived from adaptive heatmap bins",
+    )
+    scan_band_parser.add_argument(
+        "--hotspot-threshold",
+        type=float,
+        default=0.65,
+        help="Minimum heatmap activity score for hotspot candidates (default: 0.65)",
+    )
+    scan_band_parser.add_argument(
+        "--hotspot-top",
+        type=int,
+        default=5,
+        help="Maximum hotspot candidates to show (default: 5)",
+    )
 
     # Scan activity
     scan_activity_parser = scan_subparsers.add_parser(
@@ -867,15 +884,30 @@ def cli_main():
                 results = scanner.scan_band(args.start, args.end, args.step, args.dwell)
 
                 if results:
-                    if args.heatmap:
+                    heatmap = None
+                    if args.heatmap or args.hotspots:
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
                         )
-                        report = scanner.format_adaptive_heatmap(heatmap)
+
+                    if args.heatmap:
+                        report = scanner.format_adaptive_heatmap(heatmap or [])
                         print(report)
                     else:
-                        chart = scanner.format_scan_results(results, "Band Scan Results")
+                        chart = scanner.format_scan_results(
+                            results, "Band Scan Results"
+                        )
                         print(chart)
+
+                    if args.hotspots:
+                        hotspots = scanner.extract_heatmap_hotspots(
+                            heatmap or [],
+                            min_score=max(0.0, min(1.0, args.hotspot_threshold)),
+                            top_n=max(1, args.hotspot_top),
+                            min_samples=1,
+                        )
+                        print()
+                        print(scanner.format_heatmap_hotspots(hotspots))
                 else:
                     print("No scan results")
 
