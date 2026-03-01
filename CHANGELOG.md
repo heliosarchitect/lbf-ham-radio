@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.14.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Clock Sync Projection (Feature 6/20)**
+  - Added wall-clock projection from timeline steps (`BandScanner.build_hotspot_window_clock`)
+  - Added wall-clock terminal formatter (`BandScanner.format_hotspot_window_clock`)
+  - Added `HotspotWindowClockStep` model for explicit absolute-time schedule boundaries
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-clock`
+  - Composes with existing Feature 1/2/3/4/5 heatmap → hotspot → window → plan → timeline flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+
+### ✅ Tests
+
+- Added scanner tests for clock projection anchoring and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.14.0`.
+
 ## [v0.13.0] - 2026-03-01
 
 ### ✨ Features

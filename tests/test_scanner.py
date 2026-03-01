@@ -18,6 +18,7 @@ from ft991a.scanner import (
     HeatmapBin,
     HeatmapHotspot,
     HotspotWindow,
+    HotspotWindowClockStep,
     HotspotWindowPlanStep,
     HotspotWindowTimelineStep,
     ScanResult,
@@ -430,6 +431,38 @@ class TestBandScanner:
         assert "start=+    0 ms" in rendered
         assert "revisit=30000 ms" in rendered
         assert "Timeline steps: 2" in rendered
+
+    def test_build_hotspot_window_clock(self, scanner):
+        """Clock projection should anchor timeline offsets to wall-clock ms."""
+        steps = [
+            HotspotWindowTimelineStep(1, 14003999, 18000, 0, 18000, 30000),
+            HotspotWindowTimelineStep(2, 14012999, 12000, 18000, 30000, 30000),
+        ]
+
+        clock = scanner.build_hotspot_window_clock(steps, start_epoch_ms=1_700_000_000_000)
+
+        assert len(clock) == 2
+        assert all(isinstance(step, HotspotWindowClockStep) for step in clock)
+        assert clock[0].start_epoch_ms == 1_700_000_000_000
+        assert clock[0].end_epoch_ms == 1_700_000_018_000
+        assert clock[1].start_epoch_ms == 1_700_000_018_000
+        assert clock[1].end_epoch_ms == 1_700_000_030_000
+        assert clock[0].revisit_epoch_ms == 1_700_000_030_000
+
+    def test_format_hotspot_window_clock(self, scanner):
+        """Clock formatter should render readable wall-clock schedule."""
+        steps = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        rendered = scanner.format_hotspot_window_clock(steps)
+
+        assert "Hotspot Window Clock Sync" in rendered
+        assert "C1" in rendered
+        assert "14.004 MHz" in rendered
+        assert "dwell=18000 ms" in rendered
+        assert "Clock steps: 2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

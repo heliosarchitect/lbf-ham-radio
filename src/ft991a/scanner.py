@@ -20,6 +20,7 @@ Usage:
 import logging
 import time
 from dataclasses import dataclass
+from datetime import datetime
 from math import ceil
 from statistics import mean
 from typing import List, Optional, Tuple
@@ -109,6 +110,18 @@ class HotspotWindowTimelineStep:
     start_offset_ms: int
     end_offset_ms: int
     revisit_after_ms: int
+
+
+@dataclass
+class HotspotWindowClockStep:
+    """Wall-clock projection for timeline steps anchored to a cycle start."""
+
+    rank: int
+    center_hz: int
+    dwell_ms: int
+    start_epoch_ms: int
+    end_epoch_ms: int
+    revisit_epoch_ms: int
 
 
 class BandScanner:
@@ -689,6 +702,58 @@ class BandScanner:
             )
 
         lines.extend(["", f"Timeline steps: {len(steps)}"])
+        return "\n".join(lines)
+
+    def build_hotspot_window_clock(
+        self,
+        steps: List[HotspotWindowTimelineStep],
+        start_epoch_ms: Optional[int] = None,
+    ) -> List[HotspotWindowClockStep]:
+        """Anchor timeline steps to wall-clock times for operator synchronization.
+
+        RX/analysis only: computes schedule timestamps, does not tune or transmit.
+        """
+        if not steps:
+            return []
+
+        anchor_ms = int(time.time() * 1000) if start_epoch_ms is None else int(start_epoch_ms)
+
+        clock_steps: List[HotspotWindowClockStep] = []
+        for step in steps:
+            clock_steps.append(
+                HotspotWindowClockStep(
+                    rank=step.rank,
+                    center_hz=step.center_hz,
+                    dwell_ms=step.dwell_ms,
+                    start_epoch_ms=anchor_ms + step.start_offset_ms,
+                    end_epoch_ms=anchor_ms + step.end_offset_ms,
+                    revisit_epoch_ms=anchor_ms + step.revisit_after_ms,
+                )
+            )
+
+        return clock_steps
+
+    def format_hotspot_window_clock(
+        self,
+        steps: List[HotspotWindowClockStep],
+        title: str = "Hotspot Window Clock Sync",
+    ) -> str:
+        """Render wall-clock schedule for one hotspot review cycle."""
+        if not steps:
+            return f"{title}\n(No clock schedule)"
+
+        lines = [f"{title}", "=" * len(title), ""]
+
+        def _fmt(epoch_ms: int) -> str:
+            dt = datetime.fromtimestamp(epoch_ms / 1000.0)
+            return dt.strftime("%H:%M:%S.%f")[:-3]
+
+        for step in steps:
+            lines.append(
+                f"C{step.rank:<2} {step.center_hz/1e6:8.3f} MHz  start={_fmt(step.start_epoch_ms)}  end={_fmt(step.end_epoch_ms)}  dwell={step.dwell_ms:5} ms  revisit={_fmt(step.revisit_epoch_ms)}"
+            )
+
+        lines.extend(["", f"Clock steps: {len(steps)}"])
         return "\n".join(lines)
 
     def format_scan_results(
