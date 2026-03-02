@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.24.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Machine Snapshot (Feature 16/20)**
+  - Added machine-friendly snapshot model + builder from existing handoff packet state (`HotspotWindowSnapshot`, `BandScanner.build_hotspot_window_snapshot`)
+  - Added one-line key=value formatter for logging/automation glue (`BandScanner.format_hotspot_window_snapshot`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-snapshot [--action-ready-ms MS] [--action-critical-ms MS] [--upcoming-count N]`
+  - Composes with existing Feature 1..15 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue/action/decision/ops/directive/handoff flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 16 source details were not explicitly documented in repo planning files; implemented conservatively as a machine-readable summary layer over Feature 15 handoff output.
+
+### ✅ Tests
+
+- Added scanner tests for snapshot composition and formatter output.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.24.0`.
+
 ## [v0.23.0] - 2026-03-01
 
 ### ✨ Features

@@ -458,6 +458,11 @@ def cli_main():
         help="Show compact shift-handoff packet (headline + immediate + queued steps)",
     )
     scan_band_parser.add_argument(
+        "--window-snapshot",
+        action="store_true",
+        help="Show one-line machine-friendly handoff snapshot (key=value fields)",
+    )
+    scan_band_parser.add_argument(
         "--action-ready-ms",
         type=int,
         default=5000,
@@ -996,6 +1001,7 @@ def cli_main():
                         or args.window_ops
                         or args.window_directive
                         or args.window_handoff
+                        or args.window_snapshot
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -1026,6 +1032,7 @@ def cli_main():
                         or args.window_ops
                         or args.window_directive
                         or args.window_handoff
+                        or args.window_snapshot
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -1053,6 +1060,7 @@ def cli_main():
                         or args.window_ops
                         or args.window_directive
                         or args.window_handoff
+                        or args.window_snapshot
                     ):
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
@@ -1076,6 +1084,7 @@ def cli_main():
                         or args.window_ops
                         or args.window_directive
                         or args.window_handoff
+                        or args.window_snapshot
                     ):
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
@@ -1100,6 +1109,7 @@ def cli_main():
                             or args.window_ops
                             or args.window_directive
                             or args.window_handoff
+                        or args.window_snapshot
                         ):
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
@@ -1121,6 +1131,7 @@ def cli_main():
                             or args.window_ops
                             or args.window_directive
                             or args.window_handoff
+                        or args.window_snapshot
                         ):
                             clock_steps = scanner.build_hotspot_window_clock(
                                 timeline_steps
@@ -1228,6 +1239,21 @@ def cli_main():
                             print(
                                 scanner.format_hotspot_window_handoff(
                                     scanner.build_hotspot_window_handoff(
+                                        clock_steps,
+                                        ready_threshold_ms=max(0, args.action_ready_ms),
+                                        critical_threshold_ms=max(
+                                            0, args.action_critical_ms
+                                        ),
+                                        upcoming_count=max(0, args.upcoming_count),
+                                    )
+                                )
+                            )
+
+                        if args.window_snapshot:
+                            print()
+                            print(
+                                scanner.format_hotspot_window_snapshot(
+                                    scanner.build_hotspot_window_snapshot(
                                         clock_steps,
                                         ready_threshold_ms=max(0, args.action_ready_ms),
                                         critical_threshold_ms=max(

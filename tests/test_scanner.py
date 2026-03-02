@@ -28,6 +28,7 @@ from ft991a.scanner import (
     HotspotWindowNowState,
     HotspotWindowOps,
     HotspotWindowPlanStep,
+    HotspotWindowSnapshot,
     HotspotWindowTimelineStep,
     HotspotWindowUpcomingStep,
     ScanResult,
@@ -889,6 +890,51 @@ class TestBandScanner:
         assert "Immediate:" in rendered
         assert "Queued:" in rendered
         assert "1. Stay on P1" in rendered
+
+    def test_build_hotspot_window_snapshot(self, scanner):
+        """Snapshot builder should compress handoff state into machine-friendly counters."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        snapshot = scanner.build_hotspot_window_snapshot(
+            clock,
+            now_epoch_ms=1_700_000_016_500,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+            upcoming_count=2,
+        )
+
+        assert isinstance(snapshot, HotspotWindowSnapshot)
+        assert snapshot.action in {"READY", "SWITCH"}
+        assert snapshot.urgency in {"HIGH", "CRITICAL"}
+        assert snapshot.immediate_count >= 2
+        assert snapshot.queued_count == 2
+
+    def test_format_hotspot_window_snapshot(self, scanner):
+        """Snapshot formatter should render one-line key=value payload."""
+        snapshot = HotspotWindowSnapshot(
+            generated_epoch_ms=1_700_000_016_500,
+            action="READY",
+            urgency="HIGH",
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=1500,
+            recheck_ms=750,
+            immediate_count=3,
+            queued_count=2,
+        )
+
+        rendered = scanner.format_hotspot_window_snapshot(snapshot)
+
+        assert rendered.startswith("Hotspot Window Snapshot:")
+        assert "action=READY" in rendered
+        assert "urgency=HIGH" in rendered
+        assert "switch_ms=1500" in rendered
+        assert "queued=2" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

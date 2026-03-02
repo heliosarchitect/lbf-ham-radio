@@ -257,6 +257,23 @@ class HotspotWindowHandoff:
     queued_steps: List[str]
 
 
+@dataclass
+class HotspotWindowSnapshot:
+    """Machine-friendly one-line snapshot derived from handoff packet state."""
+
+    generated_epoch_ms: int
+    action: str
+    urgency: str
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+    recheck_ms: int
+    immediate_count: int
+    queued_count: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1505,6 +1522,56 @@ class BandScanner:
             lines.append("  1. (none)")
 
         return "\n".join(lines)
+
+    def build_hotspot_window_snapshot(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+        critical_threshold_ms: int = 2500,
+        upcoming_count: int = 3,
+    ) -> Optional[HotspotWindowSnapshot]:
+        """Build compact machine-friendly snapshot from handoff packet state."""
+        handoff = self.build_hotspot_window_handoff(
+            steps,
+            now_epoch_ms=now_epoch_ms,
+            ready_threshold_ms=ready_threshold_ms,
+            critical_threshold_ms=critical_threshold_ms,
+            upcoming_count=upcoming_count,
+        )
+        if handoff is None:
+            return None
+
+        return HotspotWindowSnapshot(
+            generated_epoch_ms=handoff.generated_epoch_ms,
+            action=handoff.action,
+            urgency=handoff.urgency,
+            active_rank=handoff.active_rank,
+            active_center_hz=handoff.active_center_hz,
+            next_rank=handoff.next_rank,
+            next_center_hz=handoff.next_center_hz,
+            ms_until_switch=handoff.ms_until_switch,
+            recheck_ms=handoff.recheck_ms,
+            immediate_count=len(handoff.immediate_steps),
+            queued_count=len(handoff.queued_steps),
+        )
+
+    def format_hotspot_window_snapshot(
+        self,
+        snapshot: Optional[HotspotWindowSnapshot],
+        title: str = "Hotspot Window Snapshot",
+    ) -> str:
+        """Render one-line key=value snapshot for handoff logging or automation glue."""
+        if snapshot is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: ts={snapshot.generated_epoch_ms} action={snapshot.action} urgency={snapshot.urgency} "
+            f"active=P{snapshot.active_rank}@{snapshot.active_center_hz/1e6:0.3f}MHz "
+            f"next=P{snapshot.next_rank}@{snapshot.next_center_hz/1e6:0.3f}MHz "
+            f"switch_ms={snapshot.ms_until_switch} recheck_ms={snapshot.recheck_ms} "
+            f"immediate={snapshot.immediate_count} queued={snapshot.queued_count}"
+        )
 
     def format_scan_results(
         self, results: List[Tuple[int, int]], title: str = "Band Scan Results"
