@@ -17,6 +17,7 @@ Usage:
     active = scanner.find_activity(threshold=50)
 """
 
+import hashlib
 import logging
 import time
 from dataclasses import dataclass
@@ -272,6 +273,18 @@ class HotspotWindowSnapshot:
     recheck_ms: int
     immediate_count: int
     queued_count: int
+
+
+@dataclass
+class HotspotWindowFingerprint:
+    """Deterministic fingerprint for machine dedupe/change tracking of snapshot state."""
+
+    generated_epoch_ms: int
+    signature: str
+    action: str
+    urgency: str
+    active_rank: int
+    next_rank: int
 
 
 class BandScanner:
@@ -1571,6 +1584,43 @@ class BandScanner:
             f"next=P{snapshot.next_rank}@{snapshot.next_center_hz/1e6:0.3f}MHz "
             f"switch_ms={snapshot.ms_until_switch} recheck_ms={snapshot.recheck_ms} "
             f"immediate={snapshot.immediate_count} queued={snapshot.queued_count}"
+        )
+
+    def build_hotspot_window_fingerprint(
+        self,
+        snapshot: Optional[HotspotWindowSnapshot],
+    ) -> Optional[HotspotWindowFingerprint]:
+        """Build deterministic short signature for a machine snapshot."""
+        if snapshot is None:
+            return None
+
+        material = (
+            f"{snapshot.action}|{snapshot.urgency}|{snapshot.active_rank}|{snapshot.active_center_hz}|"
+            f"{snapshot.next_rank}|{snapshot.next_center_hz}|{snapshot.ms_until_switch}|{snapshot.recheck_ms}"
+        )
+        signature = hashlib.sha1(material.encode("utf-8")).hexdigest()[:12]
+        return HotspotWindowFingerprint(
+            generated_epoch_ms=snapshot.generated_epoch_ms,
+            signature=signature,
+            action=snapshot.action,
+            urgency=snapshot.urgency,
+            active_rank=snapshot.active_rank,
+            next_rank=snapshot.next_rank,
+        )
+
+    def format_hotspot_window_fingerprint(
+        self,
+        fingerprint: Optional[HotspotWindowFingerprint],
+        title: str = "Hotspot Window Fingerprint",
+    ) -> str:
+        """Render one-line deterministic fingerprint output."""
+        if fingerprint is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: ts={fingerprint.generated_epoch_ms} sig={fingerprint.signature} "
+            f"action={fingerprint.action} urgency={fingerprint.urgency} "
+            f"active=P{fingerprint.active_rank} next=P{fingerprint.next_rank}"
         )
 
     def format_scan_results(

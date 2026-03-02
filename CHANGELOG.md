@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.25.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Deterministic Fingerprint (Feature 17/20)**
+  - Added fingerprint model + builder + formatter (`HotspotWindowFingerprint`, `BandScanner.build_hotspot_window_fingerprint`, `BandScanner.format_hotspot_window_fingerprint`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-fingerprint`
+  - RX/analysis only; no TX behavior changes.
+
+### ✅ Tests
+
+- Added scanner test for deterministic fingerprint generation + formatter output.
+
 ## [v0.24.0] - 2026-03-01
 
 ### ✨ Features

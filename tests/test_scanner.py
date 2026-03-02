@@ -29,6 +29,7 @@ from ft991a.scanner import (
     HotspotWindowOps,
     HotspotWindowPlanStep,
     HotspotWindowSnapshot,
+    HotspotWindowFingerprint,
     HotspotWindowTimelineStep,
     HotspotWindowUpcomingStep,
     ScanResult,
@@ -935,6 +936,26 @@ class TestBandScanner:
         assert "urgency=HIGH" in rendered
         assert "switch_ms=1500" in rendered
         assert "queued=2" in rendered
+
+    def test_build_and_format_hotspot_window_fingerprint(self, scanner):
+        snapshot = HotspotWindowSnapshot(
+            generated_epoch_ms=1_700_000_016_500,
+            action="READY",
+            urgency="HIGH",
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=1500,
+            recheck_ms=750,
+            immediate_count=3,
+            queued_count=2,
+        )
+        fp = scanner.build_hotspot_window_fingerprint(snapshot)
+        assert isinstance(fp, HotspotWindowFingerprint)
+        assert len(fp.signature) == 12
+        rendered = scanner.format_hotspot_window_fingerprint(fp)
+        assert "sig=" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
