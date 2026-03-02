@@ -239,6 +239,24 @@ class HotspotWindowDirective:
     checklist: List[str]
 
 
+@dataclass
+class HotspotWindowHandoff:
+    """Shift-handoff packet distilled for quick operator transition."""
+
+    generated_epoch_ms: int
+    action: str
+    urgency: str
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+    recheck_ms: int
+    headline: str
+    immediate_steps: List[str]
+    queued_steps: List[str]
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1404,6 +1422,88 @@ class BandScanner:
         ]
         for idx, item in enumerate(directive.checklist, start=1):
             lines.append(f"  {idx}. {item}")
+        return "\n".join(lines)
+
+    def build_hotspot_window_handoff(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+        critical_threshold_ms: int = 2500,
+        upcoming_count: int = 3,
+    ) -> Optional[HotspotWindowHandoff]:
+        """Build compact shift-handoff packet from directive + queue state."""
+        ops = self.build_hotspot_window_ops(
+            steps,
+            now_epoch_ms=now_epoch_ms,
+            ready_threshold_ms=ready_threshold_ms,
+            critical_threshold_ms=critical_threshold_ms,
+            upcoming_count=upcoming_count,
+        )
+        if ops is None:
+            return None
+
+        headline = (
+            f"{ops.action}/{ops.urgency} P{ops.active_rank} {ops.active_center_hz/1e6:8.3f} MHz"
+            f" → P{ops.next_rank} {ops.next_center_hz/1e6:8.3f} MHz"
+            f" in {ops.ms_until_switch} ms"
+        )
+
+        immediate_steps = [
+            f"Stay on P{ops.active_rank} ({ops.active_center_hz/1e6:8.3f} MHz)",
+            f"Recheck in {ops.recommended_check_ms} ms",
+        ]
+        if ops.action in {"READY", "SWITCH"}:
+            immediate_steps.append(
+                f"Prep P{ops.next_rank} ({ops.next_center_hz/1e6:8.3f} MHz)"
+            )
+        if ops.action == "SWITCH":
+            immediate_steps.append("Switch now + verify continuity")
+
+        queued_steps = [
+            f"U{item.sequence} P{item.rank} @ {item.center_hz/1e6:8.3f} MHz in {item.starts_in_ms} ms"
+            for item in ops.upcoming
+        ]
+
+        return HotspotWindowHandoff(
+            generated_epoch_ms=ops.generated_epoch_ms,
+            action=ops.action,
+            urgency=ops.urgency,
+            active_rank=ops.active_rank,
+            active_center_hz=ops.active_center_hz,
+            next_rank=ops.next_rank,
+            next_center_hz=ops.next_center_hz,
+            ms_until_switch=ops.ms_until_switch,
+            recheck_ms=ops.recommended_check_ms,
+            headline=headline,
+            immediate_steps=immediate_steps,
+            queued_steps=queued_steps,
+        )
+
+    def format_hotspot_window_handoff(
+        self,
+        handoff: Optional[HotspotWindowHandoff],
+        title: str = "Hotspot Window Handoff",
+    ) -> str:
+        """Render compact shift-handoff packet for low-friction operator relay."""
+        if handoff is None:
+            return f"{title}\n(No active schedule)"
+
+        lines = [
+            f"{title}: {handoff.headline}",
+            f"Cadence: recheck={handoff.recheck_ms} ms",
+            "Immediate:",
+        ]
+        for idx, item in enumerate(handoff.immediate_steps, start=1):
+            lines.append(f"  {idx}. {item}")
+
+        lines.append("Queued:")
+        if handoff.queued_steps:
+            for idx, item in enumerate(handoff.queued_steps, start=1):
+                lines.append(f"  {idx}. {item}")
+        else:
+            lines.append("  1. (none)")
+
         return "\n".join(lines)
 
     def format_scan_results(

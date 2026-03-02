@@ -22,6 +22,7 @@ from ft991a.scanner import (
     HotspotWindowBrief,
     HotspotWindowDecision,
     HotspotWindowDirective,
+    HotspotWindowHandoff,
     HotspotWindowClockStep,
     HotspotWindowCue,
     HotspotWindowNowState,
@@ -834,6 +835,60 @@ class TestBandScanner:
         assert "Cadence: recheck=750 ms" in rendered
         assert "Checklist:" in rendered
         assert "1. Monitor active window" in rendered
+
+    def test_build_hotspot_window_handoff(self, scanner):
+        """Handoff builder should compose shift packet from ops and queue state."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        handoff = scanner.build_hotspot_window_handoff(
+            clock,
+            now_epoch_ms=1_700_000_016_500,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+            upcoming_count=2,
+        )
+
+        assert isinstance(handoff, HotspotWindowHandoff)
+        assert handoff.action in {"READY", "SWITCH"}
+        assert handoff.urgency in {"HIGH", "CRITICAL"}
+        assert handoff.recheck_ms >= 250
+        assert handoff.immediate_steps
+        assert len(handoff.queued_steps) == 2
+
+    def test_format_hotspot_window_handoff(self, scanner):
+        """Handoff formatter should render headline plus immediate/queued sections."""
+        handoff = HotspotWindowHandoff(
+            generated_epoch_ms=1_700_000_016_500,
+            action="READY",
+            urgency="HIGH",
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=1500,
+            recheck_ms=750,
+            headline="READY/HIGH P1   14.004 MHz → P2   14.013 MHz in 1500 ms",
+            immediate_steps=[
+                "Stay on P1 (  14.004 MHz)",
+                "Recheck in 750 ms",
+                "Prep P2 (  14.013 MHz)",
+            ],
+            queued_steps=[
+                "U1 P2 @   14.013 MHz in 1500 ms",
+                "U2 P1 @   14.004 MHz in 13500 ms",
+            ],
+        )
+
+        rendered = scanner.format_hotspot_window_handoff(handoff)
+
+        assert rendered.startswith("Hotspot Window Handoff:")
+        assert "Cadence: recheck=750 ms" in rendered
+        assert "Immediate:" in rendered
+        assert "Queued:" in rendered
+        assert "1. Stay on P1" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

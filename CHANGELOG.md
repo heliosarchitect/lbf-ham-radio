@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.23.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Shift Handoff Packet (Feature 15/20)**
+  - Added shift-handoff packet model + builder for operator transitions (`HotspotWindowHandoff`, `BandScanner.build_hotspot_window_handoff`)
+  - Added compact handoff formatter with headline, immediate steps, and queued steps (`BandScanner.format_hotspot_window_handoff`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-handoff [--action-ready-ms MS] [--action-critical-ms MS] [--upcoming-count N]`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9/10/11/12/13/14 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue/action/decision/ops/directive flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 15 source details were not explicitly documented in repo planning files; implemented conservatively as an operator shift-handoff layer over existing ops/directive state.
+
+### ✅ Tests
+
+- Added scanner tests for handoff packet composition and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.23.0`.
+
 ## [v0.22.0] - 2026-03-01
 
 ### ✨ Features
