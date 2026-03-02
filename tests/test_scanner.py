@@ -21,6 +21,7 @@ from ft991a.scanner import (
     HotspotWindowAction,
     HotspotWindowBrief,
     HotspotWindowDecision,
+    HotspotWindowDirective,
     HotspotWindowClockStep,
     HotspotWindowCue,
     HotspotWindowNowState,
@@ -790,6 +791,49 @@ class TestBandScanner:
         assert "READY/HIGH" in rendered
         assert "recheck=900 ms" in rendered
         assert "Queue: U1:P2@1800ms, U2:P1@13800ms" in rendered
+
+    def test_build_hotspot_window_directive(self, scanner):
+        """Directive builder should produce an actionable checklist from ops state."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        directive = scanner.build_hotspot_window_directive(
+            clock,
+            now_epoch_ms=1_700_000_016_500,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+            upcoming_count=2,
+        )
+
+        assert isinstance(directive, HotspotWindowDirective)
+        assert directive.action in {"READY", "SWITCH"}
+        assert directive.urgency in {"HIGH", "CRITICAL"}
+        assert directive.recheck_ms >= 250
+        assert len(directive.checklist) >= 3
+
+    def test_format_hotspot_window_directive(self, scanner):
+        """Directive formatter should render summary, cadence, and checklist lines."""
+        directive = HotspotWindowDirective(
+            generated_epoch_ms=1_700_000_016_500,
+            summary="READY/HIGH: P1  14.004 MHz → P2  14.013 MHz in 1500 ms",
+            action="READY",
+            urgency="HIGH",
+            recheck_ms=750,
+            checklist=[
+                "Monitor active window P1 on  14.004 MHz",
+                "Recheck in 750 ms",
+                "Prepare handoff target P2 at  14.013 MHz",
+            ],
+        )
+
+        rendered = scanner.format_hotspot_window_directive(directive)
+
+        assert rendered.startswith("Hotspot Window Directive:")
+        assert "Cadence: recheck=750 ms" in rendered
+        assert "Checklist:" in rendered
+        assert "1. Monitor active window" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

@@ -21,7 +21,7 @@ Entry points:
 - ft991a-mcp: Launch MCP server (stdio transport)
 """
 
-__version__ = "0.21.0"
+__version__ = "0.22.0"
 __author__ = "LBF / Matthew"
 __email__ = "heliosarchitectlbf@gmail.com"
 __license__ = "MIT"

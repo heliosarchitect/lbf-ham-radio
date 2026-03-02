@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.22.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Actionable Directive Checklist (Feature 14/20)**
+  - Added directive model + builder that distills existing ops-card state into immediate execution guidance (`HotspotWindowDirective`, `BandScanner.build_hotspot_window_directive`)
+  - Added concise directive formatter with checklist output for manual RX handoff loops (`BandScanner.format_hotspot_window_directive`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-directive [--action-ready-ms MS] [--action-critical-ms MS] [--upcoming-count N]`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9/10/11/12/13 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue/action/decision/ops flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 14 source details were not explicitly documented in repo planning files; implemented conservatively as an actionable checklist layer over existing ops-card output.
+
+### ✅ Tests
+
+- Added scanner tests for directive composition and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.22.0`.
+
 ## [v0.21.0] - 2026-03-01
 
 ### ✨ Features

@@ -227,6 +227,18 @@ class HotspotWindowOps:
     upcoming: List[HotspotWindowUpcomingStep]
 
 
+@dataclass
+class HotspotWindowDirective:
+    """Execution directive distilled from ops state for immediate RX handoff action."""
+
+    generated_epoch_ms: int
+    summary: str
+    action: str
+    urgency: str
+    recheck_ms: int
+    checklist: List[str]
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1325,6 +1337,73 @@ class BandScanner:
         else:
             lines.append("Queue: (none)")
 
+        return "\n".join(lines)
+
+    def build_hotspot_window_directive(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+        critical_threshold_ms: int = 2500,
+        upcoming_count: int = 2,
+    ) -> Optional[HotspotWindowDirective]:
+        """Build execution directive checklist from compact ops-card state."""
+        ops = self.build_hotspot_window_ops(
+            steps,
+            now_epoch_ms=now_epoch_ms,
+            ready_threshold_ms=ready_threshold_ms,
+            critical_threshold_ms=critical_threshold_ms,
+            upcoming_count=upcoming_count,
+        )
+        if ops is None:
+            return None
+
+        summary = (
+            f"{ops.action}/{ops.urgency}: P{ops.active_rank} {ops.active_center_hz/1e6:8.3f} MHz"
+            f" → P{ops.next_rank} {ops.next_center_hz/1e6:8.3f} MHz in {ops.ms_until_switch} ms"
+        )
+
+        checklist = [
+            f"Monitor active window P{ops.active_rank} on {ops.active_center_hz/1e6:8.3f} MHz",
+            f"Recheck in {ops.recommended_check_ms} ms",
+        ]
+        if ops.action in {"READY", "SWITCH"}:
+            checklist.append(
+                f"Prepare handoff target P{ops.next_rank} at {ops.next_center_hz/1e6:8.3f} MHz"
+            )
+        if ops.action == "SWITCH":
+            checklist.append("Switch now and confirm signal continuity")
+        elif ops.upcoming:
+            first = ops.upcoming[0]
+            checklist.append(
+                f"Queue next: U{first.sequence} P{first.rank} in {first.starts_in_ms} ms"
+            )
+
+        return HotspotWindowDirective(
+            generated_epoch_ms=ops.generated_epoch_ms,
+            summary=summary,
+            action=ops.action,
+            urgency=ops.urgency,
+            recheck_ms=ops.recommended_check_ms,
+            checklist=checklist,
+        )
+
+    def format_hotspot_window_directive(
+        self,
+        directive: Optional[HotspotWindowDirective],
+        title: str = "Hotspot Window Directive",
+    ) -> str:
+        """Render short actionable directive with immediate RX checklist."""
+        if directive is None:
+            return f"{title}\n(No active schedule)"
+
+        lines = [
+            f"{title}: {directive.summary}",
+            f"Cadence: recheck={directive.recheck_ms} ms",
+            "Checklist:",
+        ]
+        for idx, item in enumerate(directive.checklist, start=1):
+            lines.append(f"  {idx}. {item}")
         return "\n".join(lines)
 
     def format_scan_results(
