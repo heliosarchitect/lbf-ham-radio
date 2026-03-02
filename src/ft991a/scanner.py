@@ -169,6 +169,18 @@ class HotspotWindowBrief:
     upcoming: List[HotspotWindowUpcomingStep]
 
 
+@dataclass
+class HotspotWindowCue:
+    """Single-line operator cue derived from compact hotspot brief state."""
+
+    generated_epoch_ms: int
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1051,6 +1063,40 @@ class BandScanner:
             lines.append("Upcoming handoffs: none")
 
         return "\n".join(lines)
+
+    def build_hotspot_window_cue(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+    ) -> Optional[HotspotWindowCue]:
+        """Build one-line live operator cue from current hotspot schedule state."""
+        state = self.get_hotspot_window_now(steps, now_epoch_ms=now_epoch_ms)
+        if state is None:
+            return None
+
+        return HotspotWindowCue(
+            generated_epoch_ms=state.now_epoch_ms,
+            active_rank=state.active_rank,
+            active_center_hz=state.active_center_hz,
+            next_rank=state.next_rank,
+            next_center_hz=state.next_center_hz,
+            ms_until_switch=state.ms_until_switch,
+        )
+
+    def format_hotspot_window_cue(
+        self,
+        cue: Optional[HotspotWindowCue],
+        title: str = "Hotspot Window Cue",
+    ) -> str:
+        """Render single-line active→next handoff cue for low-overhead operator glance."""
+        if cue is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: P{cue.active_rank} {cue.active_center_hz/1e6:8.3f} MHz"
+            f" → P{cue.next_rank} {cue.next_center_hz/1e6:8.3f} MHz"
+            f" in {cue.ms_until_switch} ms"
+        )
 
     def format_scan_results(
         self, results: List[Tuple[int, int]], title: str = "Band Scan Results"

@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.18.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window One-Line Live Cue (Feature 10/20)**
+  - Added single-line operator cue model + builder from wall-clock schedule state (`HotspotWindowCue`, `BandScanner.build_hotspot_window_cue`)
+  - Added compact terminal cue formatter for active→next handoff glance checks (`BandScanner.format_hotspot_window_cue`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-cue`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 10 source details were not explicitly documented in repo planning files; implemented conservatively as a low-overhead handoff cue layer over existing now-state scheduling.
+
+### ✅ Tests
+
+- Added scanner tests for cue composition and concise formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.18.0`.
+
 ## [v0.17.0] - 2026-03-01
 
 ### ✨ Features

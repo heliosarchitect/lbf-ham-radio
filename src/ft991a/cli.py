@@ -428,6 +428,11 @@ def cli_main():
         help="Show compact now + upcoming hotspot handoff brief for manual RX operations",
     )
     scan_band_parser.add_argument(
+        "--window-cue",
+        action="store_true",
+        help="Show one-line active→next hotspot handoff cue for low-overhead operator glance",
+    )
+    scan_band_parser.add_argument(
         "--upcoming-count",
         type=int,
         default=3,
@@ -948,6 +953,7 @@ def cli_main():
                         or args.window_now
                         or args.window_upcoming
                         or args.window_brief
+                        or args.window_cue
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -972,6 +978,7 @@ def cli_main():
                         or args.window_now
                         or args.window_upcoming
                         or args.window_brief
+                        or args.window_cue
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -993,6 +1000,7 @@ def cli_main():
                         or args.window_now
                         or args.window_upcoming
                         or args.window_brief
+                        or args.window_cue
                     ):
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
@@ -1010,6 +1018,7 @@ def cli_main():
                         or args.window_now
                         or args.window_upcoming
                         or args.window_brief
+                        or args.window_cue
                     ):
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
@@ -1028,6 +1037,7 @@ def cli_main():
                             or args.window_now
                             or args.window_upcoming
                             or args.window_brief
+                            or args.window_cue
                         ):
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
@@ -1038,7 +1048,13 @@ def cli_main():
                             print(scanner.format_hotspot_window_timeline(timeline_steps))
 
                         clock_steps = []
-                        if args.window_clock or args.window_now or args.window_upcoming or args.window_brief:
+                        if (
+                            args.window_clock
+                            or args.window_now
+                            or args.window_upcoming
+                            or args.window_brief
+                            or args.window_cue
+                        ):
                             clock_steps = scanner.build_hotspot_window_clock(
                                 timeline_steps
                             )
@@ -1074,6 +1090,14 @@ def cli_main():
                                         clock_steps,
                                         upcoming_count=max(0, args.upcoming_count),
                                     )
+                                )
+                            )
+
+                        if args.window_cue:
+                            print()
+                            print(
+                                scanner.format_hotspot_window_cue(
+                                    scanner.build_hotspot_window_cue(clock_steps)
                                 )
                             )
                 else:

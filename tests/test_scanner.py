@@ -20,6 +20,7 @@ from ft991a.scanner import (
     HotspotWindow,
     HotspotWindowBrief,
     HotspotWindowClockStep,
+    HotspotWindowCue,
     HotspotWindowNowState,
     HotspotWindowPlanStep,
     HotspotWindowTimelineStep,
@@ -599,6 +600,38 @@ class TestBandScanner:
         assert "Switch in: 13000 ms" in rendered
         assert "Upcoming handoffs:" in rendered
         assert "U1: P2" in rendered
+
+    def test_build_hotspot_window_cue(self, scanner):
+        """Cue builder should emit single-line state payload from live schedule."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        cue = scanner.build_hotspot_window_cue(clock, now_epoch_ms=1_700_000_005_000)
+
+        assert isinstance(cue, HotspotWindowCue)
+        assert cue.active_rank == 1
+        assert cue.next_rank == 2
+        assert cue.ms_until_switch == 13000
+
+    def test_format_hotspot_window_cue(self, scanner):
+        """Cue formatter should provide concise active→next operator handoff line."""
+        cue = HotspotWindowCue(
+            generated_epoch_ms=1_700_000_005_000,
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=13000,
+        )
+
+        rendered = scanner.format_hotspot_window_cue(cue)
+
+        assert rendered.startswith("Hotspot Window Cue:")
+        assert "P1" in rendered
+        assert "P2" in rendered
+        assert "13000 ms" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
