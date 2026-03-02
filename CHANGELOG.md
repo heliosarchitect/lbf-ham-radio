@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.26.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Stability Classification (Feature 18/20)**
+  - Added stability model + builder + formatter (`HotspotWindowStability`, `BandScanner.build_hotspot_window_stability`, `BandScanner.format_hotspot_window_stability`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-stability`
+  - RX/analysis only; no TX behavior changes.
+
+### ✅ Tests
+
+- Added scanner test for stability scoring + formatter output.
+
 ## [v0.25.0] - 2026-03-01
 
 ### ✨ Features

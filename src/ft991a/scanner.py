@@ -287,6 +287,16 @@ class HotspotWindowFingerprint:
     next_rank: int
 
 
+@dataclass
+class HotspotWindowStability:
+    """Stability score/classification derived from snapshot timing + urgency state."""
+
+    generated_epoch_ms: int
+    score: int
+    level: str
+    reason: str
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1621,6 +1631,58 @@ class BandScanner:
             f"{title}: ts={fingerprint.generated_epoch_ms} sig={fingerprint.signature} "
             f"action={fingerprint.action} urgency={fingerprint.urgency} "
             f"active=P{fingerprint.active_rank} next=P{fingerprint.next_rank}"
+        )
+
+    def build_hotspot_window_stability(
+        self,
+        snapshot: Optional[HotspotWindowSnapshot],
+    ) -> Optional[HotspotWindowStability]:
+        """Classify schedule stability from urgency and switch countdown."""
+        if snapshot is None:
+            return None
+
+        score = 100
+        if snapshot.ms_until_switch <= snapshot.recheck_ms:
+            score -= 35
+        if snapshot.action == "SWITCH":
+            score -= 35
+        elif snapshot.action == "READY":
+            score -= 15
+
+        if snapshot.urgency == "CRITICAL":
+            score -= 30
+        elif snapshot.urgency == "HIGH":
+            score -= 15
+        elif snapshot.urgency == "MEDIUM":
+            score -= 5
+
+        score = max(0, min(100, score))
+        if score >= 75:
+            level, reason = "STABLE", "normal cadence"
+        elif score >= 45:
+            level, reason = "WATCH", "near handoff window"
+        else:
+            level, reason = "VOLATILE", "immediate handoff pressure"
+
+        return HotspotWindowStability(
+            generated_epoch_ms=snapshot.generated_epoch_ms,
+            score=score,
+            level=level,
+            reason=reason,
+        )
+
+    def format_hotspot_window_stability(
+        self,
+        stability: Optional[HotspotWindowStability],
+        title: str = "Hotspot Window Stability",
+    ) -> str:
+        """Render stability classification for fast operator checks."""
+        if stability is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: ts={stability.generated_epoch_ms} level={stability.level} "
+            f"score={stability.score} reason={stability.reason}"
         )
 
     def format_scan_results(
