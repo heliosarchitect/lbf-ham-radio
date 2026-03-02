@@ -20,6 +20,7 @@ from ft991a.scanner import (
     HotspotWindow,
     HotspotWindowAction,
     HotspotWindowBrief,
+    HotspotWindowDecision,
     HotspotWindowClockStep,
     HotspotWindowCue,
     HotspotWindowNowState,
@@ -684,6 +685,63 @@ class TestBandScanner:
         assert "P1" in rendered
         assert "P2" in rendered
         assert "4200 ms" in rendered
+
+    def test_build_hotspot_window_decision(self, scanner):
+        """Decision builder should map action countdown into urgency/recheck guidance."""
+        clock = [
+            HotspotWindowClockStep(1, 14003999, 18000, 1_700_000_000_000, 1_700_000_018_000, 1_700_000_030_000),
+            HotspotWindowClockStep(2, 14012999, 12000, 1_700_000_018_000, 1_700_000_030_000, 1_700_000_030_000),
+        ]
+
+        low = scanner.build_hotspot_window_decision(
+            clock,
+            now_epoch_ms=1_700_000_005_000,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+        )
+        high = scanner.build_hotspot_window_decision(
+            clock,
+            now_epoch_ms=1_700_000_016_000,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+        )
+        critical = scanner.build_hotspot_window_decision(
+            clock,
+            now_epoch_ms=1_700_000_017_900,
+            ready_threshold_ms=5000,
+            critical_threshold_ms=2500,
+        )
+
+        assert isinstance(low, HotspotWindowDecision)
+        assert low.urgency == "LOW"
+        assert low.recommended_check_ms == 5000
+        assert isinstance(high, HotspotWindowDecision)
+        assert high.urgency == "HIGH"
+        assert isinstance(critical, HotspotWindowDecision)
+        assert critical.urgency == "CRITICAL"
+        assert critical.action == "SWITCH"
+
+    def test_format_hotspot_window_decision(self, scanner):
+        """Decision formatter should include action, urgency, and recheck cadence."""
+        decision = HotspotWindowDecision(
+            generated_epoch_ms=1_700_000_005_000,
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=1800,
+            action="READY",
+            urgency="HIGH",
+            recommended_check_ms=900,
+            decision_reason="handoff inside 2500 ms critical window",
+        )
+
+        rendered = scanner.format_hotspot_window_decision(decision)
+
+        assert rendered.startswith("Hotspot Window Decision:")
+        assert "READY/HIGH" in rendered
+        assert "recheck=900 ms" in rendered
+        assert "2500 ms critical window" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""

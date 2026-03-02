@@ -195,6 +195,22 @@ class HotspotWindowAction:
     action_reason: str
 
 
+@dataclass
+class HotspotWindowDecision:
+    """Escalated operator decision payload derived from action countdown state."""
+
+    generated_epoch_ms: int
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+    action: str
+    urgency: str
+    recommended_check_ms: int
+    decision_reason: str
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1159,6 +1175,75 @@ class BandScanner:
             f"{title}: {action.action} | P{action.active_rank} {action.active_center_hz/1e6:8.3f} MHz"
             f" → P{action.next_rank} {action.next_center_hz/1e6:8.3f} MHz"
             f" in {action.ms_until_switch} ms ({action.action_reason})"
+        )
+
+    def build_hotspot_window_decision(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+        critical_threshold_ms: int = 2500,
+        switch_floor_ms: int = 1000,
+    ) -> Optional[HotspotWindowDecision]:
+        """Build urgency-tagged decision payload for low-latency handoff operations."""
+        action = self.build_hotspot_window_action(
+            steps,
+            now_epoch_ms=now_epoch_ms,
+            ready_threshold_ms=ready_threshold_ms,
+        )
+        if action is None:
+            return None
+
+        clamped_critical_ms = max(0, critical_threshold_ms)
+        ready_ms = max(0, ready_threshold_ms)
+        effective_switch_floor_ms = min(max(0, switch_floor_ms), min(250, ready_ms) if ready_ms > 0 else 0)
+        if action.ms_until_switch <= effective_switch_floor_ms:
+            urgency = "CRITICAL"
+            reason = "switch boundary reached"
+        elif action.ms_until_switch <= clamped_critical_ms:
+            urgency = "HIGH"
+            reason = f"handoff inside {clamped_critical_ms} ms critical window"
+        elif action.ms_until_switch <= ready_ms:
+            urgency = "MEDIUM"
+            reason = f"handoff inside {ready_ms} ms ready window"
+        else:
+            urgency = "LOW"
+            reason = "handoff outside ready window"
+
+        if action.ms_until_switch <= 0:
+            recommended_check_ms = 250
+        else:
+            recommended_check_ms = max(250, min(5000, action.ms_until_switch // 2))
+
+        return HotspotWindowDecision(
+            generated_epoch_ms=action.generated_epoch_ms,
+            active_rank=action.active_rank,
+            active_center_hz=action.active_center_hz,
+            next_rank=action.next_rank,
+            next_center_hz=action.next_center_hz,
+            ms_until_switch=action.ms_until_switch,
+            action=action.action,
+            urgency=urgency,
+            recommended_check_ms=recommended_check_ms,
+            decision_reason=reason,
+        )
+
+    def format_hotspot_window_decision(
+        self,
+        decision: Optional[HotspotWindowDecision],
+        title: str = "Hotspot Window Decision",
+    ) -> str:
+        """Render one-line action + urgency decision aid for manual RX handoffs."""
+        if decision is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: {decision.action}/{decision.urgency} | "
+            f"P{decision.active_rank} {decision.active_center_hz/1e6:8.3f} MHz"
+            f" → P{decision.next_rank} {decision.next_center_hz/1e6:8.3f} MHz"
+            f" in {decision.ms_until_switch} ms"
+            f" | recheck={decision.recommended_check_ms} ms"
+            f" ({decision.decision_reason})"
         )
 
     def format_scan_results(

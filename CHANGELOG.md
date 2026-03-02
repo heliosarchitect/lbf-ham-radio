@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.20.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Escalation Decision Signal (Feature 12/20)**
+  - Added urgency-aware decision model + builder with LOW/MEDIUM/HIGH/CRITICAL escalation (`HotspotWindowDecision`, `BandScanner.build_hotspot_window_decision`)
+  - Added one-line terminal decision formatter including recheck cadence (`BandScanner.format_hotspot_window_decision`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-decision [--action-ready-ms MS] [--action-critical-ms MS]`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9/10/11 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue/action flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 12 source details were not explicitly documented in repo planning files; implemented conservatively as an urgency overlay on existing action timing.
+
+### ✅ Tests
+
+- Added scanner tests for decision urgency classification tiers and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.20.0`.
+
 ## [v0.19.0] - 2026-03-01
 
 ### ✨ Features

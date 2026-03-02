@@ -438,10 +438,21 @@ def cli_main():
         help="Show HOLD/READY/SWITCH handoff action signal derived from live hotspot schedule",
     )
     scan_band_parser.add_argument(
+        "--window-decision",
+        action="store_true",
+        help="Show escalated action+urgency decision signal with suggested recheck cadence",
+    )
+    scan_band_parser.add_argument(
         "--action-ready-ms",
         type=int,
         default=5000,
         help="READY threshold in ms before handoff switch point (default: 5000)",
+    )
+    scan_band_parser.add_argument(
+        "--action-critical-ms",
+        type=int,
+        default=2500,
+        help="CRITICAL urgency threshold in ms before handoff switch point (default: 2500)",
     )
     scan_band_parser.add_argument(
         "--upcoming-count",
@@ -966,6 +977,7 @@ def cli_main():
                         or args.window_brief
                         or args.window_cue
                         or args.window_action
+                        or args.window_decision
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -992,6 +1004,7 @@ def cli_main():
                         or args.window_brief
                         or args.window_cue
                         or args.window_action
+                        or args.window_decision
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -1015,6 +1028,7 @@ def cli_main():
                         or args.window_brief
                         or args.window_cue
                         or args.window_action
+                        or args.window_decision
                     ):
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
@@ -1034,6 +1048,7 @@ def cli_main():
                         or args.window_brief
                         or args.window_cue
                         or args.window_action
+                        or args.window_decision
                     ):
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
@@ -1054,6 +1069,7 @@ def cli_main():
                             or args.window_brief
                             or args.window_cue
                             or args.window_action
+                            or args.window_decision
                         ):
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
@@ -1071,6 +1087,7 @@ def cli_main():
                             or args.window_brief
                             or args.window_cue
                             or args.window_action
+                            or args.window_decision
                         ):
                             clock_steps = scanner.build_hotspot_window_clock(
                                 timeline_steps
@@ -1125,6 +1142,20 @@ def cli_main():
                                     scanner.build_hotspot_window_action(
                                         clock_steps,
                                         ready_threshold_ms=max(0, args.action_ready_ms),
+                                    )
+                                )
+                            )
+
+                        if args.window_decision:
+                            print()
+                            print(
+                                scanner.format_hotspot_window_decision(
+                                    scanner.build_hotspot_window_decision(
+                                        clock_steps,
+                                        ready_threshold_ms=max(0, args.action_ready_ms),
+                                        critical_threshold_ms=max(
+                                            0, args.action_critical_ms
+                                        ),
                                     )
                                 )
                             )
