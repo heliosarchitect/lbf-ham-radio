@@ -21,7 +21,7 @@ Entry points:
 - ft991a-mcp: Launch MCP server (stdio transport)
 """
 
-__version__ = "0.18.0"
+__version__ = "0.19.0"
 __author__ = "LBF / Matthew"
 __email__ = "heliosarchitectlbf@gmail.com"
 __license__ = "MIT"
@@ -36,6 +36,7 @@ try:
         HeatmapBin,
         HeatmapHotspot,
         HotspotWindow,
+        HotspotWindowAction,
         HotspotWindowCue,
         HotspotWindowPlanStep,
         ScanResult,
@@ -52,6 +53,7 @@ try:
         "HeatmapBin",
         "HeatmapHotspot",
         "HotspotWindow",
+        "HotspotWindowAction",
         "HotspotWindowCue",
         "HotspotWindowPlanStep",
         "Broadcaster",

@@ -433,6 +433,17 @@ def cli_main():
         help="Show one-line active→next hotspot handoff cue for low-overhead operator glance",
     )
     scan_band_parser.add_argument(
+        "--window-action",
+        action="store_true",
+        help="Show HOLD/READY/SWITCH handoff action signal derived from live hotspot schedule",
+    )
+    scan_band_parser.add_argument(
+        "--action-ready-ms",
+        type=int,
+        default=5000,
+        help="READY threshold in ms before handoff switch point (default: 5000)",
+    )
+    scan_band_parser.add_argument(
         "--upcoming-count",
         type=int,
         default=3,
@@ -954,6 +965,7 @@ def cli_main():
                         or args.window_upcoming
                         or args.window_brief
                         or args.window_cue
+                        or args.window_action
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -979,6 +991,7 @@ def cli_main():
                         or args.window_upcoming
                         or args.window_brief
                         or args.window_cue
+                        or args.window_action
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -1001,6 +1014,7 @@ def cli_main():
                         or args.window_upcoming
                         or args.window_brief
                         or args.window_cue
+                        or args.window_action
                     ):
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
@@ -1019,6 +1033,7 @@ def cli_main():
                         or args.window_upcoming
                         or args.window_brief
                         or args.window_cue
+                        or args.window_action
                     ):
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
@@ -1038,6 +1053,7 @@ def cli_main():
                             or args.window_upcoming
                             or args.window_brief
                             or args.window_cue
+                            or args.window_action
                         ):
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
@@ -1054,6 +1070,7 @@ def cli_main():
                             or args.window_upcoming
                             or args.window_brief
                             or args.window_cue
+                            or args.window_action
                         ):
                             clock_steps = scanner.build_hotspot_window_clock(
                                 timeline_steps
@@ -1098,6 +1115,17 @@ def cli_main():
                             print(
                                 scanner.format_hotspot_window_cue(
                                     scanner.build_hotspot_window_cue(clock_steps)
+                                )
+                            )
+
+                        if args.window_action:
+                            print()
+                            print(
+                                scanner.format_hotspot_window_action(
+                                    scanner.build_hotspot_window_action(
+                                        clock_steps,
+                                        ready_threshold_ms=max(0, args.action_ready_ms),
+                                    )
                                 )
                             )
                 else:

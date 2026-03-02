@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.19.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Live Action Signal (Feature 11/20)**
+  - Added live handoff action model + builder with HOLD/READY/SWITCH states (`HotspotWindowAction`, `BandScanner.build_hotspot_window_action`)
+  - Added one-line terminal action formatter for low-latency operator timing cues (`BandScanner.format_hotspot_window_action`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-action [--action-ready-ms MS]`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9/10 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 11 source details were not explicitly documented in repo planning files; implemented conservatively as a timing-state overlay on existing cue data.
+
+### ✅ Tests
+
+- Added scanner tests for action-state classification (HOLD/READY/SWITCH) and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.19.0`.
+
 ## [v0.18.0] - 2026-03-01
 
 ### ✨ Features

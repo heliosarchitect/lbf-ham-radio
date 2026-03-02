@@ -181,6 +181,20 @@ class HotspotWindowCue:
     ms_until_switch: int
 
 
+@dataclass
+class HotspotWindowAction:
+    """Operator action tag derived from cue countdown for faster handoff timing."""
+
+    generated_epoch_ms: int
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+    action: str
+    action_reason: str
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1096,6 +1110,55 @@ class BandScanner:
             f"{title}: P{cue.active_rank} {cue.active_center_hz/1e6:8.3f} MHz"
             f" → P{cue.next_rank} {cue.next_center_hz/1e6:8.3f} MHz"
             f" in {cue.ms_until_switch} ms"
+        )
+
+    def build_hotspot_window_action(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+    ) -> Optional[HotspotWindowAction]:
+        """Build HOLD/READY/SWITCH action signal from live hotspot window cue state."""
+        cue = self.build_hotspot_window_cue(steps, now_epoch_ms=now_epoch_ms)
+        if cue is None:
+            return None
+
+        ready_ms = max(0, ready_threshold_ms)
+        switch_floor_ms = min(250, ready_ms) if ready_ms > 0 else 0
+        if cue.ms_until_switch <= switch_floor_ms:
+            action = "SWITCH"
+            reason = "handoff due now"
+        elif cue.ms_until_switch <= ready_ms:
+            action = "READY"
+            reason = f"handoff inside {ready_ms} ms window"
+        else:
+            action = "HOLD"
+            reason = "continue active window"
+
+        return HotspotWindowAction(
+            generated_epoch_ms=cue.generated_epoch_ms,
+            active_rank=cue.active_rank,
+            active_center_hz=cue.active_center_hz,
+            next_rank=cue.next_rank,
+            next_center_hz=cue.next_center_hz,
+            ms_until_switch=cue.ms_until_switch,
+            action=action,
+            action_reason=reason,
+        )
+
+    def format_hotspot_window_action(
+        self,
+        action: Optional[HotspotWindowAction],
+        title: str = "Hotspot Window Action",
+    ) -> str:
+        """Render one-line HOLD/READY/SWITCH action cue for manual RX handoffs."""
+        if action is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: {action.action} | P{action.active_rank} {action.active_center_hz/1e6:8.3f} MHz"
+            f" → P{action.next_rank} {action.next_center_hz/1e6:8.3f} MHz"
+            f" in {action.ms_until_switch} ms ({action.action_reason})"
         )
 
     def format_scan_results(
