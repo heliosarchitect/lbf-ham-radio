@@ -30,7 +30,7 @@ AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI*
 - `ft991a-cli freq set <hz>` — Set frequency
 - `ft991a-cli mode set <mode>` — Change mode
 - `ft991a-cli cw encode/decode/send` — Morse code operations
-- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N] [--hotspot-windows --window-gap-hz HZ] [--window-plan --plan-cycle-ms MS] [--window-timeline] [--window-clock] [--window-now] [--window-upcoming --upcoming-count N] [--window-brief --upcoming-count N] [--window-cue] [--window-action --action-ready-ms MS] [--window-decision --action-critical-ms MS]` — Adaptive RX band activity heatmap + ranked hotspots + merged hotspot windows + ranked RX review plan + cycle timeline projection + wall-clock sync schedule + upcoming handoff projection + compact live handoff brief + one-line live handoff cue + HOLD/READY/SWITCH handoff action signal + urgency/recheck decision signal (Features 1/20–12/20)
+- `ft991a-cli scan band --heatmap [--max-bins N] [--hotspots --hotspot-threshold S --hotspot-top N] [--hotspot-windows --window-gap-hz HZ] [--window-plan --plan-cycle-ms MS] [--window-timeline] [--window-clock] [--window-now] [--window-upcoming --upcoming-count N] [--window-brief --upcoming-count N] [--window-cue] [--window-action --action-ready-ms MS] [--window-decision --action-critical-ms MS] [--window-ops --upcoming-count N]` — Adaptive RX band activity heatmap + ranked hotspots + merged hotspot windows + ranked RX review plan + cycle timeline projection + wall-clock sync schedule + upcoming handoff projection + compact live handoff brief + one-line live handoff cue + HOLD/READY/SWITCH handoff action signal + urgency/recheck decision signal + compact ops card with queue snapshot (Features 1/20–13/20)
 
 #### Adaptive Heatmap — Operator Note (Interface-Controlled)
 - Scope is restricted to the existing `scan band` command path.
@@ -46,6 +46,7 @@ AI-controllable Yaesu FT-991A transceiver interface with **LCARS-themed web GUI*
 - `--window-cue` provides a single-line active→next handoff cue for low-overhead terminal glance checks.
 - `--window-action` adds a one-line HOLD/READY/SWITCH directive derived from live handoff timing; tune READY sensitivity via `--action-ready-ms`.
 - `--window-decision` adds one-line action+urgency escalation (LOW/MEDIUM/HIGH/CRITICAL) plus a recommended recheck cadence; tune HIGH/CRITICAL boundary via `--action-critical-ms`.
+- `--window-ops` adds a compact multi-line operator ops card that combines decision state with a near-term handoff queue (`--upcoming-count`) for lower-overhead manual RX execution.
 - These features are receive-side analysis only; they do not add or modify TX behavior.
 - No new top-level CLI groups or web/MCP API surfaces are introduced by these features.
 

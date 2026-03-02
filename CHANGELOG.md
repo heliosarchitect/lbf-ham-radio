@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.21.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Ops Card (Feature 13/20)**
+  - Added compact ops-card model + builder combining decision urgency with near-term handoff queue (`HotspotWindowOps`, `BandScanner.build_hotspot_window_ops`)
+  - Added compact multi-line terminal formatter for low-overhead manual RX loop execution (`BandScanner.format_hotspot_window_ops`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-ops [--action-ready-ms MS] [--action-critical-ms MS] [--upcoming-count N]`
+  - Composes with existing Feature 1/2/3/4/5/6/7/8/9/10/11/12 heatmap → hotspot → window → plan → timeline → clock → now/upcoming/brief/cue/action/decision flow
+  - No new top-level command groups, endpoints, or TX controls introduced
+  - RX/analysis only
+  - **Assumption note:** Feature 13 source details were not explicitly documented in repo planning files; implemented conservatively as a compact synthesis layer over existing decision + upcoming outputs.
+
+### ✅ Tests
+
+- Added scanner tests for ops-card composition and formatter rendering.
+
+### 🛠️ Versioning
+
+- **Semver reason:** new operator-visible feature added via existing interface contract → **minor bump** to `0.21.0`.
+
 ## [v0.20.0] - 2026-03-01
 
 ### ✨ Features

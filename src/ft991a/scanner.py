@@ -211,6 +211,22 @@ class HotspotWindowDecision:
     decision_reason: str
 
 
+@dataclass
+class HotspotWindowOps:
+    """Operator ops-card payload combining decision and near-term handoff queue."""
+
+    generated_epoch_ms: int
+    action: str
+    urgency: str
+    recommended_check_ms: int
+    active_rank: int
+    active_center_hz: int
+    next_rank: int
+    next_center_hz: int
+    ms_until_switch: int
+    upcoming: List[HotspotWindowUpcomingStep]
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1245,6 +1261,71 @@ class BandScanner:
             f" | recheck={decision.recommended_check_ms} ms"
             f" ({decision.decision_reason})"
         )
+
+    def build_hotspot_window_ops(
+        self,
+        steps: List[HotspotWindowClockStep],
+        now_epoch_ms: Optional[int] = None,
+        ready_threshold_ms: int = 5000,
+        critical_threshold_ms: int = 2500,
+        upcoming_count: int = 2,
+    ) -> Optional[HotspotWindowOps]:
+        """Build compact operations card from decision state + upcoming handoffs."""
+        decision = self.build_hotspot_window_decision(
+            steps,
+            now_epoch_ms=now_epoch_ms,
+            ready_threshold_ms=ready_threshold_ms,
+            critical_threshold_ms=critical_threshold_ms,
+        )
+        if decision is None:
+            return None
+
+        upcoming = self.build_hotspot_window_upcoming(
+            steps,
+            now_epoch_ms=decision.generated_epoch_ms,
+            count=max(0, upcoming_count),
+        )
+
+        return HotspotWindowOps(
+            generated_epoch_ms=decision.generated_epoch_ms,
+            action=decision.action,
+            urgency=decision.urgency,
+            recommended_check_ms=decision.recommended_check_ms,
+            active_rank=decision.active_rank,
+            active_center_hz=decision.active_center_hz,
+            next_rank=decision.next_rank,
+            next_center_hz=decision.next_center_hz,
+            ms_until_switch=decision.ms_until_switch,
+            upcoming=upcoming,
+        )
+
+    def format_hotspot_window_ops(
+        self,
+        ops: Optional[HotspotWindowOps],
+        title: str = "Hotspot Window Ops",
+    ) -> str:
+        """Render compact multi-line operations card for manual RX handoff loop."""
+        if ops is None:
+            return f"{title}\n(No active schedule)"
+
+        lines = [
+            f"{title}: {ops.action}/{ops.urgency} | recheck={ops.recommended_check_ms} ms",
+            (
+                f"Now: P{ops.active_rank} {ops.active_center_hz/1e6:8.3f} MHz"
+                f" → P{ops.next_rank} {ops.next_center_hz/1e6:8.3f} MHz"
+                f" in {ops.ms_until_switch} ms"
+            ),
+        ]
+
+        if ops.upcoming:
+            queue = ", ".join(
+                f"U{item.sequence}:P{item.rank}@{item.starts_in_ms}ms" for item in ops.upcoming
+            )
+            lines.append(f"Queue: {queue}")
+        else:
+            lines.append("Queue: (none)")
+
+        return "\n".join(lines)
 
     def format_scan_results(
         self, results: List[Tuple[int, int]], title: str = "Band Scan Results"
