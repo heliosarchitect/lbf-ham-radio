@@ -306,6 +306,21 @@ class HotspotWindowRoute:
     rationale: str
 
 
+@dataclass
+class HotspotWindowControlPacket:
+    """Machine packet combining snapshot + fingerprint + stability + route."""
+
+    generated_epoch_ms: int
+    signature: str
+    action: str
+    urgency: str
+    route: str
+    stability: str
+    active_center_hz: int
+    next_center_hz: int
+    ms_until_switch: int
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1727,6 +1742,48 @@ class BandScanner:
         return (
             f"{title}: ts={route.generated_epoch_ms} route={route.route} "
             f"reason={route.rationale}"
+        )
+
+    def build_hotspot_window_control_packet(
+        self,
+        snapshot: Optional[HotspotWindowSnapshot],
+    ) -> Optional[HotspotWindowControlPacket]:
+        """Build consolidated machine packet from snapshot-derived overlays."""
+        if snapshot is None:
+            return None
+
+        fingerprint = self.build_hotspot_window_fingerprint(snapshot)
+        stability = self.build_hotspot_window_stability(snapshot)
+        route = self.build_hotspot_window_route(snapshot)
+        if fingerprint is None or stability is None or route is None:
+            return None
+
+        return HotspotWindowControlPacket(
+            generated_epoch_ms=snapshot.generated_epoch_ms,
+            signature=fingerprint.signature,
+            action=snapshot.action,
+            urgency=snapshot.urgency,
+            route=route.route,
+            stability=stability.level,
+            active_center_hz=snapshot.active_center_hz,
+            next_center_hz=snapshot.next_center_hz,
+            ms_until_switch=snapshot.ms_until_switch,
+        )
+
+    def format_hotspot_window_control_packet(
+        self,
+        packet: Optional[HotspotWindowControlPacket],
+        title: str = "Hotspot Window Control Packet",
+    ) -> str:
+        """Render one-line consolidated machine packet for automation handoff."""
+        if packet is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: ts={packet.generated_epoch_ms} sig={packet.signature} action={packet.action} "
+            f"urgency={packet.urgency} route={packet.route} stability={packet.stability} "
+            f"active={packet.active_center_hz/1e6:0.3f}MHz next={packet.next_center_hz/1e6:0.3f}MHz "
+            f"switch_ms={packet.ms_until_switch}"
         )
 
     def format_scan_results(

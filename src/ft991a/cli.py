@@ -478,6 +478,11 @@ def cli_main():
         help="Show route directive (MONITOR/PREP_HANDOFF/IMMEDIATE_HANDOFF) from snapshot state",
     )
     scan_band_parser.add_argument(
+        "--window-control",
+        action="store_true",
+        help="Show consolidated machine control packet (snapshot+fingerprint+stability+route)",
+    )
+    scan_band_parser.add_argument(
         "--action-ready-ms",
         type=int,
         default=5000,
@@ -1020,6 +1025,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                     ):
                         heatmap = scanner.build_adaptive_heatmap(
                             results, max_bins=max(1, args.max_bins)
@@ -1054,6 +1060,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                     ):
                         hotspots = scanner.extract_heatmap_hotspots(
                             heatmap or [],
@@ -1085,6 +1092,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                     ):
                         windows = scanner.merge_hotspot_windows(
                             hotspots,
@@ -1112,6 +1120,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                     ):
                         plan_steps = scanner.build_hotspot_window_plan(
                             windows,
@@ -1140,6 +1149,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                         ):
                             timeline_steps = scanner.build_hotspot_window_timeline(
                                 plan_steps
@@ -1165,6 +1175,7 @@ def cli_main():
                         or args.window_fingerprint
                         or args.window_stability
                         or args.window_route
+                        or args.window_control
                         ):
                             clock_steps = scanner.build_hotspot_window_clock(
                                 timeline_steps
@@ -1336,6 +1347,20 @@ def cli_main():
                             print(
                                 scanner.format_hotspot_window_route(
                                     scanner.build_hotspot_window_route(snapshot)
+                                )
+                            )
+
+                        if args.window_control:
+                            print()
+                            snapshot = scanner.build_hotspot_window_snapshot(
+                                clock_steps,
+                                ready_threshold_ms=max(0, args.action_ready_ms),
+                                critical_threshold_ms=max(0, args.action_critical_ms),
+                                upcoming_count=max(0, args.upcoming_count),
+                            )
+                            print(
+                                scanner.format_hotspot_window_control_packet(
+                                    scanner.build_hotspot_window_control_packet(snapshot)
                                 )
                             )
                 else:

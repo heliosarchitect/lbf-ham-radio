@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.28.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Consolidated Control Packet (Feature 20/20)**
+  - Added consolidated machine packet model + builder + formatter (`HotspotWindowControlPacket`, `BandScanner.build_hotspot_window_control_packet`, `BandScanner.format_hotspot_window_control_packet`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-control`
+  - Composes with existing snapshot/fingerprint/stability/route overlays.
+  - RX/analysis only; no TX behavior changes.
+
+### ✅ Tests
+
+- Added scanner test for control packet composition + formatter output.
+
 ## [v0.27.0] - 2026-03-01
 
 ### ✨ Features
