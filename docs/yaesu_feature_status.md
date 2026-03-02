@@ -22,5 +22,5 @@ Branch: `yaesu-20-increments`
 | F16 | `8122392` | done |
 | F17 | `fc9dbd0` | done |
 | F18 | `068560b` | done |
-| F19 | `TBD` | pending |
+| F19 | `1f894a5` | done |
 | F20 | `TBD` | pending |

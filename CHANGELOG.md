@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 *Generated automatically by `scripts/generate-changelog.py`*
 
+## [v0.27.0] - 2026-03-01
+
+### ✨ Features
+
+- **Hotspot Window Route Directive Signal (Feature 19/20)**
+  - Added route directive model + builder + formatter (`HotspotWindowRoute`, `BandScanner.build_hotspot_window_route`, `BandScanner.format_hotspot_window_route`)
+  - Exposed only through existing CLI surface: `ft991a-cli scan band --window-route`
+  - RX/analysis only; no TX behavior changes.
+
+### ✅ Tests
+
+- Added scanner test for route classification + formatter output.
+
 ## [v0.26.0] - 2026-03-01
 
 ### ✨ Features

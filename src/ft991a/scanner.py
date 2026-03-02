@@ -297,6 +297,15 @@ class HotspotWindowStability:
     reason: str
 
 
+@dataclass
+class HotspotWindowRoute:
+    """Operator route directive distilled from action+urgency state."""
+
+    generated_epoch_ms: int
+    route: str
+    rationale: str
+
+
 class BandScanner:
     """
     Band scanning capability for FT-991A.
@@ -1683,6 +1692,41 @@ class BandScanner:
         return (
             f"{title}: ts={stability.generated_epoch_ms} level={stability.level} "
             f"score={stability.score} reason={stability.reason}"
+        )
+
+    def build_hotspot_window_route(
+        self,
+        snapshot: Optional[HotspotWindowSnapshot],
+    ) -> Optional[HotspotWindowRoute]:
+        """Derive route directive from snapshot action/urgency state."""
+        if snapshot is None:
+            return None
+
+        if snapshot.action == "SWITCH" or snapshot.urgency == "CRITICAL":
+            route, rationale = "IMMEDIATE_HANDOFF", "switch threshold reached"
+        elif snapshot.action == "READY" or snapshot.urgency == "HIGH":
+            route, rationale = "PREP_HANDOFF", "prepare next operator action"
+        else:
+            route, rationale = "MONITOR", "hold current window and monitor"
+
+        return HotspotWindowRoute(
+            generated_epoch_ms=snapshot.generated_epoch_ms,
+            route=route,
+            rationale=rationale,
+        )
+
+    def format_hotspot_window_route(
+        self,
+        route: Optional[HotspotWindowRoute],
+        title: str = "Hotspot Window Route",
+    ) -> str:
+        """Render route directive in compact one-line form."""
+        if route is None:
+            return f"{title}\n(No active schedule)"
+
+        return (
+            f"{title}: ts={route.generated_epoch_ms} route={route.route} "
+            f"reason={route.rationale}"
         )
 
     def format_scan_results(

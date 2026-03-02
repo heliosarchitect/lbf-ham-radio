@@ -31,6 +31,7 @@ from ft991a.scanner import (
     HotspotWindowSnapshot,
     HotspotWindowFingerprint,
     HotspotWindowStability,
+    HotspotWindowRoute,
     HotspotWindowTimelineStep,
     HotspotWindowUpcomingStep,
     ScanResult,
@@ -977,6 +978,26 @@ class TestBandScanner:
         assert stability.level in {"STABLE", "WATCH", "VOLATILE"}
         rendered = scanner.format_hotspot_window_stability(stability)
         assert "level=" in rendered
+
+    def test_build_and_format_hotspot_window_route(self, scanner):
+        snapshot = HotspotWindowSnapshot(
+            generated_epoch_ms=1_700_000_016_500,
+            action="READY",
+            urgency="HIGH",
+            active_rank=1,
+            active_center_hz=14003999,
+            next_rank=2,
+            next_center_hz=14012999,
+            ms_until_switch=1500,
+            recheck_ms=750,
+            immediate_count=3,
+            queued_count=2,
+        )
+        route = scanner.build_hotspot_window_route(snapshot)
+        assert isinstance(route, HotspotWindowRoute)
+        assert route.route in {"MONITOR", "PREP_HANDOFF", "IMMEDIATE_HANDOFF"}
+        rendered = scanner.format_hotspot_window_route(route)
+        assert "route=" in rendered
 
     def test_activity_result_dataclass(self):
         """Test ActivityResult dataclass creation and attributes."""
