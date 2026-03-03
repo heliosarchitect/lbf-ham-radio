@@ -632,6 +632,10 @@
                     <div class="status-item">
                         <div class="status-label">Squelch</div>
                         <div class="status-value" id="squelchStatus">CLOSED</div>
+                        <div style="margin-top:0.35rem">
+                            <input type="range" id="mainSqlSlider" min="0" max="255" value="3" oninput="setMainSquelch(this.value)" title="Main RX squelch (radio SQL)">
+                            <div style="font-size:0.72rem;color:var(--text-secondary)">Main SQL: <span id="mainSqlValue">3</span></div>
+                        </div>
                     </div>
                     <div class="status-item">
                         <div class="status-label">Mode</div>
@@ -762,6 +766,12 @@
             const squelch = document.getElementById('squelchStatus');
             squelch.textContent = status.squelch_open ? 'OPEN' : 'CLOSED';
             squelch.className = status.squelch_open ? 'status-value active' : 'status-value';
+            if (typeof status.squelch_level === 'number') {
+                const sqlSlider = document.getElementById('mainSqlSlider');
+                const sqlValue = document.getElementById('mainSqlValue');
+                if (sqlSlider) sqlSlider.value = String(status.squelch_level);
+                if (sqlValue) sqlValue.textContent = String(status.squelch_level);
+            }
             
             // Update S-meter
             updateSMeter(status.s_meter);
@@ -830,6 +840,30 @@
                 alert(`API call failed: ${error.message}`);
                 throw error;
             }
+        }
+
+        async function setMainSquelch(value) {
+            const v = parseInt(value, 10);
+            const sqlValue = document.getElementById('mainSqlValue');
+            if (sqlValue) sqlValue.textContent = String(v);
+            try {
+                await apiCall('/squelch', 'POST', { level: v });
+            } catch (error) {
+                console.error('Main squelch set failed:', error);
+            }
+        }
+
+        async function refreshMainSquelch() {
+            try {
+                const r = await apiCall('/squelch');
+                if (r && typeof r.squelch_level === 'number') {
+                    const v = r.squelch_level;
+                    const s = document.getElementById('mainSqlSlider');
+                    const t = document.getElementById('mainSqlValue');
+                    if (s) s.value = String(v);
+                    if (t) t.textContent = String(v);
+                }
+            } catch (_) {}
         }
 
         // ── Frequency Control ───────────────────────────────────
@@ -1010,6 +1044,8 @@
                 }
             }).catch(error => {
                 console.log('Initial status load failed:', error);
+            }).finally(() => {
+                refreshMainSquelch();
             });
         }
 

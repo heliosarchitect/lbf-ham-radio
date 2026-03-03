@@ -325,6 +325,21 @@ class FT991A:
                 return False
         return False
 
+    def get_squelch_level(self) -> int:
+        """Get main RX squelch level (0-255) for current VFO via SQ0 query."""
+        resp = self._read("SQ0;")
+        if resp.startswith("SQ0") and resp.endswith(";"):
+            try:
+                return int(resp[3:-1])
+            except ValueError:
+                return 0
+        return 0
+
+    def set_squelch_level(self, level: int):
+        """Set main RX squelch level (0-255) via SQ0xxx command."""
+        level = max(0, min(255, int(level)))
+        self._set(f"SQ0{level:03d};")
+
     # ── Information ───────────────────────────────────────────
 
     def get_info(self) -> str:

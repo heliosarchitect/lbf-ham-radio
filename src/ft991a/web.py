@@ -64,6 +64,10 @@ class BandRequest(BaseModel):
     band: str  # Band name (160M, 80M, etc.)
 
 
+class SquelchRequest(BaseModel):
+    level: int  # 0-255
+
+
 class PTTRequest(BaseModel):
     enable: bool
 
@@ -604,6 +608,7 @@ async def monitor_radio():
                         "power_output": status.power_output,
                         "swr": status.swr,
                         "tx_lockout": tx_lockout,
+                        "squelch_level": radio.get_squelch_level(),
                     },
                 }
             )
@@ -682,8 +687,34 @@ async def api_status():
                 "power_output": status.power_output,
                 "swr": status.swr,
                 "tx_lockout": tx_lockout,
+                "squelch_level": radio.get_squelch_level(),
             },
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/squelch")
+async def api_get_squelch():
+    """Get main RX squelch level (0-255)."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+
+    try:
+        return {"success": True, "squelch_level": radio.get_squelch_level()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/squelch")
+async def api_set_squelch(req: SquelchRequest):
+    """Set main RX squelch level (0-255)."""
+    if not radio_connected or not radio:
+        raise HTTPException(status_code=503, detail="Radio not connected")
+
+    try:
+        radio.set_squelch_level(req.level)
+        return {"success": True, "squelch_level": radio.get_squelch_level()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
