@@ -2023,7 +2023,9 @@
                                     style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block; cursor: crosshair;"
                                     title="SDR panadapter waterfall - double-click to tune radio when click-tune is armed"
                                     onclick="handleSDRPreviewClick(event)"
-                                    ondblclick="handleSDRClick(event)">
+                                    ondblclick="handleSDRClick(event)"
+                                    onmousemove="handleSDRHover(event)"
+                                    onmouseleave="handleSDRHoverLeave()">
                             </canvas>
                             
                             <!-- Grid overlay canvas (does NOT scroll) -->
@@ -2040,6 +2042,10 @@
                             <div id="sdrRadioFreqLine" style="position: absolute; top: 1rem; bottom: 3rem; width: 2px; background: var(--lcars-red); pointer-events: none; display: none;">
                                 <div style="position: absolute; top: -20px; left: -30px; width: 60px; text-align: center; font-size: 0.7rem; color: var(--lcars-red); font-weight: bold;">RADIO</div>
                             </div>
+
+                            <!-- Hover preview line + tooltip -->
+                            <div id="sdrHoverLine" style="position: absolute; top: 1rem; bottom: 3rem; width: 1px; background: rgba(255,255,255,0.75); pointer-events: none; display: none;"></div>
+                            <div id="sdrHoverTooltip" style="position: absolute; top: 1.2rem; left: 1.2rem; background: rgba(0,0,0,0.88); color: var(--lcars-gold); border: 1px solid var(--lcars-orange); border-radius: 6px; padding: 0.15rem 0.4rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.5px; pointer-events: none; display: none; white-space: nowrap;"></div>
                             
                             <!-- Status indicator -->
                             <div id="sdrWaterfallStatus" style="position: absolute; top: 1rem; right: 1rem; color: var(--lcars-red); font-weight: 700; font-size: 0.8rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.8);">
@@ -5869,6 +5875,38 @@
             if (!sdrRunning) return;
             const targetFreq = getSDRTargetFrequency(event);
             logError(`Preview: ${formatFrequencyPrecise(targetFreq)} (${sdrClickTuneArmed ? 'double-click to tune' : 'click-tune disarmed'})`);
+        }
+
+        function handleSDRHover(event) {
+            if (!sdrRunning || !sdrCanvas) return;
+
+            const rect = sdrCanvas.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const targetFreq = getSDRTargetFrequency(event);
+
+            const line = document.getElementById('sdrHoverLine');
+            const tip = document.getElementById('sdrHoverTooltip');
+            if (!line || !tip) return;
+
+            // Align with canvas inside padded container (1rem inset)
+            line.style.left = `calc(1rem + ${x}px)`;
+            line.style.display = 'block';
+
+            tip.textContent = `${formatFrequencyPrecise(targetFreq)}`;
+            // Keep tooltip within container bounds
+            const margin = 12;
+            let tipX = x + margin;
+            const maxX = rect.width - 150;
+            if (tipX > maxX) tipX = Math.max(0, x - 150);
+            tip.style.left = `calc(1rem + ${tipX}px)`;
+            tip.style.display = 'block';
+        }
+
+        function handleSDRHoverLeave() {
+            const line = document.getElementById('sdrHoverLine');
+            const tip = document.getElementById('sdrHoverTooltip');
+            if (line) line.style.display = 'none';
+            if (tip) tip.style.display = 'none';
         }
 
         function handleSDRClick(event) {
