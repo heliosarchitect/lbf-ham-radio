@@ -1419,6 +1419,11 @@
                             <button class="btn" onclick="setTunerStep(5000)">5k</button>
                         </div>
 
+                        <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; margin-bottom:0.8rem;">
+                            <input type="text" id="opsDirectFreq" placeholder="14.250 or 14250000" style="font-family:'Antonio',monospace; font-size:1rem; background:rgba(0,0,0,0.75); color:var(--lcars-gold); border:2px solid var(--lcars-orange); border-radius:8px; padding:0.35rem 0.55rem; min-width:190px;" onkeydown="if(event.key==='Enter') setOpsDirectFrequency();" title="Enter MHz (e.g. 14.250) or Hz (e.g. 14250000)">
+                            <button class="btn" onclick="setOpsDirectFrequency()">SET FREQ</button>
+                        </div>
+
                         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                             <button class="btn primary" onclick="swapVfo()">A⇄B SWAP</button>
                             <button class="btn" onclick="copyAtoB()">A→B COPY</button>
@@ -3512,14 +3517,44 @@
         }
 
         // ── Frequency Control ───────────────────────────────────
+        function parseFrequencyInput(raw) {
+            const txt = String(raw || '').trim().replace(/,/g, '');
+            if (!txt) return NaN;
+            if (txt.includes('.')) {
+                // MHz input
+                const mhz = parseFloat(txt);
+                if (isNaN(mhz)) return NaN;
+                return Math.round(mhz * 1_000_000);
+            }
+            // Hz input
+            return parseInt(txt, 10);
+        }
+
         function setDirectFrequency() {
-            const freq = parseInt(document.getElementById('directFreq').value);
+            const freq = parseFrequencyInput(document.getElementById('directFreq').value);
             if (isNaN(freq) || freq < 30000 || freq > 470000000) {
                 alert('Invalid frequency. Enter frequency in Hz (30 kHz - 470 MHz)');
                 return;
             }
             
             apiCall('/frequency/a', 'POST', { frequency: freq });
+        }
+
+        function setOpsDirectFrequency() {
+            const el = document.getElementById('opsDirectFreq');
+            const freq = parseFrequencyInput(el ? el.value : '');
+            if (isNaN(freq) || freq < 30000 || freq > 470000000) {
+                alert('Invalid frequency. Use MHz (e.g. 14.250) or Hz (e.g. 14250000)');
+                return;
+            }
+            apiCall('/frequency/a', 'POST', { frequency: freq })
+                .then(() => {
+                    if (el) el.value = '';
+                    logError(`OPS tuned to ${formatFrequencyPrecise(freq)}`);
+                })
+                .catch(error => {
+                    logError('OPS direct tune failed: ' + error.message);
+                });
         }
 
         function setFT8Frequency(freq) {
