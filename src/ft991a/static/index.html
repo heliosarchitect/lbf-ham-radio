@@ -1342,7 +1342,8 @@
         <div class="lcars-sidebar">
             <div class="lcars-sidebar-top"></div>
             <div class="lcars-sidebar-nav">
-                <a href="#" class="lcars-nav-item active" data-tab="vfo-ctrl">VFO CTRL</a>
+                <a href="#" class="lcars-nav-item active" data-tab="ops">OPS</a>
+                <a href="#" class="lcars-nav-item" data-tab="vfo-ctrl">VFO CTRL</a>
                 <a href="#" class="lcars-nav-item" data-tab="modes">MODES</a>
                 <a href="#" class="lcars-nav-item" data-tab="bands">BANDS</a>
                 <a href="#" class="lcars-nav-item" data-tab="tx-pwr">TX PWR</a>
@@ -1381,7 +1382,8 @@
             <!-- Mobile Navigation Bar (appears only on mobile) -->
             <div class="mobile-nav-bar" id="mobileNavBar">
                 <div class="mobile-nav-container">
-                    <button class="mobile-nav-item active" data-tab="vfo-ctrl" title="VFO Control - Frequency tuning and operations">VFO</button>
+                    <button class="mobile-nav-item active" data-tab="ops" title="Primary Operations - daily controls">OPS</button>
+                    <button class="mobile-nav-item" data-tab="vfo-ctrl" title="VFO Control - Frequency tuning and operations">VFO</button>
                     <button class="mobile-nav-item" data-tab="modes" title="Mode Selection - USB, LSB, CW, FM, FT8">MODES</button>
                     <button class="mobile-nav-item" data-tab="bands" title="Band Selection - HF/VHF/UHF amateur bands">BANDS</button>
                     <button class="mobile-nav-item" data-tab="tx-pwr" title="TX Power Control - Transmitter power settings">TX PWR</button>
@@ -1398,8 +1400,72 @@
                 </div>
             </div>
             
+            <!-- Primary Ops Tab -->
+            <div class="tab-content active" id="ops">
+                <div class="main-grid">
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator green"></div>
+                            <div class="lcars-panel-title">Primary Ops</div>
+                        </div>
+
+                        <div class="frequency-display" style="font-size:2.4rem; margin-bottom:0.7rem;" id="opsFreqA">14.250.000</div>
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+                            <button class="btn" onclick="tuneDown()">◀ DN</button>
+                            <button class="btn" onclick="tuneUp()">UP ▶</button>
+                            <button class="btn" onclick="setTunerStep(10)">10Hz</button>
+                            <button class="btn" onclick="setTunerStep(100)">100Hz</button>
+                            <button class="btn" onclick="setTunerStep(1000)">1k</button>
+                            <button class="btn" onclick="setTunerStep(5000)">5k</button>
+                        </div>
+
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                            <button class="btn primary" onclick="swapVfo()">A⇄B SWAP</button>
+                            <button class="btn" onclick="copyAtoB()">A→B COPY</button>
+                            <button class="btn" onclick="startAutoTune()">⚡ AUTO TUNE</button>
+                        </div>
+                    </div>
+
+                    <div class="lcars-panel">
+                        <div class="lcars-panel-header">
+                            <div class="lcars-panel-indicator blue"></div>
+                            <div class="lcars-panel-title">Listen + Squelch</div>
+                        </div>
+
+                        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.8rem;">
+                            <button class="btn success" id="listenButtonOps" onclick="toggleListen()">🔇 LISTEN OFF</button>
+                            <button class="btn" onclick="switchTab('audio')">AUDIO TAB</button>
+                            <button class="btn" onclick="switchTab('sdr')">SDR TAB</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label>AF Monitor Volume</label>
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <input type="range" class="volume-slider" id="opsAudioVolumeSlider" min="0" max="100" value="50" oninput="setAudioVolume(this.value)">
+                                <span id="opsVolumeValue" style="min-width:48px; text-align:right; color: var(--lcars-gold); font-weight: bold;">50%</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Main RX Squelch</label>
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <input type="range" class="volume-slider" id="opsMainSqlSlider" min="0" max="255" value="3" oninput="setMainSquelch(this.value)">
+                                <span id="opsMainSqlValue" style="min-width:40px; text-align:right; color: var(--lcars-green); font-weight: bold;">3</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-grid" style="margin-top:0.8rem;">
+                    <div class="status-item"><div class="status-label">VFO-A</div><div class="status-value" id="opsVfoA">14.250.000</div></div>
+                    <div class="status-item"><div class="status-label">VFO-B</div><div class="status-value" id="opsVfoB">14.300.000</div></div>
+                    <div class="status-item"><div class="status-label">Mode</div><div class="status-value" id="opsMode">USB</div></div>
+                    <div class="status-item"><div class="status-label">S-Meter</div><div class="status-value" id="opsSmeter">S0</div></div>
+                </div>
+            </div>
+
             <!-- VFO Control Tab -->
-            <div class="tab-content active" id="vfo-ctrl">
+            <div class="tab-content" id="vfo-ctrl">
                 <div class="main-grid">
                     
                     <!-- VFO Control Panel -->
@@ -3225,12 +3291,20 @@
             // Update frequency displays with full precision
             document.getElementById('frequencyA').textContent = formatFrequencyPrecise(status.frequency_a);
             document.getElementById('frequencyB').textContent = formatFrequencyPrecise(status.frequency_b);
+            const opsFreqA = document.getElementById('opsFreqA');
+            const opsVfoA = document.getElementById('opsVfoA');
+            const opsVfoB = document.getElementById('opsVfoB');
+            if (opsFreqA) opsFreqA.textContent = formatFrequencyPrecise(status.frequency_a);
+            if (opsVfoA) opsVfoA.textContent = formatFrequencyPrecise(status.frequency_a);
+            if (opsVfoB) opsVfoB.textContent = formatFrequencyPrecise(status.frequency_b);
             
             // Update mode
             document.getElementById('currentMode').textContent = status.mode;
             if (document.getElementById('statusMode')) {
                 document.getElementById('statusMode').textContent = status.mode;
             }
+            const opsMode = document.getElementById('opsMode');
+            if (opsMode) opsMode.textContent = status.mode;
             
             // Update SDR displays
             if (document.getElementById('sdrFreqDisplay')) {
@@ -3260,8 +3334,12 @@
             if (typeof status.squelch_level === 'number') {
                 const sqlSlider = document.getElementById('mainSqlSlider');
                 const sqlValue = document.getElementById('mainSqlValue');
+                const opsSqlSlider = document.getElementById('opsMainSqlSlider');
+                const opsSqlValue = document.getElementById('opsMainSqlValue');
                 if (sqlSlider) sqlSlider.value = String(status.squelch_level);
                 if (sqlValue) sqlValue.textContent = String(status.squelch_level);
+                if (opsSqlSlider) opsSqlSlider.value = String(status.squelch_level);
+                if (opsSqlValue) opsSqlValue.textContent = String(status.squelch_level);
             }
             
             // Update S-meter
@@ -3319,11 +3397,10 @@
             else if (level < 84) sValue = Math.floor((level - 42) / 6) + 1;
             else sValue = 9 + Math.floor((level - 84) / 17);
             
-            if (sValue <= 9) {
-                document.getElementById('sMeterValue').textContent = `S${sValue}`;
-            } else {
-                document.getElementById('sMeterValue').textContent = `S9+${(sValue - 9) * 10}`;
-            }
+            const smText = (sValue <= 9) ? `S${sValue}` : `S9+${(sValue - 9) * 10}`;
+            document.getElementById('sMeterValue').textContent = smText;
+            const opsSmeter = document.getElementById('opsSmeter');
+            if (opsSmeter) opsSmeter.textContent = smText;
         }
 
         // ── Fine Tuning Controls ────────────────────────────────
@@ -3420,8 +3497,12 @@
                     const v = r.squelch_level;
                     const s = document.getElementById('mainSqlSlider');
                     const t = document.getElementById('mainSqlValue');
+                    const os = document.getElementById('opsMainSqlSlider');
+                    const ot = document.getElementById('opsMainSqlValue');
                     if (s) s.value = String(v);
                     if (t) t.textContent = String(v);
+                    if (os) os.value = String(v);
+                    if (ot) ot.textContent = String(v);
                 }
             } catch (_) {
                 // Ignore if unavailable during startup
@@ -4041,13 +4122,26 @@
         function toggleListen() {
             audioListening = !audioListening;
             const btn = document.getElementById('listenButton');
+            const opsBtn = document.getElementById('listenButtonOps');
             if (audioListening) {
-                btn.innerHTML = '🔊 LISTENING';
-                btn.style.background = 'var(--lcars-green)';
+                if (btn) {
+                    btn.innerHTML = '🔊 LISTENING';
+                    btn.style.background = 'var(--lcars-green)';
+                }
+                if (opsBtn) {
+                    opsBtn.innerHTML = '🔊 LISTENING';
+                    opsBtn.style.background = 'var(--lcars-green)';
+                }
                 if (audioGainNode) audioGainNode.gain.value = (document.getElementById('audioVolumeSlider').value / 100);
             } else {
-                btn.innerHTML = '🔇 LISTEN OFF';
-                btn.style.background = 'var(--lcars-blue)';
+                if (btn) {
+                    btn.innerHTML = '🔇 LISTEN OFF';
+                    btn.style.background = 'var(--lcars-blue)';
+                }
+                if (opsBtn) {
+                    opsBtn.innerHTML = '🔇 LISTEN OFF';
+                    opsBtn.style.background = 'var(--lcars-blue)';
+                }
                 if (audioGainNode) audioGainNode.gain.value = 0;
             }
             // Auto-start waterfall if not running
@@ -4057,9 +4151,17 @@
         }
 
         function setAudioVolume(val) {
-            document.getElementById('volumeValue').textContent = val + '%';
+            const v = parseInt(val, 10);
+            const volumeValue = document.getElementById('volumeValue');
+            const opsVolumeValue = document.getElementById('opsVolumeValue');
+            const audioSlider = document.getElementById('audioVolumeSlider');
+            const opsAudioSlider = document.getElementById('opsAudioVolumeSlider');
+            if (volumeValue) volumeValue.textContent = v + '%';
+            if (opsVolumeValue) opsVolumeValue.textContent = v + '%';
+            if (audioSlider && audioSlider.value !== String(v)) audioSlider.value = String(v);
+            if (opsAudioSlider && opsAudioSlider.value !== String(v)) opsAudioSlider.value = String(v);
             if (audioGainNode && audioListening) {
-                audioGainNode.gain.value = val / 100;
+                audioGainNode.gain.value = v / 100;
             }
         }
 
