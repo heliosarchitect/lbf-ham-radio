@@ -2084,7 +2084,7 @@
                         </div>
                         
                         <!-- Waterfall Canvas Container -->
-                        <div style="background: rgba(0, 0, 0, 0.8); border: 2px solid var(--lcars-orange); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; position: relative;">
+                        <div id="sdrCanvasContainer" style="background: rgba(0, 0, 0, 0.8); border: 2px solid var(--lcars-orange); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; position: relative;">
                             <canvas id="sdrWaterfallCanvas" width="800" height="400" 
                                     style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block; cursor: crosshair;"
                                     title="SDR panadapter waterfall - double-click to tune radio when click-tune is armed"
@@ -2130,6 +2130,7 @@
                                 <div class="form-group" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                                     <button class="btn success" id="sdrStartButton" onclick="toggleSDRWaterfall()" 
                                             title="Start/stop SDR stream and waterfall display">▶ START SDR</button>
+                                    <button class="btn" id="sdrExpandButton" onclick="toggleSDRExpand()" title="Expand/collapse SDR waterfall pane">⤢ EXPAND SDR</button>
                                 </div>
 
                                 <div class="form-group">
@@ -3179,6 +3180,7 @@
         };
         let sdrSignalLevel = -100;  // dB
         let sdrClickTuneArmed = true;
+        let sdrExpanded = false;
 
         // ── Tab Management ──────────────────────────────────────
         function switchTab(tabId) {
@@ -5927,6 +5929,52 @@
                 sdrCanvas.style.height = `${height}px`;
                 sdrConfig.canvasHeight = parseInt(height);
             }
+            const gridCanvas = document.getElementById('sdrGridCanvas');
+            if (gridCanvas) {
+                gridCanvas.style.height = `${height}px`;
+            }
+        }
+
+        function setSDRExpanded(expanded) {
+            sdrExpanded = expanded;
+            const container = document.getElementById('sdrCanvasContainer');
+            const btn = document.getElementById('sdrExpandButton');
+            const hSlider = document.getElementById('sdrHeightSlider');
+            if (!container || !btn) return;
+
+            if (sdrExpanded) {
+                const h = Math.max(500, Math.floor(window.innerHeight * 0.72));
+                container.style.position = 'fixed';
+                container.style.top = '72px';
+                container.style.left = '20px';
+                container.style.right = '20px';
+                container.style.bottom = '20px';
+                container.style.zIndex = '2000';
+                container.style.marginBottom = '0';
+                updateSDRCanvasHeight(h);
+                if (hSlider) hSlider.value = String(Math.min(800, h));
+                btn.textContent = '⤡ COLLAPSE SDR';
+                btn.style.background = 'var(--lcars-red)';
+                btn.style.color = '#000';
+            } else {
+                container.style.position = 'relative';
+                container.style.top = '';
+                container.style.left = '';
+                container.style.right = '';
+                container.style.bottom = '';
+                container.style.zIndex = '';
+                container.style.marginBottom = '1rem';
+                const target = hSlider ? parseInt(hSlider.value, 10) : 400;
+                updateSDRCanvasHeight(target);
+                btn.textContent = '⤢ EXPAND SDR';
+                btn.style.background = '';
+                btn.style.color = '';
+            }
+            try { localStorage.setItem('sdrExpanded', sdrExpanded ? '1' : '0'); } catch (_) {}
+        }
+
+        function toggleSDRExpand() {
+            setSDRExpanded(!sdrExpanded);
         }
 
         function updateSDRBandwidthDisplay() {
@@ -6282,6 +6330,21 @@
                 sdrToggle.style.color = '#000';
             }
 
+            // Restore SDR layout preference
+            try {
+                if (localStorage.getItem('sdrExpanded') === '1') {
+                    setSDRExpanded(true);
+                }
+            } catch (_) {}
+
+            // Sync OPS and AUDIO volume sliders
+            const audioVol = document.getElementById('audioVolumeSlider');
+            const opsVol = document.getElementById('opsAudioVolumeSlider');
+            if (audioVol && opsVol) {
+                opsVol.value = audioVol.value;
+                setAudioVolume(audioVol.value);
+            }
+
             // Set up power slider
             const powerSlider = document.getElementById('powerSlider');
             if (powerSlider) {
@@ -6342,6 +6405,12 @@
             if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
                 e.preventDefault();
                 pttRelease();
+            }
+        });
+
+        window.addEventListener('resize', function() {
+            if (sdrExpanded) {
+                setSDRExpanded(true);
             }
         });
 
