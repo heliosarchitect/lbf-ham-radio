@@ -2000,10 +2000,12 @@
                                 <button class="selector-btn" onclick="setSDRBandwidth(10000000, this)" title="10 MHz SDR bandwidth">10M</button>
                             </div>
 
-                            <!-- Click-to-tune indicator -->
-                            <div style="flex: 0 0 auto;">
-                                <div style="font-size: 0.6rem; color: var(--lcars-peach); text-align: center; margin-bottom: 2px;">CLICK WATERFALL</div>
-                                <div style="font-size: 0.6rem; color: var(--lcars-gold); text-align: center;">TO TUNE RADIO</div>
+                            <!-- Click-to-tune controls -->
+                            <div style="flex: 0 0 auto; text-align: center;">
+                                <button id="sdrClickTuneToggle" class="btn" onclick="toggleSDRClickTune()" style="font-size: 0.7rem; padding: 0.25rem 0.6rem; background: var(--lcars-green); color: #000; font-weight: 700;" title="Arm/disarm SDR double-click tuning">
+                                    CLICK-TUNE ARMED
+                                </button>
+                                <div style="font-size: 0.6rem; color: var(--lcars-peach); margin-top: 4px;">DOUBLE-CLICK WATERFALL TO TUNE</div>
                             </div>
                         </div>
                     </div>
@@ -2019,8 +2021,9 @@
                         <div style="background: rgba(0, 0, 0, 0.8); border: 2px solid var(--lcars-orange); border-radius: var(--radius-sm); padding: 1rem; margin-bottom: 1rem; position: relative;">
                             <canvas id="sdrWaterfallCanvas" width="800" height="400" 
                                     style="width: 100%; height: 400px; background: #000; border-radius: var(--radius-sm); display: block; cursor: crosshair;"
-                                    title="SDR panadapter waterfall - click to tune radio to frequency"
-                                    onclick="handleSDRClick(event)">
+                                    title="SDR panadapter waterfall - double-click to tune radio when click-tune is armed"
+                                    onclick="handleSDRPreviewClick(event)"
+                                    ondblclick="handleSDRClick(event)">
                             </canvas>
                             
                             <!-- Grid overlay canvas (does NOT scroll) -->
@@ -3103,6 +3106,7 @@
             centerFreq: 14250000  // Default center frequency
         };
         let sdrSignalLevel = -100;  // dB
+        let sdrClickTuneArmed = true;
 
         // ── Tab Management ──────────────────────────────────────
         function switchTab(tabId) {
@@ -5836,23 +5840,48 @@
             document.getElementById('sdrFFTSizeDisplay').textContent = sdrConfig.fftSize.toString();
         }
 
-        function handleSDRClick(event) {
-            if (!sdrRunning) return;
-            
+        function getSDRTargetFrequency(event) {
             const rect = sdrCanvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const canvasWidth = rect.width;
-            
+
             // Calculate clicked frequency
             const clickPosition = x / canvasWidth; // 0 to 1
             const bandwidth = sdrConfig.bandwidth;
             const centerFreq = sdrConfig.centerFreq;
-            
+
             const freqOffset = (clickPosition - 0.5) * bandwidth;
-            const targetFreq = centerFreq + freqOffset;
-            
-            // Tune radio to clicked frequency
-            console.log(`SDR click: tuning to ${targetFreq} Hz`);
+            return centerFreq + freqOffset;
+        }
+
+        function toggleSDRClickTune() {
+            sdrClickTuneArmed = !sdrClickTuneArmed;
+            const btn = document.getElementById('sdrClickTuneToggle');
+            if (btn) {
+                btn.textContent = sdrClickTuneArmed ? 'CLICK-TUNE ARMED' : 'CLICK-TUNE SAFE';
+                btn.style.background = sdrClickTuneArmed ? 'var(--lcars-green)' : 'var(--lcars-red)';
+                btn.style.color = '#000';
+            }
+            logError(sdrClickTuneArmed ? 'SDR click-tune armed (double-click active)' : 'SDR click-tune disarmed (safe mode)');
+        }
+
+        function handleSDRPreviewClick(event) {
+            if (!sdrRunning) return;
+            const targetFreq = getSDRTargetFrequency(event);
+            logError(`Preview: ${formatFrequencyPrecise(targetFreq)} (${sdrClickTuneArmed ? 'double-click to tune' : 'click-tune disarmed'})`);
+        }
+
+        function handleSDRClick(event) {
+            if (!sdrRunning) return;
+            if (!sdrClickTuneArmed) {
+                logError('SDR double-click ignored: click-tune is disarmed');
+                return;
+            }
+
+            const targetFreq = getSDRTargetFrequency(event);
+
+            // Tune radio to double-clicked frequency
+            console.log(`SDR double-click: tuning to ${targetFreq} Hz`);
             apiCall('/frequency/a', 'POST', { frequency: Math.round(targetFreq) })
                 .then(() => {
                     logError(`Tuned to ${formatFrequencyPrecise(targetFreq)} via SDR waterfall`);
@@ -6105,6 +6134,14 @@
                 });
             });
             
+            // Initialize SDR click-tune state
+            const sdrToggle = document.getElementById('sdrClickTuneToggle');
+            if (sdrToggle) {
+                sdrToggle.textContent = sdrClickTuneArmed ? 'CLICK-TUNE ARMED' : 'CLICK-TUNE SAFE';
+                sdrToggle.style.background = sdrClickTuneArmed ? 'var(--lcars-green)' : 'var(--lcars-red)';
+                sdrToggle.style.color = '#000';
+            }
+
             // Set up power slider
             const powerSlider = document.getElementById('powerSlider');
             if (powerSlider) {

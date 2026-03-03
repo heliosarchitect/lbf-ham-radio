@@ -1,6 +1,6 @@
 {
   "name": "lbf-ham-radio",
-  "version": "0.29.0",
+  "version": "0.30.0",
   "description": "Yaesu FT-991A CAT control and AI-assisted ham radio operations",
   "private": true,
   "scripts": {
