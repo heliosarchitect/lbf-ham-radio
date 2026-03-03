@@ -25,6 +25,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .cat import FT991A, Band, Mode
+from .cw import CWDecoder, CWFrequencyLocator
 
 # Configure logging
 logging.basicConfig(
@@ -112,6 +113,16 @@ class MonitorStartRequest(BaseModel):
     interval: int = 120
     language: str = "es"
     smeter_threshold: int = 20
+
+
+class CWSampleDecodeRequest(BaseModel):
+    samples: List[float]
+    sample_rate: int = 8000
+    tone_freq: int = 600
+
+
+class CWCandidateRequest(BaseModel):
+    top_n: int = 8
 
 
 # ── Global State ─────────────────────────────────────────────
@@ -329,6 +340,9 @@ class SDRConnectionManager:
         self.bandwidth = 2000000  # Default 2 MHz
         self.fft_size = 1024  # Default FFT size
         self.frame_rate = 10  # Target ~10 fps
+        self.latest_bins: List[float] = []
+        self.latest_center_freq: float = 0.0
+        self.latest_timestamp: float = 0.0
 
     async def connect(self, websocket: WebSocket):
         await websocket.accept()
@@ -464,14 +478,20 @@ class SDRConnectionManager:
                 except:
                     pass
 
+                bins_list = power_spectrum.tolist()
+                ts = time.time()
+                self.latest_bins = bins_list
+                self.latest_center_freq = center_freq
+                self.latest_timestamp = ts
+
                 # Broadcast FFT data
                 await self.broadcast_sdr_data(
                     {
                         "type": "sdr_fft",
-                        "bins": power_spectrum.tolist(),
+                        "bins": bins_list,
                         "center_freq": center_freq,
                         "bandwidth": self.bandwidth,
-                        "timestamp": time.time(),
+                        "timestamp": ts,
                     }
                 )
 
@@ -537,6 +557,7 @@ class SDRConnectionManager:
 manager = ConnectionManager()
 audio_manager = AudioConnectionManager()
 sdr_manager = SDRConnectionManager()
+cw_locator = CWFrequencyLocator()
 
 # ── Radio Control Functions ──────────────────────────────────
 
@@ -1727,6 +1748,37 @@ async def set_sdr_fft_size(data: dict):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/cw/candidates")
+async def get_cw_candidates(top_n: int = 8):
+    """Locate likely CW frequencies from latest SDR FFT frame."""
+    if not sdr_manager or not sdr_manager.latest_bins:
+        return {"success": False, "reason": "no_sdr_frame", "candidates": []}
+
+    candidates = cw_locator.scan_fft(
+        sdr_manager.latest_bins,
+        sdr_manager.latest_center_freq,
+        sdr_manager.bandwidth,
+        max(1, min(20, int(top_n))),
+    )
+    return {
+        "success": True,
+        "timestamp": sdr_manager.latest_timestamp,
+        "center_freq": int(sdr_manager.latest_center_freq),
+        "bandwidth": sdr_manager.bandwidth,
+        "candidates": candidates,
+    }
+
+
+@app.post("/api/cw/decode_samples")
+async def decode_cw_samples(req: CWSampleDecodeRequest):
+    """Decode CW from sample buffer (worker validation path)."""
+    if not req.samples or len(req.samples) < max(100, req.sample_rate // 5):
+        raise HTTPException(status_code=400, detail="Insufficient sample buffer")
+
+    decoder = CWDecoder(sample_rate=req.sample_rate, tone_freq=req.tone_freq)
+    return decoder.decode_with_metadata(req.samples)
 
 
 # ── Monitor Functions ────────────────────────────────────────

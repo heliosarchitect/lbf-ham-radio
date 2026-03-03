@@ -365,69 +365,203 @@ class CWKeyer:
 
 
 class CWDecoder:
-    """
-    CW decoder for audio input analysis.
+    """CW decoder using Goertzel tone detection + adaptive timing analysis."""
 
-    TODO: This is a placeholder for future audio decoding functionality.
-    Will implement Goertzel algorithm for tone detection when audio input is available.
-    """
-
-    def __init__(self, sample_rate: int = 8000, tone_freq: int = 600):
-        """
-        Initialize CW decoder.
-
-        Args:
-            sample_rate: Audio sample rate (Hz)
-            tone_freq: CW tone frequency to detect (Hz)
-        """
+    def __init__(self, sample_rate: int = 8000, tone_freq: int = 600, wpm_hint: int = 20):
         self.sample_rate = sample_rate
         self.tone_freq = tone_freq
+        self.wpm_hint = wpm_hint
         self._enabled = False
-
-        logger.info("CWDecoder initialized (PLACEHOLDER - not yet implemented)")
+        self._last_result: Dict = {}
+        self._frame_ms = 10
+        logger.info("CWDecoder initialized (goertzel/adaptive mode)")
 
     def start_listening(self):
-        """Start listening for CW audio input"""
-        logger.info("CW decoder listening started (PLACEHOLDER)")
-        # TODO: Implement Goertzel algorithm for tone detection
-        # TODO: Add audio input handling (sounddevice, pyaudio, etc.)
-        # TODO: Implement dit/dah timing analysis
-        # TODO: Add noise filtering and AGC
         self._enabled = True
 
     def stop_listening(self):
-        """Stop listening for CW audio input"""
-        logger.info("CW decoder listening stopped")
         self._enabled = False
 
+    def _goertzel_power(self, frame: List[float], target_freq: float) -> float:
+        import math
+
+        n = len(frame)
+        if n == 0:
+            return 0.0
+        k = int(0.5 + ((n * target_freq) / self.sample_rate))
+        omega = (2.0 * math.pi * k) / n
+        coeff = 2.0 * math.cos(omega)
+        s_prev = 0.0
+        s_prev2 = 0.0
+        for x in frame:
+            s = x + coeff * s_prev - s_prev2
+            s_prev2 = s_prev
+            s_prev = s
+        power = s_prev2 * s_prev2 + s_prev * s_prev - coeff * s_prev * s_prev2
+        return max(0.0, power)
+
     def decode_audio_buffer(self, audio_data: List[float]) -> Optional[str]:
-        """
-        Decode CW from audio buffer.
+        import math
+        import statistics
 
-        Args:
-            audio_data: Audio samples as floats
+        if not audio_data or len(audio_data) < int(self.sample_rate * 0.2):
+            return None
 
-        Returns:
-            Decoded Morse code string, or None if no valid CW detected
+        frame_len = max(8, int(self.sample_rate * (self._frame_ms / 1000.0)))
+        frames = [audio_data[i : i + frame_len] for i in range(0, len(audio_data) - frame_len, frame_len)]
+        if len(frames) < 5:
+            return None
 
-        TODO: Implement Goertzel algorithm for tone detection:
-        1. Apply Goertzel algorithm to detect tone_freq
-        2. Use threshold to determine key-down/key-up
-        3. Analyze timing to distinguish dits from dahs
-        4. Build Morse code string from timing analysis
-        5. Return decoded Morse (can be fed to morse_to_text())
-        """
-        logger.debug(f"Processing {len(audio_data)} audio samples (PLACEHOLDER)")
-        return None  # TODO: Implement actual decoding
+        # Detect tone energy with slight frequency robustness (target +-20Hz)
+        powers = []
+        for fr in frames:
+            p0 = self._goertzel_power(fr, self.tone_freq)
+            p1 = self._goertzel_power(fr, self.tone_freq - 20)
+            p2 = self._goertzel_power(fr, self.tone_freq + 20)
+            powers.append(max(p0, p1, p2))
+
+        med = statistics.median(powers)
+        abs_dev = [abs(p - med) for p in powers]
+        mad = statistics.median(abs_dev) if abs_dev else 0.0
+        thresh = med + max(1e-9, 3.0 * mad)
+        tone_mask = [p > thresh for p in powers]
+
+        # Run-length encode tone/silence
+        runs = []
+        cur = tone_mask[0]
+        length = 1
+        for b in tone_mask[1:]:
+            if b == cur:
+                length += 1
+            else:
+                runs.append((cur, length))
+                cur = b
+                length = 1
+        runs.append((cur, length))
+
+        tone_units_ms = [r[1] * self._frame_ms for r in runs if r[0]]
+        if not tone_units_ms:
+            return None
+
+        tone_sorted = sorted(tone_units_ms)
+        short_n = max(1, len(tone_sorted) // 3)
+        dit_ms = sum(tone_sorted[:short_n]) / short_n
+        dit_ms = max(20.0, min(220.0, dit_ms))
+
+        morse_parts = []
+        current_symbol = []
+        timing_scores = []
+
+        for is_tone, run_len in runs:
+            dur_ms = run_len * self._frame_ms
+            units = dur_ms / dit_ms
+            if is_tone:
+                sym = '-' if units >= 2.2 else '.'
+                current_symbol.append(sym)
+                timing_scores.append(max(0.0, 1.0 - abs((3.0 if sym == '-' else 1.0) - units) / 3.0))
+            else:
+                if units <= 1.8:
+                    # intra-character gap
+                    continue
+                if current_symbol:
+                    morse_parts.append(''.join(current_symbol))
+                    current_symbol = []
+                if units >= 4.5:
+                    morse_parts.append(' / ')
+
+        if current_symbol:
+            morse_parts.append(''.join(current_symbol))
+
+        # Normalize spacing
+        morse = []
+        for tok in morse_parts:
+            if tok == ' / ':
+                if morse and morse[-1] != '/':
+                    morse.append('/')
+            elif tok:
+                morse.append(tok)
+        if not morse:
+            return None
+
+        morse_str = ' '.join(morse).replace('/ ', '/').replace(' /', '/').replace('/', '  ')
+        text = morse_to_text(morse_str)
+
+        snr_proxy = (max(powers) / (med + 1e-9)) if med > 0 else 0.0
+        timing_conf = sum(timing_scores) / len(timing_scores) if timing_scores else 0.0
+        conf = max(0.0, min(1.0, 0.5 * min(1.0, snr_proxy / 8.0) + 0.5 * timing_conf))
+
+        self._last_result = {
+            "morse": morse_str,
+            "text": text,
+            "confidence": round(conf, 3),
+            "dit_ms": round(dit_ms, 1),
+            "tone_freq": self.tone_freq,
+            "snr_proxy": round(snr_proxy, 3),
+        }
+        return morse_str
+
+    def decode_with_metadata(self, audio_data: List[float]) -> Dict:
+        morse = self.decode_audio_buffer(audio_data)
+        if not morse:
+            return {"ok": False, "reason": "no_cw_detected"}
+        return {"ok": True, **self._last_result}
 
     def get_decoder_stats(self) -> Dict:
-        """Get decoder statistics and status"""
         return {
             "enabled": self._enabled,
             "sample_rate": self.sample_rate,
             "tone_freq": self.tone_freq,
-            "status": "placeholder_not_implemented",
+            "frame_ms": self._frame_ms,
+            "last_result": self._last_result,
         }
+
+
+class CWFrequencyLocator:
+    """Find and track CW-like narrowband peaks from wideband FFT frames."""
+
+    def __init__(self):
+        self._tracks: Dict[int, float] = {}
+
+    def scan_fft(self, bins: List[float], center_freq: float, bandwidth: float, top_n: int = 8) -> List[Dict]:
+        if not bins or bandwidth <= 0:
+            return []
+
+        n = len(bins)
+        if n < 8:
+            return []
+
+        # Local maxima above adaptive threshold
+        sorted_bins = sorted(bins)
+        noise_floor = sorted_bins[max(0, int(0.65 * n) - 1)]
+        peak_thresh = noise_floor + 8.0
+        cands = []
+        for i in range(2, n - 2):
+            v = bins[i]
+            if v < peak_thresh:
+                continue
+            if v > bins[i - 1] and v > bins[i + 1]:
+                # narrowness proxy: peak over local shoulders
+                shoulders = (bins[i - 2] + bins[i - 1] + bins[i + 1] + bins[i + 2]) / 4.0
+                sharpness = v - shoulders
+                if sharpness < 2.0:
+                    continue
+                frac = (i / (n - 1)) - 0.5
+                freq = center_freq + frac * bandwidth
+                prev = self._tracks.get(i, freq)
+                drift = freq - prev
+                self._tracks[i] = freq
+                conf = max(0.0, min(1.0, ((v - noise_floor) / 22.0) * (sharpness / 8.0)))
+                cands.append({
+                    "bin": i,
+                    "freq_hz": int(round(freq)),
+                    "power_db": round(v, 2),
+                    "sharpness": round(sharpness, 2),
+                    "drift_hz": round(drift, 1),
+                    "confidence": round(conf, 3),
+                })
+
+        cands.sort(key=lambda x: (x["confidence"], x["power_db"]), reverse=True)
+        return cands[:top_n]
 
 
 # Convenience functions for command-line usage
